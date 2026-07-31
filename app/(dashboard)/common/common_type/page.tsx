@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { common_type } from "../../../generated/prisma/client";
 import { columns } from "./components/commonTypeColumns";
 import { DataTable } from "./components/CommonTypeTable";
-import { Button } from "@/components/ui/button";
+import BreadcrumbHeader from "./components/BreadcrumbHeader";
 
 export default function CommonType() {
   const [commonTypes, setCommonTypes] = useState<common_type[]>([]);
@@ -27,15 +27,7 @@ export default function CommonType() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Common Type</h1>
-        <Button
-          className="p-4"
-          onClick={() => router.push("common-types/add-common-type")}
-        >
-          Add Common Type
-        </Button>
-      </div>
+      <BreadcrumbHeader />
       <DataTable columns={columns} data={commonTypes} />
     </div>
   );

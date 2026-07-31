@@ -55,43 +55,7 @@ export const columns: ColumnDef<CommonType>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  {
-    accessorKey: "id",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          ID
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-  },
-  {
-    accessorKey: "TYP_CD",
-    header: "Type Code",
-  },
-  {
-    accessorKey: "TYP_NM",
-    header: "Type Name",
-  },
-  {
-    accessorKey: "VIEW_NM",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          View Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-  },
-  {
+    {
     accessorKey: "Actions",
     id: "actions",
     cell: ({ row }) => {
@@ -137,46 +101,10 @@ export const columns: ColumnDef<CommonType>[] = [
               <Pencil /> Edit
               </Button>
             </DropdownMenuItem>
-            
-            <DropdownMenuItem>
-              <Button variant="ghost" asChild>
-                <Link href="/">
-                  <FilePlus /> Add new order
-                </Link>
-              </Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Button variant="ghost" asChild>
-                <Link href="/">
-                  <FileSpreadsheet /> Orders
-                </Link>
-              </Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Button variant="ghost" asChild>
-                <Link href="/">
-                  <Lock /> Login
-                </Link>
-              </Button>
-            </DropdownMenuItem>
             <DropdownMenuItem>
               <Button variant="ghost" asChild onClick={handleDelete}>
                 <Link href="/">
                   <CircleX /> Delete
-                </Link>
-              </Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Button variant="ghost" asChild>
-                <Link href="/">
-                  <RefreshCcw /> Sync All on Cashonreferral
-                </Link>
-              </Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Button variant="ghost" asChild>
-                <Link href="/">
-                  <ThumbsUp /> Do you want to deactivate?
                 </Link>
               </Button>
             </DropdownMenuItem>
@@ -185,4 +113,41 @@ export const columns: ColumnDef<CommonType>[] = [
       );
     },
   },
+  {
+    accessorKey: "TYP_ID",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          TYP_ID
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+  {
+    accessorKey: "TYP_CD",
+    header: "Type Code",
+  },
+  {
+    accessorKey: "TYP_NM",
+    header: "Type Name",
+  },
+  {
+    accessorKey: "VIEW_NM",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          View Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+
 ];
