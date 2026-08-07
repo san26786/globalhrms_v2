@@ -1,46 +1,20 @@
-import { FormConfig } from "./formTypes";
+import { DynamicForm } from "./formTypes";
+import { mapAttributesToFields } from "./utils/fieldMapper";
 
-export async function buildForm(config: FormConfig) {
-
-    const isEdit = !!config.id;
-
-    let initialData = {};
-
-    if (isEdit) {
-        initialData = await config.service.getById(config.id);
-    }
-
-    const controls = await config.controls();
-
-    return {
-
-        title: `${isEdit ? "Edit" : "Add"} ${config.title}`,
-
-        mode: isEdit ? "edit" : "add",
-
-        action:
-            isEdit
-                ? `/api/${config.module}/${config.id}`
-                : `/api/${config.module}`,
-
-        cancelUrl: `/${config.module}`,
-
-        breadcrumb: [
-
-            {
-                title: config.title,
-                href: `/${config.module}`,
-            },
-
-            {
-                title: isEdit ? "Edit" : "Add",
-            },
-
-        ],
-
-        controls,
-
-        values: initialData,
-
-    };
+/**
+ * Builds a DynamicForm from raw entity metadata.
+ *
+ * This used to carry its own local copy of attribute -> field mapping
+ * (including a second, less complete `mapControlType` switch) that
+ * duplicated `utils/fieldMapper.ts`. There was also a third copy in
+ * the now-removed `fieldFactory.ts`. `utils/fieldMapper.ts` is the
+ * canonical version (most complete type coverage, handles both
+ * IS_REQUIRED and IS_MANDATORY, disabled/readOnly/width) - everything
+ * else now delegates to it.
+ */
+export function buildForm(metadata: any): DynamicForm {
+  return {
+    title: metadata.OBJ_NM,
+    fields: mapAttributesToFields(metadata.entity_obj_attrbt ?? []),
+  };
 }

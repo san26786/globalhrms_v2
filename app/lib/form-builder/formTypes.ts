@@ -1,13 +1,63 @@
-export interface FormConfig {
+// app/lib/form-builder/formTypes.ts
 
-    id?: number;
+import { FieldError } from "react-hook-form";
+import { ZodTypeAny } from "zod";
 
-    module: string;
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "email"
+  | "password"
+  | "select"
+  | "checkbox"
+  | "radio"
+  | "date"
+  | "datetime"
+  | "time"
+  | "file"
+  | "switch"
+  | "hidden";
 
-    title: string;
+export interface SelectOption {
+  label: string;
+  value: string | number;
+}
 
-    service: any;
+export interface DynamicField {
+  id?: number | string;
+  name: string;
+  label: string;
+  type: string;
 
-    controls: () => Promise<any[]>;
+  options?: {
+    label: string;
+    value: string;
+  }[];
 
+  placeholder?: string;
+
+  required?: boolean;
+
+  disabled?: boolean;
+
+  readOnly?: boolean;
+  
+  hidden?: boolean;
+
+  errors?: FieldError;
+
+  defaultValue?: any;
+
+  validation?: ZodTypeAny;
+
+  width?: number;
+
+  order?: number;
+}
+
+export interface DynamicForm {
+  title?: string;
+
+  fields: DynamicField[];
 }

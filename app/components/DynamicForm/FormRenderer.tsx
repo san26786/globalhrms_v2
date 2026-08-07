@@ -1,66 +1,78 @@
-import { InputBlock } from "@/components/FormBlocks/Input/InputBlock";
-import { SelectBlock } from "@/components/FormBlocks/Select/SelectBlock";
-import { CheckboxBlock } from "@/components/FormBlocks/Checkbox/CheckboxBlock";
-import { TextareaBlock } from "@/components/FormBlocks/Textarea/TextAreaBlock";
+"use client";
+
+import { Control, FieldErrors, FieldValues, UseFormRegister } from "react-hook-form";
+
+import FormSection from "./FormSection";
+import FormGrid, { FormGridItem } from "./FormGrid";
+import FieldFactory from "./FieldFactory";
+
+interface DynamicField {
+  name: string;
+  label?: string;
+  type: string;
+  section?: string;
+  colSpan?: number;
+  order?: number;
+  hidden?: boolean;
+  [key: string]: unknown;
+}
+
+interface Props {
+  fields: DynamicField[];
+  register: UseFormRegister<FieldValues>;
+  control: Control<FieldValues>;
+  errors: FieldErrors<FieldValues>;
+}
 
 export default function FormRenderer({
   fields,
   register,
   control,
   errors,
-}: any) {
+}: Props) {
+
+  // Group fields by section
+  const groupedFields = fields.reduce<Record<string, DynamicField[]>>(
+    (acc, field) => {
+      const section = field.section || "General";
+
+      if (!acc[section]) {
+        acc[section] = [];
+      }
+
+      acc[section].push(field);
+
+      return acc;
+    },
+    {}
+  );
+
   return (
     <>
-      {fields.map((field: any) => {
-        switch (field.type) {
-          case "input":
-            return (
-              <InputBlock
-                key={field.name}
-                {...field}
-                register={register}
-                control={control}
-                errors={errors}
-              />
-            );
-
-          case "select":
-            return (
-              <SelectBlock
-                key={field.name}
-                {...field}
-                register={register}
-                control={control}
-                errors={errors}
-              />
-            );
-
-          case "checkbox":
-            return (
-              <CheckboxBlock
-                key={field.name}
-                {...field}
-                register={register}
-                control={control}
-                errors={errors}
-              />
-            );
-
-          case "textarea":
-            return (
-              <TextareaBlock
-                key={field.name}
-                {...field}
-                register={register}
-                control={control}
-                errors={errors}
-              />
-            );
-
-          default:
-            return null;
-        }
-      })}
+      {Object.entries(groupedFields).map(([section, sectionFields]) => (
+        <FormSection
+          key={section}
+          title={section}
+        >
+          <FormGrid columns={12}>
+            {sectionFields
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((field) => (
+                <FormGridItem
+                  key={field.name}
+                  span={field.colSpan ?? 12}
+                >
+                  <FieldFactory
+                    field={field as any}
+                    register={register}
+                    control={control}
+                    errors={errors}
+                  />
+                </FormGridItem>
+              ))}
+          </FormGrid>
+        </FormSection>
+      ))}
     </>
   );
 }
