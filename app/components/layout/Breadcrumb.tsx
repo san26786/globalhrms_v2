@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
-
-export interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
+import type { BreadcrumbItem } from "@/lib/page-builder/pageTypes";
 
 interface Props {
   items: BreadcrumbItem[];
@@ -28,11 +24,11 @@ export default function Breadcrumb({ items }: Props) {
               href={item.href}
               className="hover:text-primary transition-colors"
             >
-              {item.label}
+              {item.title}
             </Link>
           ) : (
             <span className="font-medium text-foreground">
-              {item.label}
+              {item.title}
             </span>
           )}
         </div>

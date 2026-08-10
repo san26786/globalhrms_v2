@@ -1,76 +1,196 @@
-import { createPageConfig } from "./pageConfig";
-import { buildBreadcrumbsFromMetadata } from "./breadcrumbs";
-import { LoadedPage } from "./pageTypes";
+import { resolvePageConfig } from "@/lib/page-builder/pageResolver";
+import { LoadedPage } from "@/lib/page-builder/pageTypes";
 
 import { EntityService } from "@/lib/entity/entityService";
-import { buildTable } from "@/lib/table-builder/tableBuilder";
-import { buildForm } from "@/lib/form-builder/formBuilder";
 
+import { resolvePageForm } from "@/lib/page-builder/pageFormResolver";
+import { resolvePageTable } from "@/lib/page-builder/pageTableResolver";
+import { PageConfig, PageRenderState } from "@/lib/page-builder/pageTypes";
+
+/**
+ * ==========================================================
+ * Page Loader
+ * ==========================================================
+ *
+ * Loads the metadata/configuration required to render
+ * an entity-driven page.
+ *
+ * Responsibilities:
+ *
+ * 1. Load entity metadata
+ * 2. Resolve page configuration
+ * 3. Resolve breadcrumbs
+ * 4. Build dynamic form schema
+ * 5. Build table definition
+ *
+ * CRUD records are loaded separately by:
+ *
+ * pageDataLoader.ts
+ */
 export class PageLoader {
+  private static entityService =
+    new EntityService();
+
   /**
-   * Load everything required for rendering an entity page.
+   * ========================================================
+   * Load Complete Page
+   * ========================================================
    */
-  static async load(entityId: number): Promise<LoadedPage> {
+  static async load(
+    entityId: number
+  ): Promise<LoadedPage> {
     /**
-     * 1. Load metadata
-     *
-     * Replace this with your actual service method.
+     * ------------------------------------------------------
+     * 1. Load Entity Metadata
+     * ------------------------------------------------------
      */
-    const entityService = new EntityService();
-    const metadata = await entityService.getEntityMetadata(entityId);
+    const metadata =
+      await this.entityService.getEntityMetadata(
+        entityId
+      );
 
     if (!metadata) {
-      throw new Error(`Entity ${entityId} not found.`);
+      throw new Error(
+        `Entity ${entityId} not found.`
+      );
     }
 
     /**
-     * 2. Build page configuration
+     * ------------------------------------------------------
+     * 2. Resolve Entity Name
+     * ------------------------------------------------------
+     *
+     * Different metadata implementations may use
+     * different property names.
      */
-    const config = createPageConfig(metadata.OBJ_NM, metadata);
+    const entity =
+      metadata.OBJ_NM ??
+      metadata.OBJ_TYP ;
+    if (!entity) {
+      throw new Error(
+        `Entity name not found for entity ${entityId}.`
+      );
+    }
 
     /**
-     * 3. Generate breadcrumb
+     * ------------------------------------------------------
+     * 3. Resolve Page Configuration
+     * ------------------------------------------------------
+     *
+     * pageResolver handles:
+     *
+     * - page config
+     * - breadcrumbs
+     * - metadata overrides
      */
-    config.breadcrumbs = buildBreadcrumbsFromMetadata(
-      metadata.OBJ_NM,
-      metadata
-    );
+    const config =
+      resolvePageConfig(
+        entity,
+        metadata
+      );
 
     /**
-     * 4. Generate Dynamic Form
+     * ------------------------------------------------------
+     * 4. Build Dynamic Form
+     * ------------------------------------------------------
      */
-    const formSchema = buildForm(metadata);
+    const formSchema =
+      resolvePageForm(
+        metadata
+      );
 
     /**
-     * 5. Generate DataTable definition
+     * ------------------------------------------------------
+     * 5. Build DataTable Definition
+     * ------------------------------------------------------
      */
-    const tableDefinition = buildTable(metadata.entity_obj_attrbt);
+    const tableColumns =
+      resolvePageTable(
+        metadata
+      );
 
     /**
-     * 6. Return
+     * ------------------------------------------------------
+     * 6. Return Page Definition
+     * ------------------------------------------------------
+     *
+     * tableData is intentionally empty.
+     *
+     * Actual CRUD records will be loaded through:
+     *
+     * pageDataLoader.ts
      */
     return {
       config,
+
       metadata,
+
       formSchema,
-      tableColumns: tableDefinition,
+
+      tableColumns,
+
+      tableData: [],
+
+      total: 0,
+
+      loading: false,
     };
   }
-  entityService = new EntityService();
-  static async getConfig(entityId: number) {
-    return (await this.load(entityId)).config;
+
+  /**
+   * ========================================================
+   * Get Page Configuration
+   * ========================================================
+   */
+  static async getConfig(
+    entityId: number
+  ) {
+    const page =
+      await this.load(entityId);
+
+    return page.config;
   }
 
-  static async getForm(entityId: number) {
-    return (await this.load(entityId)).formSchema;
+  /**
+   * ========================================================
+   * Get Dynamic Form
+   * ========================================================
+   */
+  static async getForm(
+    entityId: number
+  ) {
+    const page =
+      await this.load(entityId);
+
+    return page.formSchema;
   }
 
-  static async getTable(entityId: number) {
-    return (await this.load(entityId)).tableColumns;
+  /**
+   * ========================================================
+   * Get Table Definition
+   * ========================================================
+   */
+  static async getTable(
+    entityId: number
+  ) {
+    const page =
+      await this.load(entityId);
+
+    return page.tableColumns;
   }
 
-  async exists(entityId: number) {
-    const entity = await this.entityService.getEntity(entityId);
+  /**
+   * ========================================================
+   * Check Entity Exists
+   * ========================================================
+   */
+  static async exists(
+    entityId: number
+  ): Promise<boolean> {
+    const entity =
+      await this.entityService.getEntity(
+        entityId
+      );
 
     return !!entity;
   }

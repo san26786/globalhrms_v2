@@ -1,12 +1,14 @@
 import { ReactNode } from "react";
+
 import { DynamicForm } from "@/lib/form-builder/formTypes";
-import { TableDefinition } from "@/lib/table-builder/tableTypes"; 
+import { TableDefinition } from "@/lib/table-builder/tableTypes";
+
 /* ==========================================================
    Breadcrumb
 ========================================================== */
 
 export interface BreadcrumbItem {
-  title: string;
+  label: string;
   href?: string;
   icon?: ReactNode;
 }
@@ -110,14 +112,10 @@ export interface PermissionConfig {
 ========================================================== */
 
 export interface LayoutConfig {
-  title: string;
-
+  title?: string;
   subtitle?: string;
-
   showHeader?: boolean;
-
   showBreadcrumb?: boolean;
-
   showToolbar?: boolean;
 }
 
@@ -168,12 +166,97 @@ export interface PageConfig {
 }
 
 /* ==========================================================
-   Loader Result
+   Page Mode
+========================================================== */
+
+export type PageMode =
+  | "list"
+  | "create"
+  | "edit"
+  | "view";
+
+/* ==========================================================
+   Page Runtime State
+========================================================== */
+
+export interface PageRuntimeState {
+  search?: string;
+
+  page?: number;
+
+  pageSize?: number;
+
+  sortBy?: string;
+
+  sortOrder?: "asc" | "desc";
+
+  filters?: Record<string, any>;
+}
+
+/* ==========================================================
+   Page Render State
+========================================================== */
+
+export interface PageRenderState {
+  mode: PageMode;
+
+  selectedId?: string | number;
+
+  search?: string;
+
+  page?: number;
+
+  pageSize?: number;
+}
+
+/* ==========================================================
+   Page Render Model
+========================================================== */
+
+export interface PageRenderModel {
+  showHeader: boolean;
+
+  showBreadcrumb: boolean;
+
+  showToolbar: boolean;
+
+  showTable: boolean;
+
+  showForm: boolean;
+
+  permissions: {
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    view: boolean;
+  };
+}
+
+/* ==========================================================
+   Loaded Page
 ========================================================== */
 
 export interface LoadedPage {
   config: PageConfig;
+
   metadata: any;
+
   formSchema: DynamicForm;
+
   tableColumns: TableDefinition;
+
+  /**
+   * Records returned by the CRUD API.
+   */
+  tableData: any[];
+
+  /**
+   * Total records available.
+   */
+  total?: number;
+
+  /**
+   * Runtime loading state.
+   */
+  loading?: boolean;
 }

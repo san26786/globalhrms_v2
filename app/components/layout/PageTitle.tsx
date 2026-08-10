@@ -1,10 +1,12 @@
 interface Props {
   title: string;
+  subtitle?: string;
   description?: string;
 }
 
 export default function PageTitle({
   title,
+  subtitle,
   description,
 }: Props) {
   return (
@@ -13,7 +15,11 @@ export default function PageTitle({
         {title}
       </h1>
 
-      {description && (
+      {subtitle ? (
+        <p className="mt-1 text-muted-foreground">
+          {subtitle}
+        </p>
+      ) : description && (
         <p className="mt-1 text-muted-foreground">
           {description}
         </p>

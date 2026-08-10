@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
-import PageLoader from "./pageLoader";
+import PageLoader from "@/lib/page-builder/pageLoader";
+import { loadPageData } from "@/lib/page-builder/pageDataLoader";
 
-import { LoadedPage } from "./pageTypes";
+import {
+  LoadedPage,
+  PageRuntimeState,
+} from "@/lib/page-builder/pageTypes";
 
 import {
   PageContainer,
@@ -16,11 +24,24 @@ import {
 import { DataTable } from "@/components/DataTable";
 
 interface EntityPageProps {
-  entity: string;
+  entityId: number;
 }
 
+/**
+ * Entity Page
+ *
+ * Connects:
+ *
+ * PageLoader
+ *     ↓
+ * PageConfig
+ *     ↓
+ * CRUD API
+ *     ↓
+ * DataTable
+ */
 export default function EntityPage({
-  entity,
+  entityId,
 }: EntityPageProps) {
   const [page, setPage] =
     useState<LoadedPage | null>(null);
@@ -28,101 +49,262 @@ export default function EntityPage({
   const [loading, setLoading] =
     useState(true);
 
+  const [error, setError] =
+    useState<string | null>(null);
+
   const [search, setSearch] =
     useState("");
 
-  useEffect(() => {
-    load();
-  }, [entity]);
+  /**
+   * Current page state
+   */
+  const [runtimeState, setRuntimeState] =
+    useState<PageRuntimeState>({
+      page: 1,
+      pageSize: 10,
+    });
 
-  async function load() {
-    setLoading(true);
-
+  /**
+   * --------------------------------------------------
+   * Load Page
+   * --------------------------------------------------
+   */
+  const load = useCallback(async () => {
     try {
-      const result =
-        await PageLoader.load(entity);
+      setLoading(true);
+      setError(null);
 
-      setPage(result);
+      /**
+       * -----------------------------------------------
+       * 1. Load page definition
+       * -----------------------------------------------
+       */
+      const loadedPage =
+        await PageLoader.load(entityId);
+
+      /**
+       * -----------------------------------------------
+       * 2. Load CRUD records
+       * -----------------------------------------------
+       */
+      const result =
+        await loadPageData(
+          loadedPage.config,
+          {
+            ...runtimeState,
+            search,
+            pageSize:
+              loadedPage.config.table
+                ?.pageSize ??
+              runtimeState.pageSize ??
+              10,
+          }
+        );
+
+      /**
+       * -----------------------------------------------
+       * 3. Merge page definition + data
+       * -----------------------------------------------
+       */
+      setPage({
+        ...loadedPage,
+
+        tableData:
+          result.data,
+
+        total:
+          result.total ?? result.data.length,
+
+        loading: false,
+      });
+    } catch (err) {
+      console.error(
+        "Failed to load entity page:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load page."
+      );
     } finally {
       setLoading(false);
     }
-  }
+  }, [
+    entityId,
+    runtimeState,
+    search,
+  ]);
 
+  /**
+   * --------------------------------------------------
+   * Load when entity/search/page changes
+   * --------------------------------------------------
+   */
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  /**
+   * --------------------------------------------------
+   * Search
+   * --------------------------------------------------
+   */
+  const handleSearch = (
+    value: string
+  ) => {
+    setSearch(value);
+
+    setRuntimeState((previous) => ({
+      ...previous,
+      page: 1,
+    }));
+  };
+
+  /**
+   * --------------------------------------------------
+   * Refresh
+   * --------------------------------------------------
+   */
+  const handleRefresh = () => {
+    load();
+  };
+
+  /**
+   * --------------------------------------------------
+   * Loading
+   * --------------------------------------------------
+   */
   if (loading) {
     return (
       <PageContainer>
-
-        <div className="bg-white rounded-xl border p-10">
-
+        <div className="rounded-xl border bg-white p-10">
           Loading...
-
         </div>
-
       </PageContainer>
     );
   }
 
+  /**
+   * --------------------------------------------------
+   * Error
+   * --------------------------------------------------
+   */
+  if (error) {
+    return (
+      <PageContainer>
+        <div className="rounded-xl border bg-white p-10 text-red-500">
+          {error}
+        </div>
+      </PageContainer>
+    );
+  }
+
+  /**
+   * --------------------------------------------------
+   * Page not found
+   * --------------------------------------------------
+   */
   if (!page) {
     return (
       <PageContainer>
-
-        <div className="bg-white rounded-xl border p-10 text-red-500">
-
+        <div className="rounded-xl border bg-white p-10 text-red-500">
           Entity not found.
-
         </div>
-
       </PageContainer>
     );
   }
 
+  /**
+   * --------------------------------------------------
+   * Render Page
+   * --------------------------------------------------
+   */
   return (
     <PageContainer>
+      {/* ================================================
+          Page Header
+      ================================================= */}
+      {page.config.layout
+        ?.showHeader !== false && (
+        <PageHeader
+          title={page.config.title}
+          subtitle={page.config.layout?.subtitle}
+        />
+      )}
 
-      <PageHeader
-        title={page.config.title}
-        subtitle={
-          page.config.subtitle
-        }
-      />
+      {/* ================================================
+          Breadcrumb
+      ================================================= */}
+      {page.config.layout
+        ?.showBreadcrumb !== false && (
+        <Breadcrumb
+          items={
+            page.config.breadcrumbs ??
+            []
+          }
+        />
+      )}
 
-      <Breadcrumb
-        items={
-          page.config.breadcrumbs ??
-          []
-        }
-      />
+      {/* ================================================
+          Toolbar
+      ================================================= */}
+      {page.config.layout
+        ?.showToolbar !== false && (
+        <EntityToolbar
+          createLabel={`Add ${page.config.title}`}
+          onRefresh={
+            page.config.toolbar
+              ?.showRefresh !== false
+              ? handleRefresh
+              : undefined
+          }
+          onSearch={
+            page.config.toolbar
+              ?.showSearch !== false
+              ? handleSearch
+              : undefined
+          }
+        />
+      )}
 
-      <EntityToolbar
-        createLabel={`Add ${page.config.title}`}
-        onRefresh={load}
-        onSearch={setSearch}
-      />
-
+      {/* ================================================
+          Data Table
+      ================================================= */}
       <DataTable
         columns={
-          page.tableColumns ?? []
+          page.tableColumns?.columns ?? []
         }
-        data={page.tableData ?? []}
-        entity={entity}
+        data={
+          page.tableData ?? []
+        }
+        entity={
+          page.config.entity
+        }
         search={search}
       />
-
     </PageContainer>
   );
 }
 
 /**
- * Factory
+ * ======================================================
+ * Entity Page Factory
+ * ======================================================
  *
- * export default createEntityPage("employee")
+ * Example:
+ *
+ * export default createEntityPage(1);
  */
 export function createEntityPage(
-  entity: string
+  entityId: number
 ) {
   return function Entity() {
     return (
-      <EntityPage entity={entity} />
+      <EntityPage
+        entityId={entityId}
+      />
     );
   };
 }
