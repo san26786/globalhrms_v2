@@ -8,7 +8,8 @@ import { TableDefinition } from "@/lib/table-builder/tableTypes";
 ========================================================== */
 
 export interface BreadcrumbItem {
-  label: string;
+  label?: string;
+  title?: string;
   href?: string;
   icon?: ReactNode;
 }

@@ -176,7 +176,7 @@ export default function BankTransactionPage() {
   }, [columnSettings, baseColumns]);
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="max-w-[96%] mx-auto p-4 space-y-6">
       {/* Breadcrumb Header */}
       <BreadcrumbHeader 
         onRefresh={fetchTransactions}
@@ -282,7 +282,7 @@ export default function BankTransactionPage() {
       </div>
 
       {/* Table Section */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
+      <div>
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-2">
             <RefreshCw size={20} className="animate-spin text-blue-600" />

@@ -1,37 +1,14 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
-import {
-  ChevronRight,
-  Database,
-  Edit2,
-  Trash2,
-  Plus,
-  Search,
-  ChevronLeft,
-  ChevronRight as ChevronRightIcon,
-  ChevronsLeft,
-  ChevronsRight,
-  ArrowUpDown,
-  SlidersHorizontal,
-  Loader2,
-  Settings
-} from "lucide-react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  ColumnDef,
-  flexRender,
-  SortingState
-} from "@tanstack/react-table";
+import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useRouter } from "next/navigation";
+import { DataTable } from "./components/bank-name-masterTable";
+import BreadcrumbHeader from "./components/BreadcrumbHeader";
 import FormSettingsModal, { ColumnSetting } from "./components/FormSettingsModal";
 
 interface BankNameRecord {
@@ -66,6 +43,7 @@ export default function BankNameMasterPage() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const router = useRouter();
 
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>(() => {
     if (typeof window !== "undefined") {
@@ -116,12 +94,13 @@ export default function BankNameMasterPage() {
   };
 
   const handleBulkDelete = async () => {
-    const selectedIds = Object.keys(rowSelection).map((index) => data[parseInt(index)].MSTR_ID);
-    if (selectedIds.length === 0) {
+    const selectedIndices = Object.keys(rowSelection).map((k) => parseInt(k));
+    if (selectedIndices.length === 0) {
       toast.warning("Please select at least one record to delete");
       return;
     }
 
+    const selectedIds = selectedIndices.map((index) => data[index]?.MSTR_ID).filter(Boolean);
     if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected bank records?`)) return;
 
     let successCount = 0;
@@ -144,150 +123,117 @@ export default function BankNameMasterPage() {
     }
   };
 
+  const handleExport = (format: string) => {
+    toast.info(`Exporting as ${format}...`);
+  };
+
   const columns = useMemo<ColumnDef<BankNameRecord>[]>(
     () => {
       const result: ColumnDef<BankNameRecord>[] = [
         {
           id: "select",
           header: ({ table }) => (
-            <div className="flex justify-center items-center w-10">
-              <Checkbox
-                checked={table.getIsAllPageRowsSelected()}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-                className="rounded border-slate-300"
-              />
-            </div>
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              aria-label="Select all"
+            />
           ),
           cell: ({ row }) => (
-            <div className="flex justify-center items-center w-10">
-              <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-                className="rounded border-slate-300"
-              />
-            </div>
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+            />
           ),
-          enableSorting: false
+          enableSorting: false,
+          enableHiding: false,
         },
         {
+          id: "sr_no",
+          header: () => <span className="font-bold text-slate-700">S.No.</span>,
+          cell: ({ row }) => {
+            return <span className="text-slate-500 font-medium">{row.index + 1}</span>;
+          },
+        },
+        {
+          accessorKey: "Actions",
           id: "actions",
-          header: () => <span className="font-bold text-slate-700">Actions</span>,
-          cell: ({ row }) => (
-            <div className="flex items-center gap-1">
-              <Link href={`/bank-manager/bank-name-master/edit/${row.original.MSTR_ID}`}>
+          header: "Actions",
+          cell: ({ row }) => {
+            const record = row.original;
+            return (
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                  className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                  onClick={() => router.push(`/bank-manager/bank-name-master/edit/${record.MSTR_ID}`)}
                   title="Edit"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-3.5 w-3.5" />
                 </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDelete(row.original.MSTR_ID)}
-                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ),
-          enableSorting: false
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                  onClick={() => handleDelete(record.MSTR_ID)}
+                  title="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            );
+          },
         },
-        {
-          id: "sno",
-          header: () => <span className="font-bold text-slate-700">S.No</span>,
-          cell: (info) => <span className="text-slate-600 font-medium">{info.row.index + 1}</span>,
-          enableSorting: false
-        }
       ];
 
       columnSettings.forEach((setting) => {
         if (setting.visibleInList) {
-          if (setting.systemName === "MSTR_CD") {
-            result.push({
-              accessorKey: "MSTR_CD",
-              header: ({ column }) => (
-                <Button
-                  variant="ghost"
-                  onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                  className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
-                >
-                  {setting.displayName}
-                  <ArrowUpDown className="h-3 w-3" />
-                </Button>
-              ),
-              cell: (info) => <span className="text-slate-600 font-semibold">{info.getValue() as string}</span>
-            });
-          } else if (setting.systemName === "MSTR_NM") {
-            result.push({
-              accessorKey: "MSTR_NM",
-              header: ({ column }) => (
-                <Button
-                  variant="ghost"
-                  onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                  className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
-                >
-                  {setting.displayName}
-                  <ArrowUpDown className="h-3 w-3" />
-                </Button>
-              ),
-              cell: (info) => <span className="text-slate-800 font-bold">{info.getValue() as string}</span>
-            });
-          } else {
-            result.push({
-              accessorKey: setting.systemName,
-              header: ({ column }) => (
-                <Button
-                  variant="ghost"
-                  onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                  className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
-                >
-                  {setting.displayName}
-                  <ArrowUpDown className="h-3 w-3" />
-                </Button>
-              ),
-              cell: (info) => (
+          result.push({
+            accessorKey: setting.systemName,
+            id: setting.systemName,
+            header: ({ column }) => {
+              const isSortable = ["MSTR_CD", "MSTR_NM"].includes(setting.systemName);
+              if (isSortable) {
+                return (
+                  <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                  >
+                    {setting.displayName}
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                  </Button>
+                );
+              }
+              return <span className="font-bold text-slate-700">{setting.displayName}</span>;
+            },
+            cell: ({ getValue }) => {
+              const val = getValue();
+              if (setting.systemName === "MSTR_NM") {
+                return <span className="text-slate-800 font-bold">{val !== null && val !== undefined ? String(val) : "-"}</span>;
+              }
+              if (setting.systemName === "MSTR_CD") {
+                return <span className="text-slate-600 font-semibold">{val !== null && val !== undefined ? String(val) : "-"}</span>;
+              }
+              return (
                 <span className="text-slate-500 font-medium max-w-xs truncate block font-sans">
-                  {info.getValue() !== undefined && info.getValue() !== null ? String(info.getValue()) : "-"}
+                  {val !== null && val !== undefined ? String(val) : "-"}
                 </span>
-              )
-            });
-          }
+              );
+            }
+          });
         }
       });
 
       return result;
     },
-    [data, columnSettings]
+    [columnSettings, router]
   );
-
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      globalFilter,
-      rowSelection
-    },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10
-      }
-    }
-  });
 
   const handleSaveSettings = (newSettings: ColumnSetting[]) => {
     setColumnSettings(newSettings);
@@ -295,199 +241,31 @@ export default function BankNameMasterPage() {
     toast.success("Form settings saved successfully");
   };
 
-  const selectedCount = Object.keys(rowSelection).length;
-
   return (
-    <div className="container mx-auto p-4 space-y-6 text-left max-w-6xl">
-      {/* Premium Header Panel */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span className="font-semibold text-blue-600">Bank Name Master</span>
-            </div>
-
-            <div className="mt-2 flex items-center gap-2">
-              <Database className="text-blue-600 h-6 w-6" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
-                Bank Name
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-end md:self-auto">
-            {/* Add Button */}
-            <Link href="/bank-manager/bank-name-master/add">
-              <Button
-                size="icon"
-                className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
-                title="Add New Bank Name"
-              >
-                <Plus className="h-5 w-5 stroke-[2.5]" />
-              </Button>
-            </Link>
-
-            {/* Settings Button opening FormSettingsModal */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSettingsOpen(true)}
-              className="rounded-full border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
-              title="Configure Bank Name Master Columns"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-
-            {/* Bulk Delete Selected Button */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleBulkDelete}
-              className="rounded-full border-red-100 hover:border-red-200 bg-white hover:bg-red-50 text-red-500 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
-              title="Delete Selected Records"
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
-          </div>
+    <div className="max-w-[96%] mx-auto p-4 space-y-6">
+      <BreadcrumbHeader 
+        onOpenSettings={() => setIsSettingsOpen(true)} 
+        onDeleteSelected={handleBulkDelete}
+        onExport={handleExport}
+      />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+          <span className="text-sm font-semibold text-slate-400">Loading bank list...</span>
         </div>
-      </div>
-
-      {/* Table Section Card Container */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        {/* Table Filter Action Row */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search Bank Code or Name..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-10 h-10 rounded-xl border-slate-200 bg-white placeholder-slate-400 w-full focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
-            <SlidersHorizontal className="h-4 w-4 text-slate-400" />
-            <span>Showing {table.getFilteredRowModel().rows.length} of {data.length} records</span>
-          </div>
-        </div>
-
-        {/* Table content view */}
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-              <span className="text-sm font-semibold text-slate-400">Loading bank list...</span>
-            </div>
-          ) : table.getFilteredRowModel().rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-2">
-              <Database className="h-12 w-12 text-slate-200" />
-              <span className="text-sm font-bold">No Bank Name records found</span>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/20">
-                  {table.getFlatHeaders().map((header) => (
-                    <th
-                      key={header.id}
-                      className="py-4 px-5 text-xs font-bold uppercase tracking-wider text-slate-500"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-slate-50/40 transition-all duration-150 group"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="py-3.5 px-5 text-sm">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Pagination Toolbar */}
-        {!loading && table.getFilteredRowModel().rows.length > 0 && (
-          <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-semibold text-slate-600">
-            <div className="flex items-center gap-1.5">
-              <span>Records per page:</span>
-              <select
-                value={table.getState().pagination.pageSize}
-                onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className="h-8 rounded-lg border-slate-200 bg-white px-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              <span className="text-xs font-bold text-slate-700 px-2">
-                Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
-              </span>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Form Customization settings modal component */}
+      ) : (
+        <DataTable 
+          columns={columns} 
+          data={data} 
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          sorting={sorting}
+          setSorting={setSorting}
+        />
+      )}
+      
       <FormSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

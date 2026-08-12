@@ -2,47 +2,13 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { 
-  ChevronRight, 
-  Database, 
-  Plus, 
-  Settings, 
-  Trash2, 
-  Pencil, 
-  ChevronLeft, 
-  ChevronRight as ChevronRightIcon,
-  ChevronsLeft,
-  ChevronsRight,
-  ArrowUpDown,
-  LogOut,
-  FileSpreadsheet,
-  FileText,
-  Printer,
-  Copy,
-  SlidersHorizontal,
-  Loader2,
-  Search
-} from "lucide-react";
+import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  SortingState
-} from "@tanstack/react-table";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
+import { DataTable } from "./components/bank-statement-settingTable";
+import BreadcrumbHeader from "./components/BreadcrumbHeader";
 import FormSettingsModal, { ColumnSetting } from "./components/FormSettingsModal";
 
 interface StatementSetting {
@@ -73,10 +39,6 @@ export default function BankStatementSettingPage() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 10,
-  });
 
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>(() => {
     if (typeof window !== "undefined") {
@@ -136,18 +98,16 @@ export default function BankStatementSettingPage() {
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete the mapping rules for ${selectedIndices.length} selected row(s)?`)) return;
+    const selectedItems = selectedIndices.map((index) => settingsList[index]).filter(Boolean);
+    if (!confirm(`Are you sure you want to delete the mapping rules for ${selectedItems.length} selected row(s)?`)) return;
 
     let successCount = 0;
-    for (const index of selectedIndices) {
-      const item = settingsList[index];
-      if (item) {
-        try {
-          const res = await fetch(`/api/bank-statement-setting/${item.id}`, { method: "DELETE" });
-          if (res.ok) successCount++;
-        } catch (err) {
-          console.error(err);
-        }
+    for (const item of selectedItems) {
+      try {
+        const res = await fetch(`/api/bank-statement-setting/${item.id}`, { method: "DELETE" });
+        if (res.ok) successCount++;
+      } catch (err) {
+        console.error(err);
       }
     }
 
@@ -160,6 +120,10 @@ export default function BankStatementSettingPage() {
     }
   };
 
+  const handleExport = (format: string) => {
+    toast.info(`Exporting as ${format}...`);
+  };
+
   const handleSaveSettings = (newSettings: ColumnSetting[]) => {
     setColumnSettings(newSettings);
     localStorage.setItem("bank_statement_column_settings", JSON.stringify(newSettings));
@@ -167,68 +131,64 @@ export default function BankStatementSettingPage() {
   };
 
   // Define table columns
-  const columns = useMemo(() => {
-    const result: any[] = [
+  const columns = useMemo<ColumnDef<StatementSetting>[]>(() => {
+    const result: ColumnDef<StatementSetting>[] = [
       {
         id: "select",
-        header: ({ table }: any) => (
-          <div className="flex justify-center items-center w-10">
-            <Checkbox
-              checked={table.getIsAllPageRowsSelected()}
-              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-              aria-label="Select all"
-              className="rounded border-slate-300"
-            />
-          </div>
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
         ),
-        cell: ({ row }: any) => (
-          <div className="flex justify-center items-center w-10">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
-              className="rounded border-slate-300"
-            />
-          </div>
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
         ),
         enableSorting: false,
         enableHiding: false,
       },
       {
-        id: "sno",
-        header: () => <span className="font-bold text-slate-700">S.No</span>,
-        cell: (info: any) => <span className="text-slate-500 font-medium">{info.row.index + 1}</span>,
-        enableSorting: false
+        id: "sr_no",
+        header: () => <span className="font-bold text-slate-700">S.No.</span>,
+        cell: ({ row }) => <span className="text-slate-500 font-medium">{row.index + 1}</span>,
       },
       {
+        accessorKey: "Actions",
         id: "actions",
-        header: () => <span className="font-bold text-slate-700">Actions</span>,
-        cell: ({ row }: any) => {
+        header: "Actions",
+        cell: ({ row }) => {
           const item = row.original;
           return (
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
                 onClick={() => router.push(`/bank-manager/bank-statement-setting/edit/${item.bankId}`)}
                 title="Edit Settings for this Bank"
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-3.5 w-3.5" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
                 onClick={() => handleDelete(item.id, item.bankName, item.csvColumn)}
                 title="Delete Mapping"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           );
         },
-        enableSorting: false
       }
     ];
 
@@ -237,17 +197,18 @@ export default function BankStatementSettingPage() {
         if (setting.systemName === "bankName") {
           result.push({
             accessorKey: "bankName",
-            header: ({ column }: any) => (
+            id: "bankName",
+            header: ({ column }) => (
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
+                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="h-3 w-3" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
               </Button>
             ),
-            cell: ({ row }: any) => {
+            cell: ({ row }) => {
               const item = row.original;
               return (
                 <div className="flex items-center gap-2">
@@ -264,51 +225,54 @@ export default function BankStatementSettingPage() {
         } else if (setting.systemName === "csvColumn") {
           result.push({
             accessorKey: "csvColumn",
-            header: ({ column }: any) => (
+            id: "csvColumn",
+            header: ({ column }) => (
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
+                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="h-3 w-3" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
               </Button>
             ),
-            cell: ({ row }: any) => (
+            cell: ({ row }) => (
               <span className="text-slate-600 font-semibold font-sans">{row.original.csvColumn}</span>
             ),
           });
         } else if (setting.systemName === "mappedColumn") {
           result.push({
             accessorKey: "mappedColumn",
-            header: ({ column }: any) => (
+            id: "mappedColumn",
+            header: ({ column }) => (
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
+                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="h-3 w-3" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
               </Button>
             ),
-            cell: ({ row }: any) => (
+            cell: ({ row }) => (
               <span className="text-slate-600 font-semibold font-mono text-xs">{row.original.mappedColumn}</span>
             ),
           });
         } else if (setting.systemName === "crdbFlag") {
           result.push({
             accessorKey: "crdbFlag",
-            header: ({ column }: any) => (
+            id: "crdbFlag",
+            header: ({ column }) => (
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="hover:bg-slate-50 text-slate-700 font-bold p-0 flex items-center gap-1"
+                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="h-3 w-3" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
               </Button>
             ),
-            cell: ({ row }: any) => (
+            cell: ({ row }) => (
               <span className="text-slate-600 font-bold">{row.original.crdbFlag ? "1" : "0"}</span>
             ),
           });
@@ -317,267 +281,34 @@ export default function BankStatementSettingPage() {
     });
 
     return result;
-  }, [router, settingsList, columnSettings]);
-
-  const table = useReactTable({
-    data: settingsList,
-    columns,
-    state: {
-      sorting,
-      globalFilter,
-      rowSelection,
-      pagination,
-    },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
-
-  const selectedCount = Object.keys(rowSelection).length;
+  }, [router, columnSettings]);
 
   return (
-    <div className="container mx-auto p-4 space-y-6 text-left max-w-6xl">
-      {/* Breadcrumb Header Card */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span className="font-semibold text-blue-600">
-                Bank Statement Setting
-              </span>
-            </div>
-
-            <div className="mt-2 flex items-center gap-2">
-              <Database className="text-blue-600 h-6 w-6" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
-                Bank Statement Setting
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Add Button */}
-            <Link href="/bank-manager/bank-statement-setting/add">
-              <Button
-                size="icon"
-                className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
-                title="Configure Bank Statement Setting"
-              >
-                <Plus className="h-5 w-5 stroke-[2.5]" />
-              </Button>
-            </Link>
-
-            {/* Export Dropdown Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200"
-                  title="Export Options"
-                >
-                  <LogOut className="h-5 w-5 rotate-90" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white border border-slate-100 rounded-xl shadow-lg p-1.5 w-32 z-[100]">
-                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg hover:bg-slate-50 cursor-pointer text-slate-700 hover:text-slate-900">
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  <span>CSV</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg hover:bg-slate-50 cursor-pointer text-slate-700 hover:text-slate-900">
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  <span>EXCEL</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg hover:bg-slate-50 cursor-pointer text-slate-700 hover:text-slate-900">
-                  <FileText className="h-4 w-4 text-red-500" />
-                  <span>PDF</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg hover:bg-slate-50 cursor-pointer text-slate-700 hover:text-slate-900">
-                  <Printer className="h-4 w-4 text-blue-500" />
-                  <span>PRINT</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg hover:bg-slate-50 cursor-pointer text-slate-700 hover:text-slate-900">
-                  <Copy className="h-4 w-4 text-slate-500" />
-                  <span>COPY</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Settings Button */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSettingsOpen(true)}
-              className="rounded-full border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
-              title="Configure Columns"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-
-            {/* Delete Selected Button */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleBulkDelete}
-              className="rounded-full border-red-100 hover:border-red-200 bg-white hover:bg-red-50 text-red-500 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
-              title="Delete Selected Records"
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
-          </div>
+    <div className="max-w-[96%] mx-auto p-4 space-y-6">
+      <BreadcrumbHeader 
+        onOpenSettings={() => setIsSettingsOpen(true)} 
+        onDeleteSelected={handleBulkDelete}
+        onExport={handleExport}
+      />
+      
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+          <p className="text-sm font-semibold text-slate-400">Loading statement settings...</p>
         </div>
-      </div>
+      ) : (
+        <DataTable 
+          columns={columns} 
+          data={settingsList} 
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          sorting={sorting}
+          setSorting={setSorting}
+        />
+      )}
 
-      {/* Table Section Card Container */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        {/* Table Filter Action Row */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search Bank Name or column..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-10 h-10 rounded-xl border-slate-200 bg-white placeholder-slate-400 w-full focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
-            <SlidersHorizontal className="h-4 w-4 text-slate-400" />
-            <span>Showing {table.getFilteredRowModel().rows.length} of {settingsList.length} records</span>
-          </div>
-        </div>
-
-        {/* Table View */}
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-              <p className="text-sm font-semibold text-slate-400">Loading statement settings...</p>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/20">
-                  {table.getFlatHeaders().map((header) => (
-                    <th key={header.id} className="py-4 px-5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-slate-50/40 transition-all duration-150"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="py-3.5 px-5 text-sm">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="h-24 text-center text-slate-400 font-medium py-10"
-                    >
-                      No results found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Pagination Controls */}
-        {!loading && table.getFilteredRowModel().rows.length > 0 && (
-          <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-semibold text-slate-600">
-            <div className="flex items-center gap-1.5">
-              <span>Records per page:</span>
-              <select
-                value={table.getState().pagination.pageSize}
-                onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className="h-8 rounded-lg border-slate-200 bg-white px-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              <span className="text-xs font-bold text-slate-700 px-2">
-                Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
-              </span>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 hover:bg-slate-100 disabled:opacity-50"
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Form customization settings modal */}
       <FormSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

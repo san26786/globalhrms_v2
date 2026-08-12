@@ -28,7 +28,7 @@ export default function BreadcrumbHeader({ onOpenSettings }: BreadcrumbHeaderPro
     <div className="rounded-3xl border bg-white p-6 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-base text-gray-500">
             <span>Bank Manager</span>
             <ChevronRight size={15} />
             <span className="font-semibold text-blue-600">
@@ -37,8 +37,8 @@ export default function BreadcrumbHeader({ onOpenSettings }: BreadcrumbHeaderPro
           </div>
 
           <div className="mt-2 flex items-center gap-2">
-            <Database className="text-blue-600 h-6 w-6" />
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+            <Database className="text-blue-600 h-7 w-7" />
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-800">
               Bank Account Details
             </h1>
           </div>

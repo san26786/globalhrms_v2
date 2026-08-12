@@ -71,13 +71,8 @@ export default function EntityPage({
    */
   const load = useCallback(async () => {
     try {
-<<<<<<< Updated upstream
       setLoading(true);
       setError(null);
-=======
-      const result =
-        await PageLoader.load(parseInt(entity, 10));
->>>>>>> Stashed changes
 
       /**
        * -----------------------------------------------
@@ -239,7 +234,6 @@ export default function EntityPage({
         />
       )}
 
-<<<<<<< Updated upstream
       {/* ================================================
           Breadcrumb
       ================================================= */}
@@ -274,34 +268,12 @@ export default function EntityPage({
           }
         />
       )}
-=======
-      <PageHeader
-        title={page.config.title}
-        description={page.config.subtitle}
-      />
-
-      <Breadcrumb
-        items={
-          (page.config.breadcrumbs ?? []).map((b) => ({
-            label: b.title,
-            href: b.href,
-          }))
-        }
-      />
-
-      <EntityToolbar
-        createLabel={`Add ${page.config.title}`}
-        onRefresh={load}
-        onSearch={setSearch}
-      />
->>>>>>> Stashed changes
 
       {/* ================================================
           Data Table
       ================================================= */}
       <DataTable
         columns={
-<<<<<<< Updated upstream
           page.tableColumns?.columns ?? []
         }
         data={
@@ -310,12 +282,6 @@ export default function EntityPage({
         entity={
           page.config.entity
         }
-=======
-          (page.tableColumns as any)?.columns ?? []
-        }
-        data={(page as any).tableData ?? []}
-        entity={entity}
->>>>>>> Stashed changes
         search={search}
       />
     </PageContainer>
