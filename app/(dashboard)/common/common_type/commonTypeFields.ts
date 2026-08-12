@@ -15,6 +15,8 @@ export interface FormField {
   // Extra props
   visible?: boolean;
   disabled?: boolean;
+  hasLookup?: boolean;
+  onLookupClick?: () => void;
 }
 
 export function commonTypeFields(

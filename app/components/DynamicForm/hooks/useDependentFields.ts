@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, FieldValues } from "react-hook-form";
 
 export interface SelectOption {
   label: string;
@@ -46,13 +46,13 @@ export interface DependentFieldConfig {
   valueKey?: string;
 }
 
-interface UseDependentFieldsProps<T> {
+interface UseDependentFieldsProps<T extends FieldValues> {
   form: UseFormReturn<T>;
 
   dependencies: DependentFieldConfig[];
 }
 
-export function useDependentFields<T>({
+export function useDependentFields<T extends FieldValues>({
   form,
   dependencies,
 }: UseDependentFieldsProps<T>) {

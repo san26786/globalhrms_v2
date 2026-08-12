@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -34,9 +35,11 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 5,
+  });
 
   const table = useReactTable({
     data,
@@ -46,9 +49,11 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
+      pagination,
     },
     getPaginationRowModel: getPaginationRowModel(),
   });
@@ -115,37 +120,62 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="text-sm text-muted-foreground">
-        {(() => {
-          const pageIndex = table.getState().pagination.pageIndex;
-          const pageSize = table.getState().pagination.pageSize;
-          const totalRows = table.getFilteredRowModel().rows.length;
+      <div className="flex items-center justify-between py-4 border-t border-slate-100 mt-4">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="flex items-center gap-1.5 px-3 h-9 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-40 transition-all font-semibold active:scale-95 shadow-sm"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
 
-          const from = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
-          const to = Math.min(totalRows, (pageIndex + 1) * pageSize);
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="flex items-center gap-1.5 px-3 h-9 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-40 transition-all font-semibold active:scale-95 shadow-sm"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
 
-          return `Results ${from} - ${to} of ${totalRows}`;
-        })()}
-      </div>
+        <div className="flex items-center gap-4 text-xs md:text-sm text-slate-500 font-medium font-sans">
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-400">Rows per page:</span>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value));
+              }}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
+            >
+              {[5, 10, 20, 25, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          <div>
+            {(() => {
+              const pageIndex = table.getState().pagination.pageIndex;
+              const pageSize = table.getState().pagination.pageSize;
+              const totalRows = table.getFilteredRowModel().rows.length;
 
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
+              const from = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
+              const to = Math.min(totalRows, (pageIndex + 1) * pageSize);
+
+              return `Showing ${from} - ${to} of ${totalRows}`;
+            })()}
+          </div>
+        </div>
       </div>
     </div>
   );

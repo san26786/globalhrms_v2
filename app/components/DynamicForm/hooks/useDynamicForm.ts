@@ -96,7 +96,7 @@ export function useDynamicForm<T extends FieldValues>({
    * Zod schema
    */
   const schema = useMemo(() => {
-    return buildValidationSchema(fields);
+    return buildValidationSchema(fields as any);
   }, [fields]);
 
   /**
@@ -107,11 +107,11 @@ export function useDynamicForm<T extends FieldValues>({
       return defaultValues;
     }
 
-    return buildDefaultValues<T>(fields, values) as DefaultValues<T>;
+    return buildDefaultValues<T>(fields as any, values) as DefaultValues<T>;
   }, [fields, values, defaultValues]);
 
   const form = useForm<T>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any) as any,
     defaultValues: defaults,
     mode: "onSubmit",
   });
@@ -143,7 +143,7 @@ export function useDynamicForm<T extends FieldValues>({
   );
 
   return {
-    form,
+    form: form as any,
     loading,
     submitting,
     schema,

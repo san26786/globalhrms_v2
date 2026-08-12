@@ -1,4 +1,4 @@
-import { PageConfig } from "./pageTypes";
+import { PageConfig, LayoutConfig } from "./pageTypes";
 
 /**
  * Default configuration shared by every entity page.
@@ -138,7 +138,7 @@ export function mergePageConfig(
     layout: {
       ...config.layout,
       ...overrides.layout,
-    },
+    } as LayoutConfig,
 
     toolbar: {
       ...config.toolbar,

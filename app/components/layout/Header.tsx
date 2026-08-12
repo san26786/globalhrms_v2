@@ -238,7 +238,7 @@ export default function Header({
             <div className="flex flex-col text-left leading-none font-sans">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Active Session</span>
               <span id="session-login-time" className="text-[10px] font-bold text-slate-700 mt-0.5 leading-none font-mono">
-                Logged in: <span className="text-blue-600 font-black">{formatLoginTime(loginTime)}</span>
+                Logged in: <span className="text-blue-600 font-black" suppressHydrationWarning={true}>{formatLoginTime(loginTime)}</span>
               </span>
             </div>
           </div>

@@ -6,4 +6,8 @@ export { default as EmptyState } from "./EmptyState";
 export { default as Loader } from "./Loader";
 export { default as Error } from "./Error";
 export { default as PageContainer } from "./PageContainer";
+<<<<<<< Updated upstream
 export { default as EntityToolbar } from "./EntityToolbar";
+=======
+export { default as EntityToolbar } from "./EntityToolbar";
+>>>>>>> Stashed changes

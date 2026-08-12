@@ -51,21 +51,21 @@ function Calendar({
             day_range_middle: "bg-blue-200 text-blue-700",
             day_hidden: "invisible",
             ...classNames,
-          }}
+          } as any}
           components={{
-            IconLeft: ({ className, ...props }) => (
+            IconLeft: ({ className, ...props }: any) => (
               <ChevronLeft
                 className={cn("h-4 w-4", className)}
                 {...props}
               />
             ),
-            IconRight: ({ className, ...props }) => (
+            IconRight: ({ className, ...props }: any) => (
               <ChevronRight
                 className={cn("h-4 w-4", className)}
                 {...props}
               />
             ),
-          }}
+          } as any}
           {...props}
         />
       </div>

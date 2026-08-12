@@ -5,7 +5,7 @@ export async function hasPermission(
   action: string,
   module: string
 ): Promise<void> {
-  const permission = await prisma.user_permission.findFirst({
+  const permission = await (prisma as any).user_permission.findFirst({
     where: {
       USER_ID: Number(userId),
       MODULE_NAME: module,

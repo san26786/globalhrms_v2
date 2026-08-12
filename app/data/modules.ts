@@ -52,9 +52,9 @@ export const modulesData: ModuleItem[] = [
     color: 'text-purple-500',
     subModules: [
       'Bank Account Details',
+      'Bank Transaction',
       'Bank Name Master',
       'Bank Statement Setting',
-      'Bank Transaction',
       'Import Freeagent Transactions'
     ]
   },
