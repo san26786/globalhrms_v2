@@ -49,12 +49,9 @@ export default function FormRenderer({
 
   return (
     <>
-      {Object.entries(groupedFields).map(([section, sectionFields]) => (
-        <FormSection
-          key={section}
-          title={section}
-        >
-          <FormGrid columns={12}>
+      {Object.entries(groupedFields).map(([section, sectionFields]) => {
+        const grid = (
+          <FormGrid columns={12} key={section}>
             {sectionFields
               .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
               .map((field) => (
@@ -71,8 +68,21 @@ export default function FormRenderer({
                 </FormGridItem>
               ))}
           </FormGrid>
-        </FormSection>
-      ))}
+        );
+
+        if (section === "General") {
+          return grid;
+        }
+
+        return (
+          <FormSection
+            key={section}
+            title={section}
+          >
+            {grid}
+          </FormSection>
+        );
+      })}
     </>
   );
 }

@@ -45,6 +45,7 @@ export default function FieldFactory({
   const type = field.type.toLowerCase();
 
   switch (type) {
+    case "input":
     case "text":
     case "email":
     case "password":
@@ -53,7 +54,7 @@ export default function FieldFactory({
     case "url":
     case "file":
       return (
-        <InputField field={field} register={register} control={control} errors={errors} />
+        <InputField field={field} register={register} errors={errors} />
       );
 
     case "textarea":

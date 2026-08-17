@@ -1,7 +1,7 @@
 import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
-import { typeMstSeedData } from './data/typeMstSeed';
+import { typeMstSeedData } from './app/data/typeMstSeed';
 
 const { Pool } = pg;
 

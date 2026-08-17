@@ -23,6 +23,26 @@ export default function DashboardLayout({
   const handleSelectMenu = (menu: string, subMenu?: string) => {
     setActiveMenu(menu);
     setActiveSubMenu(subMenu);
+
+    if (subMenu === "Bank Account Details") {
+      router.push("/bank-manager/bank-details");
+    } else if (subMenu === "Bank Transaction") {
+      router.push("/bank-manager/bank-transaction");
+    } else if (subMenu === "Bank Statement Setting") {
+      router.push("/bank-manager/bank-statement-setting");
+    } else if (subMenu === "Bank Name Master") {
+      router.push("/bank-manager/bank-name-master");
+    } else if (subMenu === "Common Type") {
+      router.push("/common/common_type");
+    } else if (subMenu === "Employee Dashboard") {
+      router.push("/dashboard");
+    } else if (subMenu === "Attendance Dashboard") {
+      router.push("/dashboard/attendance");
+    } else if (subMenu === "Leave Dashboard") {
+      router.push("/dashboard/leave");
+    } else if (subMenu === "Timesheet Dashboard") {
+      router.push("/dashboard/timesheet");
+    }
   };
 
   const handleLogout = () => {

@@ -66,7 +66,7 @@ export default function FormProvider<T extends FieldValues>({
 }: DynamicFormProviderProps<T>) {
   const methods = useForm<T>({
     mode,
-    resolver: schema ? zodResolver(schema) : undefined,
+    resolver: schema ? (zodResolver(schema as any) as any) : undefined,
     defaultValues,
     disabled,
   });
@@ -89,14 +89,14 @@ export default function FormProvider<T extends FieldValues>({
    * Expose methods to parent if needed
    */
   useEffect(() => {
-    onReady?.(methods);
+    onReady?.(methods as any);
   }, [methods, onReady]);
 
   return (
     <RHFProvider {...methods}>
       <form
         className={className}
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit as any)}
         noValidate
       >
         {children}
