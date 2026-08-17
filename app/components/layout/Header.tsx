@@ -28,6 +28,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { menuHierarchy, ModuleMenu } from '@/data/menuData';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onLogout: () => void;
@@ -68,6 +69,26 @@ export default function Header({
   });
   
   const searchRef = useRef<HTMLDivElement>(null);
+
+
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setShowProfileDropdown(false);
+    setLoggingOut(true);
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      // Even if the network call fails, still clear local state and
+      // send the user to login rather than leaving them stuck.
+      console.error('Logout request failed:', err);
+    } finally {
+      onLogout();
+      router.push('/login');
+    }
+  };
 
   // Captures the precise user login session time
   const [loginTime] = useState(() => {
@@ -461,14 +482,12 @@ export default function Header({
                 <div className="p-2 border-t border-slate-100 bg-slate-50/50 mt-1">
                   <button
                     id="profile-logout-button"
-                    onClick={() => {
-                      setShowProfileDropdown(false);
-                      onLogout();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-bold text-red-600 hover:text-red-700 transition-colors border border-red-200/30"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-bold text-red-600 hover:text-red-700 transition-colors border border-red-200/30 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Power className="w-3.5 h-3.5 stroke-[2]" />
-                    Logout Session
+                    {loggingOut ? 'Logging out...' : 'Logout Session'}
                   </button>
                 </div>
               </div>

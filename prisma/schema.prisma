@@ -20103,7 +20103,7 @@ model user_mst {
   USER_ID                                Int                       @id @default(autoincrement())
   USER_NAME                              String                    @db.VarChar(40)
   REG_EMAIL_ID                           String                    @db.VarChar(100)
-  PASSWORD                               String                    @db.VarChar(40)
+  PASSWORD                               String                    @db.VarChar(255)
   FIRST_NAME                             String?                   @db.VarChar(100)
   LAST_NAME                              String?                   @db.VarChar(100)
   USER_STATUS_ID                         Int
@@ -20153,54 +20153,21 @@ model user_mst {
   loan_repayment_dtl_via_UPDATED_BY      loan_repayment_dtl[]      @relation("loan_repayment_dtl_ibfk_4")
   loan_repayment_schedule_via_CREATED_BY loan_repayment_schedule[] @relation("loan_repayment_schedule_ibfk_4")
   loan_repayment_schedule_via_UPDATED_BY loan_repayment_schedule[] @relation("loan_repayment_schedule_ibfk_5")
+  auth_refresh_sessions auth_refresh_session[]
 }
 
-model user_mst010419 {
-  USER_ID                          Int       @id @default(autoincrement())
-  USER_NAME                        String    @db.VarChar(40)
-  REG_EMAIL_ID                     String    @db.VarChar(40)
-  PASSWORD                         String    @db.VarChar(40)
-  USER_STATUS_ID                   Int
-  EXT_REF_NBR                      String?   @db.VarChar(40)
-  LAST_LOGIN_AT                    DateTime  @db.Timestamp(6)
-  DMN_ID                           Int?
-  ACTIVATION                       String?   @db.VarChar(400)
-  PWD_RESET_CD                     String?   @db.VarChar(400)
-  IS_ADMIN                         Boolean   @default(false)
-  IS_ACCOUNT_ADMIN                 Boolean   @default(false)
-  IS_SYSADMIN                      Boolean   @default(false)
-  IS_ASSIGNABLE                    Boolean   @default(true)
-  USER_TYP_ID                      Int?
-  IS_ONLINE                        Boolean   @default(false)
-  IS_PREDEFINED                    Boolean   @default(false)
-  IS_EDITABLE                      Boolean?  @default(true)
-  IS_DELETED                       Boolean?  @default(false)
-  OA_ID                            Int?
-  OA_BRAND_ID                      Int?
-  CREATED_BY                       Int?
-  UPDATED_BY                       Int?
-  CREATED_ON                       DateTime? @db.Timestamp(6)
-  UPDATED_ON                       DateTime? @db.Timestamp(6)
-  LOCAL_TIME                       Boolean?
-  PASSWORD_CHANGED_TIME            DateTime? @db.Timestamp(6)
-  CONCURRENT_LOGIN_COUNT           Int
-  SUSPENSION_FAILED_LOGIN_ATTEMPTS Int
-  FAILED_LOGIN_ATTEMPTS            Int
-  LAST_FAILED_ATTEMPT_ON           DateTime? @db.Timestamp(6)
-  QUESTION_ONE                     Int
-  QUESTION_TWO                     Int
-  QUESTION_THREE                   Int
-  QUESTION_FOUR                    Int?
-  ANSWER_ONE                       String    @db.VarChar(100)
-  ANSWER_TWO                       String    @db.VarChar(100)
-  ANSWER_THREE                     String    @db.VarChar(100)
-  ANSWER_FOUR                      String?   @db.VarChar(250)
-  TPIN                             Int?
-  MEMORABLE_WORD                   String?   @db.VarChar(250)
-  NOTIFY_COUNT                     Int
-  BATCH_ID                         Int?
-  ACC_GROUP                        Int
-  SUB_ACC_GROUP                    Int
+model auth_refresh_session {
+  ID         Int      @id @default(autoincrement())
+  USER_ID    Int
+  TOKEN_HASH String   @unique @db.VarChar(255)
+  EXPIRES_AT DateTime @db.Timestamp(6)
+  CREATED_AT DateTime @default(now()) @db.Timestamp(6)
+  REVOKED_AT DateTime? @db.Timestamp(6)
+
+  user user_mst @relation(fields: [USER_ID], references: [USER_ID], onDelete: Cascade)
+
+  @@index([USER_ID])
+  @@index([EXPIRES_AT])
 }
 
 model user_mst1 {
@@ -20279,62 +20246,6 @@ model user_mst_aud {
   UPDATED_ON     DateTime? @db.Timestamp(6)
   LOCAL_TIME     Boolean?
   ACTIONMODE     String?   @db.VarChar(20)
-}
-
-model user_mst_old {
-  USER_ID        Int       @id @default(autoincrement())
-  USER_NAME      String    @db.VarChar(40)
-  REG_EMAIL_ID   String    @db.VarChar(40)
-  PASSWORD       String    @db.VarChar(40)
-  USER_STATUS_ID Int
-  EXT_REF_NBR    String?   @db.VarChar(40)
-  LAST_LOGIN_AT  DateTime  @db.Timestamp(6)
-  DMN_ID         Int?
-  ACTIVATION     String?   @db.VarChar(400)
-  PWD_RESET_CD   String?   @db.VarChar(400)
-  IS_ADMIN       Boolean   @default(false)
-  IS_SYSADMIN    Boolean   @default(false)
-  IS_ASSIGNABLE  Boolean   @default(true)
-  USER_TYP_ID    Int?
-  IS_ONLINE      Boolean
-  IS_PREDEFINED  Boolean   @default(false)
-  IS_EDITABLE    Boolean?  @default(true)
-  IS_DELETED     Boolean?  @default(false)
-  OA_ID          Int?
-  OA_BRAND_ID    Int?
-  CREATED_BY     Int?
-  UPDATED_BY     Int?
-  CREATED_ON     DateTime? @db.Timestamp(6)
-  UPDATED_ON     DateTime? @db.Timestamp(6)
-  LOCAL_TIME     Boolean?
-}
-
-model user_mst_test {
-  USER_ID        Int       @id @default(autoincrement())
-  USER_NAME      String    @db.VarChar(40)
-  REG_EMAIL_ID   String    @db.VarChar(40)
-  PASSWORD       String    @db.VarChar(40)
-  USER_STATUS_ID Int
-  EXT_REF_NBR    String?   @db.VarChar(40)
-  LAST_LOGIN_AT  DateTime  @db.Timestamp(6)
-  DMN_ID         Int?
-  ACTIVATION     String?   @db.VarChar(400)
-  PWD_RESET_CD   String?   @db.VarChar(400)
-  IS_ADMIN       Boolean   @default(false)
-  IS_SYSADMIN    Boolean   @default(false)
-  IS_ASSIGNABLE  Boolean   @default(true)
-  USER_TYP_ID    Int?
-  IS_ONLINE      Boolean
-  IS_PREDEFINED  Boolean   @default(false)
-  IS_EDITABLE    Boolean?  @default(true)
-  IS_DELETED     Boolean?  @default(false)
-  OA_ID          Int?
-  OA_BRAND_ID    Int?
-  CREATED_BY     Int?
-  UPDATED_BY     Int?
-  CREATED_ON     DateTime? @db.Timestamp(6)
-  UPDATED_ON     DateTime? @db.Timestamp(6)
-  LOCAL_TIME     Boolean?
 }
 
 model user_password_history {

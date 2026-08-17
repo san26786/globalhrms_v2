@@ -1,31 +1,10 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff, UserPlus, Building, ArrowRight, ArrowLeft, Mail, Phone, Globe, ShieldCheck } from 'lucide-react';
 import GlobalHRLogo from '@/components/auth/GlobalHRLogo';
 
 interface LoginScreenProps {
   onLogin: (username: string) => void;
-}
-
-interface CustomUser {
-  username: string;
-  passwordHash: string;
-  email: string;
-  orgCode: string;
-  passcode: string;
-  memorableWord: string;
-}
-
-interface CustomOrg {
-  code: string;
-  name: string;
-  email: string;
-  country: string;
-  contact: string;
-  website: string;
-  subscription: string;
-  passcode: string;
-  memorableWord: string;
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -39,7 +18,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
   // --- LOGIN STATE ---
   const [username, setUsername] = useState('DEMOadmin');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('c');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -65,63 +44,10 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [orgMemorableWord, setOrgMemorableWord] = useState('');
   const [orgAgree, setOrgAgree] = useState(false);
 
-  // Seed default items in localStorage
-  useEffect(() => {
-    if (!localStorage.getItem('global_hr_orgs')) {
-      const defaultOrgs: CustomOrg[] = [
-        {
-          code: 'GLOBAL',
-          name: 'Global HR Corporate',
-          email: 'corporate@globalhr.com',
-          country: 'United Kingdom',
-          contact: '+44 20 7946 0958',
-          website: 'www.globalhr.com',
-          subscription: 'Enterprise',
-          passcode: '123456',
-          memorableWord: 'PROGRESS'
-        },
-        {
-          code: 'DEMO',
-          name: 'Demo Organization',
-          email: 'demo@globalhr.com',
-          country: 'United Kingdom',
-          contact: '+44 20 7946 1122',
-          website: 'www.demo.globalhr.com',
-          subscription: 'Premium',
-          passcode: '654321',
-          memorableWord: 'INNOVATE'
-        }
-      ];
-      localStorage.setItem('global_hr_orgs', JSON.stringify(defaultOrgs));
-    }
-
-    if (!localStorage.getItem('global_hr_users')) {
-      const defaultUsers: CustomUser[] = [
-        {
-          username: 'DEMOadmin',
-          passwordHash: 'password123',
-          email: 'admin@globalhr.com',
-          orgCode: 'GLOBAL',
-          passcode: '123456',
-          memorableWord: 'ADMIN'
-        },
-        {
-          username: 'GuestUser',
-          passwordHash: 'guest_pass',
-          email: 'guest@globalhr.com',
-          orgCode: 'DEMO',
-          passcode: '654321',
-          memorableWord: 'GUEST'
-        }
-      ];
-      localStorage.setItem('global_hr_users', JSON.stringify(defaultUsers));
-    }
-  }, []);
-
   // --- FORM SUBMIT HANDLERS ---
 
   // Handle Login
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) {
       setError('Username/Email is required');
@@ -136,34 +62,31 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     setError('');
     setSuccess('');
 
-    setTimeout(() => {
-      // Validate credentials
-      const savedUsersRaw = localStorage.getItem('global_hr_users');
-      const savedUsers: CustomUser[] = savedUsersRaw ? JSON.parse(savedUsersRaw) : [];
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usernameOrEmail: username.trim(), password }),
+      });
 
-      // Check default fallback directly or loaded users
-      const foundUser = savedUsers.find(
-        u => u.username.toLowerCase() === username.trim().toLowerCase() || u.email.toLowerCase() === username.trim().toLowerCase()
-      );
+      const data = await res.json();
 
-      if (foundUser && foundUser.passwordHash === password) {
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Invalid username or password. Please try again.');
         setLoading(false);
-        onLogin(foundUser.username);
-      } else if (username === 'DEMOadmin' && password === 'password123') {
-        setLoading(false);
-        onLogin('DEMOadmin');
-      } else if (username === 'GuestUser' && password === 'guest_pass') {
-        setLoading(false);
-        onLogin('GuestUser');
-      } else {
-        setLoading(false);
-        setError('Invalid username or password. Please try again.');
+        return;
       }
-    }, 850);
+
+      setLoading(false);
+      onLogin(data.user.username);
+    } catch (err) {
+      setLoading(false);
+      setError('Unable to reach the server. Please try again.');
+    }
   };
 
   // Handle User Account Registration
-  const handleUserRegister = (e: React.FormEvent) => {
+  const handleUserRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -180,56 +103,35 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      // Check if organization exists
-      const savedOrgsRaw = localStorage.getItem('global_hr_orgs');
-      const savedOrgs: CustomOrg[] = savedOrgsRaw ? JSON.parse(savedOrgsRaw) : [];
-      const orgExists = savedOrgs.some(o => o.code.toUpperCase() === regOrgCode.toUpperCase().trim());
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: regUsername.trim(),
+          password: regPassword,
+          email: regEmail.trim(),
+          orgCode: regOrgCode.toUpperCase().trim(),
+          passcode: regPasscode,
+          memorableWord: regMemorableWord.trim(),
+        }),
+      });
 
-      if (!orgExists) {
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Unable to create account.');
         setLoading(false);
-        setError(`Organisation Code "${regOrgCode}" not found. Please create the organisation first.`);
         return;
       }
-
-      // Check if username/email already taken
-      const savedUsersRaw = localStorage.getItem('global_hr_users');
-      const savedUsers: CustomUser[] = savedUsersRaw ? JSON.parse(savedUsersRaw) : [];
-
-      const usernameExists = savedUsers.some(u => u.username.toLowerCase() === regUsername.trim().toLowerCase());
-      const emailExists = savedUsers.some(u => u.email.toLowerCase() === regEmail.trim().toLowerCase());
-
-      if (usernameExists) {
-        setLoading(false);
-        setError('Username is already taken.');
-        return;
-      }
-      if (emailExists) {
-        setLoading(false);
-        setError('Email is already registered.');
-        return;
-      }
-
-      // Save new user
-      const newUser: CustomUser = {
-        username: regUsername.trim(),
-        passwordHash: regPassword,
-        email: regEmail.trim(),
-        orgCode: regOrgCode.toUpperCase().trim(),
-        passcode: regPasscode,
-        memorableWord: regMemorableWord.trim()
-      };
-
-      savedUsers.push(newUser);
-      localStorage.setItem('global_hr_users', JSON.stringify(savedUsers));
 
       setLoading(false);
       setSuccess('Account created successfully! You can now log in.');
-      
+
       // Auto pre-fill login
       setUsername(regUsername);
       setPassword(regPassword);
-      
+
       // Switch back to login mode after successful registration
       setTimeout(() => {
         setMode('login');
@@ -245,11 +147,14 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       setRegPasscode('');
       setRegMemorableWord('');
       setRegAgree(false);
-    }, 1000);
+    } catch (err) {
+      setLoading(false);
+      setError('Unable to reach the server. Please try again.');
+    }
   };
 
   // Handle Organization Creation
-  const handleCreateOrg = (e: React.FormEvent) => {
+  const handleCreateOrg = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -265,38 +170,36 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
     setLoading(true);
 
-    setTimeout(() => {
-      const savedOrgsRaw = localStorage.getItem('global_hr_orgs');
-      const savedOrgs: CustomOrg[] = savedOrgsRaw ? JSON.parse(savedOrgsRaw) : [];
+    try {
+      const res = await fetch('/api/auth/create-org', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: orgCode.toUpperCase().trim(),
+          name: orgName.trim(),
+          email: orgEmail.trim(),
+          country: orgCountry,
+          contact: orgContact.trim(),
+          website: orgWebsite.trim() || undefined,
+          subscription: orgSubscription,
+          passcode: orgPasscode,
+          memorableWord: orgMemorableWord.trim(),
+        }),
+      });
 
-      const codeExists = savedOrgs.some(o => o.code.toUpperCase() === orgCode.toUpperCase().trim());
-      if (codeExists) {
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Unable to create organisation.');
         setLoading(false);
-        setError(`Organisation Code "${orgCode.toUpperCase()}" is already registered.`);
         return;
       }
 
-      // Add new organization
-      const newOrg: CustomOrg = {
-        code: orgCode.toUpperCase().trim(),
-        name: orgName.trim(),
-        email: orgEmail.trim(),
-        country: orgCountry,
-        contact: orgContact.trim(),
-        website: orgWebsite.trim() || 'N/A',
-        subscription: orgSubscription,
-        passcode: orgPasscode,
-        memorableWord: orgMemorableWord.trim()
-      };
-
-      savedOrgs.push(newOrg);
-      localStorage.setItem('global_hr_orgs', JSON.stringify(savedOrgs));
-
       setLoading(false);
-      setSuccess(`Organisation "${orgName}" registered successfully with Code: ${newOrg.code}`);
-      
+      setSuccess(`Organisation "${orgName}" registered successfully with Code: ${data.org.code}`);
+
       // Pre-fill organisation code on register state
-      setRegOrgCode(newOrg.code);
+      setRegOrgCode(data.org.code);
 
       setTimeout(() => {
         setMode('register'); // Go to register screen so they can create an admin account for it
@@ -314,12 +217,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       setOrgPasscode('');
       setOrgMemorableWord('');
       setOrgAgree(false);
-    }, 1000);
+    } catch (err) {
+      setLoading(false);
+      setError('Unable to reach the server. Please try again.');
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:grid md:grid-cols-12 overflow-x-hidden font-sans select-none">
-      
+
       {/* LEFT PANEL - IMMERSIVE COBALT BRANDING (5 Cols) */}
       <div className="relative md:col-span-5 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white p-8 sm:p-12 md:p-16 flex flex-col justify-between overflow-hidden shadow-2xl min-h-[400px] md:min-h-screen">
         {/* Abstract vector wave background */}
@@ -359,7 +265,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               Global HR
             </h2>
           </div>
-          
+
           <p className="text-slate-200 text-xs sm:text-sm leading-relaxed font-medium">
             Empowering People. Elevating Performance. A complete HR management solution to streamline your workforce operations.
           </p>
@@ -367,7 +273,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           {/* Interactive laptop mockup drawing */}
           <div className="pt-8 relative group">
             <div className="absolute inset-x-8 bottom-0 top-12 bg-sky-500/20 rounded-full filter blur-2xl group-hover:bg-sky-500/30 transition-all duration-500" />
-            
+
             <div className="relative border-4 border-slate-700/80 rounded-2xl bg-slate-900 shadow-2xl p-2.5 max-w-[340px] mx-auto transform hover:-translate-y-2 hover:rotate-1 transition-all duration-500">
               <div className="bg-slate-950 rounded-lg aspect-[16/10] overflow-hidden p-1 flex flex-col gap-1 relative border border-slate-800">
                 <div className="h-2 w-full flex items-center justify-between px-1">
@@ -427,7 +333,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
         {/* Login Central Container */}
         <div className="w-full max-w-md mx-auto bg-white rounded-3xl border border-slate-100 p-8 sm:p-10 shadow-xl shadow-slate-100/50">
-          
+
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <GlobalHRLogo size="lg" />
@@ -676,7 +582,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
                   required
                 />
-                
+
                 <select
                   value={orgCountry}
                   onChange={(e) => setOrgCountry(e.target.value)}
@@ -845,4 +751,3 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     </div>
   );
 }
-
