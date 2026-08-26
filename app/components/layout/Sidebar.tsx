@@ -6,7 +6,8 @@ import {
   ChevronUp
 } from 'lucide-react';
 import GlobalHRLogo from '@/components/auth/GlobalHRLogo';
-import { modulesData } from '../../data/modules';
+import { useSidebarMenu } from '@/lib/menu/useMenu';
+import { getModuleIcon } from '@/lib/menu/iconMap';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -25,6 +26,22 @@ export default function Sidebar({
   onSelectMenu,
   activeBrand
 }: SidebarProps) {
+  const { data: menuItems } = useSidebarMenu();
+
+  // Reshape the fetched tree back into exactly what the old static
+  // modulesData looked like — {name, icon, color, subModules: string[]} —
+  // so nothing below this line has to change.
+  const modulesData = (menuItems ?? []).map((item) => {
+    const { icon, color } = getModuleIcon(item.name);
+    console.log('item', item);
+    return {
+      name: item.name,
+      icon,
+      color,
+      subModules: item.children.map((child) => child.name),
+    };
+  });
+
   // Keep track of which menu is expanded manually
   const [expandedMenu, setExpandedMenu] = useState<string | null>(activeMenu);
 

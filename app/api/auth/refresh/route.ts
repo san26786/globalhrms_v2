@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     username: user.USER_NAME,
     isAdmin: user.IS_ADMIN,
     isSysAdmin: user.IS_SYSADMIN,
+    oaBrandId: user.OA_BRAND_ID ? String(user.OA_BRAND_ID) : null,
   });
 
   const response = NextResponse.json({ success: true });

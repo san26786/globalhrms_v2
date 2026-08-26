@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       username: user.username,
       isAdmin: user.isAdmin,
       isSysAdmin: user.isSysAdmin,
+      oaBrandId: String(user.oaBrandId),
     });
 
     const refreshToken = signRefreshToken({ sub: user.id });
