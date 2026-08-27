@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { bankdetails } from "@/generated/prisma/client";
 import { DataTable } from "./components/bank-detailsTable";
@@ -29,6 +29,7 @@ export default function BankDetailsPage() {
   const [bankDetailsList, setBankDetailsList] = useState<bankdetails[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const router = useRouter();
+  const tableRef = useRef<any>(null);
 
   // Load settings from localStorage
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>(() => {
@@ -170,10 +171,55 @@ export default function BankDetailsPage() {
     toast.success("Form settings saved successfully");
   };
 
+  const handleBulkDelete = async () => {
+    if (!tableRef.current) return;
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      toast.warning("Please select at least one record to delete.");
+      return;
+    }
+    const confirmed = confirm(`Are you sure you want to delete ${selectedRows.length} selected record(s)?`);
+    if (!confirmed) return;
+
+    let successCount = 0;
+    for (const row of selectedRows) {
+      try {
+        const res = await fetch(`/api/bank-details/${row.original.BANK_ID}`, {
+          method: "DELETE",
+        });
+        if (res.ok) successCount++;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`Successfully deleted ${successCount} record(s).`);
+      tableRef.current.resetRowSelection();
+      fetchBankDetails();
+    } else {
+      toast.error("Failed to delete selected records.");
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <BreadcrumbHeader onOpenSettings={() => setIsSettingsOpen(true)} />
-      <DataTable columns={dynamicColumns} data={bankDetailsList} />
+      <BreadcrumbHeader 
+        onOpenSettings={() => setIsSettingsOpen(true)} 
+        onDeleteSelected={handleBulkDelete}
+        entity="bank-details"
+        title="Bank Account Details"
+        filename="BankAccountDetails"
+        columnSettings={columnSettings}
+        data={bankDetailsList}
+        tableRef={tableRef}
+        onSuccess={fetchBankDetails}
+      />
+      <DataTable 
+        columns={dynamicColumns} 
+        data={bankDetailsList} 
+        onTableInstance={(instance) => { tableRef.current = instance; }}
+      />
       
       <FormSettingsModal
         isOpen={isSettingsOpen}

@@ -27,30 +27,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface DataTableProps<TData, TValue> {
   columns: any;
   data: TData[];
-  globalFilter: string;
-  setGlobalFilter: (value: string) => void;
-  rowSelection: any;
-  setRowSelection: any;
-  sorting: SortingState;
-  setSorting: any;
+  onTableInstance?: (table: any) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  globalFilter,
-  setGlobalFilter,
-  rowSelection,
-  setRowSelection,
-  sorting,
-  setSorting,
+  onTableInstance,
 }: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 5,
   });
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   const table = useReactTable({
     data,
@@ -77,6 +70,12 @@ export function DataTable<TData, TValue>({
   React.useEffect(() => {
     table.getColumn("bankName")?.setFilterValue(globalFilter);
   }, [globalFilter, table]);
+
+  React.useEffect(() => {
+    if (onTableInstance) {
+      onTableInstance(table);
+    }
+  }, [table, sorting, columnFilters, columnVisibility, rowSelection, pagination, onTableInstance]);
 
   return (
     <div className="text-base font-sans">

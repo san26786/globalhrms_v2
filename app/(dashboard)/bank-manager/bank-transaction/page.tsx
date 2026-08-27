@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable } from "./components/bank-transactionTable";
 import BreadcrumbHeader from "./components/BreadcrumbHeader";
 import { getColumns } from "./components/bank-transactionColumns";
@@ -8,7 +9,15 @@ import FormSettingsModal, { ColumnSetting } from "./components/FormSettingsModal
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RefreshCw, Filter, ArrowUpDown } from "lucide-react";
+import {
+  exportToCSV,
+  exportToExcel,
+  exportToPDF,
+  printData,
+  copyToClipboard,
+} from "@/lib/import-export/exportUtils";
 
 interface LookupOption {
   label: string;
@@ -32,9 +41,11 @@ const defaultSettings: ColumnSetting[] = [
 ];
 
 export default function BankTransactionPage() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const tableRef = useRef<any>(null);
 
   // Filter States
   const [bankAccounts, setBankAccounts] = useState<LookupOption[]>([]);
@@ -46,6 +57,9 @@ export default function BankTransactionPage() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedFy, setSelectedFy] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
+
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // Load settings from localStorage
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>(() => {
@@ -125,6 +139,161 @@ export default function BankTransactionPage() {
     toast.success("Form settings saved successfully");
   };
 
+  const handleApproveSelected = async () => {
+    if (!tableRef.current) return;
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      setIsWarningModalOpen(true);
+      return;
+    }
+
+    const ids = selectedRows.map((r: any) => r.original.ID);
+    setBulkActionLoading(true);
+    try {
+      let successCount = 0;
+      for (const id of ids) {
+        const res = await fetch(`/api/bank-transaction/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transaction_status: 2 }), // 2 = Explained
+        });
+        if (res.ok) successCount++;
+      }
+      if (successCount > 0) {
+        toast.success(`Successfully explained ${successCount} transactions`);
+        tableRef.current.resetRowSelection();
+        fetchTransactions();
+      } else {
+        toast.error("Failed to explain selected transactions");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error explaining selected transactions");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleClearSelected = async () => {
+    if (!tableRef.current) return;
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      setIsWarningModalOpen(true);
+      return;
+    }
+
+    const ids = selectedRows.map((r: any) => r.original.ID);
+    setBulkActionLoading(true);
+    try {
+      let successCount = 0;
+      for (const id of ids) {
+        const res = await fetch(`/api/bank-transaction/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transaction_status: 1 }), // 1 = Unexplained/Pending
+        });
+        if (res.ok) successCount++;
+      }
+      if (successCount > 0) {
+        toast.success(`Successfully cleared status for ${successCount} transactions`);
+        tableRef.current.resetRowSelection();
+        fetchTransactions();
+      } else {
+        toast.error("Failed to clear selected transactions");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error clearing selected transactions");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!tableRef.current) return;
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      setIsWarningModalOpen(true);
+      return;
+    }
+
+    const ids = selectedRows.map((r: any) => r.original.ID);
+    if (!confirm(`Are you sure you want to delete ${ids.length} selected transactions?`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      let successCount = 0;
+      for (const id of ids) {
+        const res = await fetch(`/api/bank-transaction/${id}`, {
+          method: "DELETE",
+        });
+        if (res.ok) successCount++;
+      }
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} transactions`);
+        tableRef.current.resetRowSelection();
+        fetchTransactions();
+      } else {
+        toast.error("Failed to delete selected transactions");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error deleting selected transactions");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleExport = (format: string) => {
+    if (!tableRef.current) return;
+
+    const visibleColumns = columnSettings.filter((c) => c.visibleInList);
+    const headers = visibleColumns.map((c) => c.displayName);
+    const keys = visibleColumns.map((c) => c.systemName);
+
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    const filteredRows = tableRef.current.getFilteredRowModel().rows;
+
+    const dataToExport = selectedRows.length > 0
+      ? selectedRows.map((r: any) => r.original)
+      : filteredRows.map((r: any) => r.original);
+
+    const filename = `BankTransactions_${new Date().toISOString().slice(0, 10)}`;
+
+    switch (format.toUpperCase()) {
+      case "CSV":
+        exportToCSV(headers, keys, dataToExport, filename);
+        toast.success("CSV export initiated");
+        break;
+      case "EXCEL":
+        exportToExcel(headers, keys, dataToExport, filename);
+        toast.success("Excel export initiated");
+        break;
+      case "PDF":
+        exportToPDF("Bank Transactions List", headers, keys, dataToExport, filename);
+        toast.success("PDF export initiated");
+        break;
+      case "PRINT":
+        printData("Bank Transactions List", headers, keys, dataToExport);
+        break;
+      case "COPY":
+        copyToClipboard(headers, keys, dataToExport).then((success) => {
+          if (success) {
+            toast.success("Table data copied to clipboard");
+          } else {
+            toast.error("Failed to copy table data");
+          }
+        });
+        break;
+      default:
+        toast.error("Unknown export format");
+    }
+  };
+
+  const handleImportClick = () => {
+    router.push("/bank-manager/bank-transaction/import");
+  };
+
   // Get table columns definition
   const baseColumns = useMemo(() => getColumns({ onRefresh: fetchTransactions }), []);
 
@@ -180,12 +349,12 @@ export default function BankTransactionPage() {
       {/* Breadcrumb Header */}
       <BreadcrumbHeader 
         onRefresh={fetchTransactions}
-        onApproveSelected={() => toast.success("Selected transactions explained successfully")}
-        onClearSelected={() => toast.success("Selected explanations cleared")}
-        onImportClick={() => toast.info("Opening sheet import module...")}
-        onExport={() => toast.success("CSV download triggered")}
+        onApproveSelected={handleApproveSelected}
+        onClearSelected={handleClearSelected}
+        onImportClick={handleImportClick}
+        onExport={handleExport}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onDeleteSelected={() => toast.warning("Bulk delete is not active")}
+        onDeleteSelected={handleBulkDelete}
       />
 
       {/* Filters Card */}
@@ -289,7 +458,11 @@ export default function BankTransactionPage() {
             <span className="font-semibold text-xs">Loading transactions list...</span>
           </div>
         ) : (
-          <DataTable columns={dynamicColumns} data={transactions} />
+          <DataTable 
+            columns={dynamicColumns} 
+            data={transactions} 
+            onTableInstance={(instance) => { tableRef.current = instance; }}
+          />
         )}
       </div>
 
@@ -300,6 +473,26 @@ export default function BankTransactionPage() {
         settings={columnSettings}
         onSave={handleSaveSettings}
       />
+
+      {/* Warning Modal */}
+      <Dialog open={isWarningModalOpen} onOpenChange={setIsWarningModalOpen}>
+        <DialogContent className="max-w-[450px] p-8 rounded-lg bg-white border border-slate-100 shadow-2xl flex flex-col items-center justify-center gap-6 focus:outline-none select-none">
+          <div className="flex items-center justify-center h-20 w-20 rounded-full border-4 border-[#f8bb86] text-[#f8bb86] bg-transparent">
+            <span className="text-5xl font-light font-sans leading-none -translate-y-[2px]">!</span>
+          </div>
+          <h2 className="text-[18px] font-normal text-[#595959] text-center leading-normal">
+            Please select record(s)
+          </h2>
+          <div className="mt-2 w-full flex justify-center">
+            <button
+              onClick={() => setIsWarningModalOpen(false)}
+              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 active:scale-95 transition-all duration-200 cursor-pointer border-0"
+            >
+              OK
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

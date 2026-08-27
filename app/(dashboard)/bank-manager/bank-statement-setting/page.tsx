@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,9 @@ export default function BankStatementSettingPage() {
   const [settingsList, setSettingsList] = useState<StatementSetting[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const tableRef = useRef<any>(null);
 
   // Table States
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [rowSelection, setRowSelection] = useState({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>(() => {
@@ -92,19 +90,19 @@ export default function BankStatementSettingPage() {
   };
 
   const handleBulkDelete = async () => {
-    const selectedIndices = Object.keys(rowSelection).map((k) => parseInt(k));
-    if (selectedIndices.length === 0) {
-      toast.warning("Please select at least one record to delete");
+    if (!tableRef.current) return;
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      toast.warning("Please select at least one record to delete.");
       return;
     }
-
-    const selectedItems = selectedIndices.map((index) => settingsList[index]).filter(Boolean);
-    if (!confirm(`Are you sure you want to delete the mapping rules for ${selectedItems.length} selected row(s)?`)) return;
+    const confirmed = confirm(`Are you sure you want to delete the mapping rules for ${selectedRows.length} selected row(s)?`);
+    if (!confirmed) return;
 
     let successCount = 0;
-    for (const item of selectedItems) {
+    for (const row of selectedRows) {
       try {
-        const res = await fetch(`/api/bank-statement-setting/${item.id}`, { method: "DELETE" });
+        const res = await fetch(`/api/bank-statement-setting/${row.original.id}`, { method: "DELETE" });
         if (res.ok) successCount++;
       } catch (err) {
         console.error(err);
@@ -113,16 +111,20 @@ export default function BankStatementSettingPage() {
 
     if (successCount > 0) {
       toast.success(`Successfully deleted ${successCount} column mapping rules.`);
-      setRowSelection({});
+      tableRef.current.resetRowSelection();
       fetchSettings();
     } else {
       toast.error("Failed to delete selected mappings.");
     }
   };
 
-  const handleExport = (format: string) => {
-    toast.info(`Exporting as ${format}...`);
-  };
+  const customImportFields = [
+    { key: "CSV_BANK", label: "Bank ID" },
+    { key: "CSV_BANK_STATEMENT_NM", label: "CSV Column Name" },
+    { key: "DB_BANK_STATEMENT_NM", label: "Mapped DB Column" },
+    { key: "ANOTHER_DB_BANK_STATEMENT_NM", label: "Secondary Mapped DB Column" },
+    { key: "CRDB_FLAG", label: "Is CR/DB Flag" }
+  ];
 
   const handleSaveSettings = (newSettings: ColumnSetting[]) => {
     setColumnSettings(newSettings);
@@ -288,7 +290,13 @@ export default function BankStatementSettingPage() {
       <BreadcrumbHeader 
         onOpenSettings={() => setIsSettingsOpen(true)} 
         onDeleteSelected={handleBulkDelete}
-        onExport={handleExport}
+        entity="bank-statement-setting"
+        title="Bank Statement Settings"
+        filename="BankStatementSettings"
+        columnSettings={columnSettings}
+        data={settingsList}
+        tableRef={tableRef}
+        onSuccess={fetchSettings}
       />
       
       {loading ? (
@@ -300,12 +308,7 @@ export default function BankStatementSettingPage() {
         <DataTable 
           columns={columns} 
           data={settingsList} 
-          globalFilter={globalFilter}
-          setGlobalFilter={setGlobalFilter}
-          rowSelection={rowSelection}
-          setRowSelection={setRowSelection}
-          sorting={sorting}
-          setSorting={setSorting}
+          onTableInstance={(instance) => { tableRef.current = instance; }}
         />
       )}
 

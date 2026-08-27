@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { common_type } from "../../../generated/prisma/client";
 import { columns } from "./components/commonTypeColumns";
 import { DataTable } from "./components/CommonTypeTable";
 import BreadcrumbHeader from "./components/BreadcrumbHeader";
 
+const columnSettings = [
+  { systemName: "TYP_ID", displayName: "Type ID", visibleInList: true, visibleInForm: true },
+  { systemName: "TYP_CD", displayName: "Type Code", visibleInList: true, visibleInForm: true },
+  { systemName: "TYP_NM", displayName: "Type Name", visibleInList: true, visibleInForm: true },
+  { systemName: "VIEW_NM", displayName: "View Name", visibleInList: true, visibleInForm: true }
+];
+
 export default function CommonType() {
   const [commonTypes, setCommonTypes] = useState<common_type[]>([]);
   const router = useRouter();
+  const tableRef = useRef<any>(null);
 
   useEffect(() => {
     fetchCommonTypes();
@@ -26,9 +34,21 @@ export default function CommonType() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <BreadcrumbHeader />
-      <DataTable columns={columns} data={commonTypes} />
+    <div className="container mx-auto p-4 space-y-6">
+      <BreadcrumbHeader 
+        entity="common-type"
+        title="Common Type"
+        filename="CommonTypes"
+        columnSettings={columnSettings}
+        data={commonTypes}
+        tableRef={tableRef}
+        onSuccess={fetchCommonTypes}
+      />
+      <DataTable 
+        columns={columns} 
+        data={commonTypes} 
+        onTableInstance={(instance) => { tableRef.current = instance; }}
+      />
     </div>
   );
 }

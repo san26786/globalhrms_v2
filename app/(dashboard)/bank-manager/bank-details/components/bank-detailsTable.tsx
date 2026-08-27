@@ -27,11 +27,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface DataTableProps<TData, TValue> {
   columns: any;
   data: TData[];
+  onTableInstance?: (table: any) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onTableInstance,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -62,6 +64,12 @@ export function DataTable<TData, TValue>({
       pagination,
     },
   });
+
+  React.useEffect(() => {
+    if (onTableInstance) {
+      onTableInstance(table);
+    }
+  }, [table, onTableInstance]);
 
   return (
     <div className="text-base font-sans">

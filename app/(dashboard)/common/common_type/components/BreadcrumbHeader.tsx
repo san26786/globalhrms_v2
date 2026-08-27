@@ -1,8 +1,28 @@
 import { ChevronRight, Database, RefreshCw, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import ImportExportControls from "@/components/import-export/ImportExportControls";
+import { ColumnSetting } from "@/lib/import-export/ExportService";
 
-export default function BreadcrumbHeader() {
+interface BreadcrumbHeaderProps {
+  entity: string;
+  title: string;
+  filename: string;
+  columnSettings: ColumnSetting[];
+  data: any[];
+  tableRef?: any;
+  onSuccess?: () => void;
+}
+
+export default function BreadcrumbHeader({
+  entity,
+  title,
+  filename,
+  columnSettings,
+  data,
+  tableRef,
+  onSuccess
+}: BreadcrumbHeaderProps) {
   return (
     <div className="rounded-3xl border bg-white p-6 shadow-sm">
 
@@ -30,7 +50,16 @@ export default function BreadcrumbHeader() {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <ImportExportControls
+            entity={entity}
+            title={title}
+            filename={filename}
+            columnSettings={columnSettings}
+            data={data}
+            tableRef={tableRef}
+            onSuccess={onSuccess}
+          />
           <Link href="/common/common_type/add">
             <Button size="icon" className="rounded-full">
               <Plus className="h-4 w-4" />
@@ -42,4 +71,4 @@ export default function BreadcrumbHeader() {
 
     </div>
   );
-}
+}

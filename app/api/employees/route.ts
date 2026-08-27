@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         EMP_NAME: true,
         EMPLST_NM: true,
       },
-      take: 20,
+      take: 300,
     });
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -25,13 +25,13 @@ interface BankNameRecord {
 }
 
 const defaultSettings: ColumnSetting[] = [
-  { systemName: "MSTR_CD", displayName: "Menu Code", visibleInList: true, visibleInForm: true },
-  { systemName: "MSTR_NM", displayName: "Menu Name", visibleInList: true, visibleInForm: true },
+  { systemName: "MSTR_CD", displayName: "Bank Code", visibleInList: true, visibleInForm: true },
+  { systemName: "MSTR_NM", displayName: "Bank Name", visibleInList: true, visibleInForm: true },
+  { systemName: "MSTR_DESC", displayName: "Description", visibleInList: true, visibleInForm: true },
   { systemName: "IS_PREDEFINED", displayName: "Is Predefined", visibleInList: false, visibleInForm: false },
   { systemName: "USER_CAN_CREATE_DATA_", displayName: "User Can Create Data", visibleInList: false, visibleInForm: false },
   { systemName: "USER_CAN_EDIT_DATA_NM", displayName: "User Can Edit Data Name", visibleInList: false, visibleInForm: false },
-  { systemName: "MSTR_DESC", displayName: "Description", visibleInList: true, visibleInForm: true },
-  { systemName: "OA_BRAND_CD", displayName: "Brand", visibleInList: false, visibleInForm: false },
+  { systemName: "OA_BRAND_CD", displayName: "Brand Code", visibleInList: false, visibleInForm: false },
   { systemName: "APP_CD", displayName: "App Code", visibleInList: false, visibleInForm: false },
   { systemName: "IS_DEFAULT_FOR_SYNC", displayName: "Is Delete For Sync", visibleInList: false, visibleInForm: false }
 ];
@@ -39,11 +39,9 @@ const defaultSettings: ColumnSetting[] = [
 export default function BankNameMasterPage() {
   const [data, setData] = useState<BankNameRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [rowSelection, setRowSelection] = useState({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const router = useRouter();
+  const tableRef = useRef<any>(null);
 
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>(() => {
     if (typeof window !== "undefined") {
@@ -94,19 +92,21 @@ export default function BankNameMasterPage() {
   };
 
   const handleBulkDelete = async () => {
-    const selectedIndices = Object.keys(rowSelection).map((k) => parseInt(k));
-    if (selectedIndices.length === 0) {
-      toast.warning("Please select at least one record to delete");
+    if (!tableRef.current) return;
+    const selectedRows = tableRef.current.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      toast.warning("Please select at least one record to delete.");
       return;
     }
-
-    const selectedIds = selectedIndices.map((index) => data[index]?.MSTR_ID).filter(Boolean);
-    if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected bank records?`)) return;
+    const confirmed = confirm(`Are you sure you want to delete ${selectedRows.length} selected record(s)?`);
+    if (!confirmed) return;
 
     let successCount = 0;
-    for (const id of selectedIds) {
+    for (const row of selectedRows) {
       try {
-        const res = await fetch(`/api/bank-name-master/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/bank-name-master/${row.original.MSTR_ID}`, {
+          method: "DELETE",
+        });
         const json = await res.json();
         if (json.success) successCount++;
       } catch (err) {
@@ -115,16 +115,12 @@ export default function BankNameMasterPage() {
     }
 
     if (successCount > 0) {
-      toast.success(`Successfully deleted ${successCount} bank records`);
-      setRowSelection({});
+      toast.success(`Successfully deleted ${successCount} record(s).`);
+      tableRef.current.resetRowSelection();
       fetchData();
     } else {
-      toast.error("Failed to delete selected records");
+      toast.error("Failed to delete selected records.");
     }
-  };
-
-  const handleExport = (format: string) => {
-    toast.info(`Exporting as ${format}...`);
   };
 
   const columns = useMemo<ColumnDef<BankNameRecord>[]>(
@@ -246,7 +242,13 @@ export default function BankNameMasterPage() {
       <BreadcrumbHeader 
         onOpenSettings={() => setIsSettingsOpen(true)} 
         onDeleteSelected={handleBulkDelete}
-        onExport={handleExport}
+        entity="bank-name-master"
+        title="Bank Name Master"
+        filename="BankNames"
+        columnSettings={columnSettings}
+        data={data}
+        tableRef={tableRef}
+        onSuccess={fetchData}
       />
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -257,12 +259,7 @@ export default function BankNameMasterPage() {
         <DataTable 
           columns={columns} 
           data={data} 
-          globalFilter={globalFilter}
-          setGlobalFilter={setGlobalFilter}
-          rowSelection={rowSelection}
-          setRowSelection={setRowSelection}
-          sorting={sorting}
-          setSorting={setSorting}
+          onTableInstance={(instance) => { tableRef.current = instance; }}
         />
       )}
       

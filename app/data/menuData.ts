@@ -147,8 +147,7 @@ export const menuHierarchy: ModuleMenu[] = [
       { name: "Bank Account Details" },
       { name: "Bank Name Master" },
       { name: "Bank Statement Setting" },
-      { name: "Bank Transaction" },
-      { name: "Import Freeagent Transactions" }
+      { name: "Bank Transaction" }
     ]
   },
   {

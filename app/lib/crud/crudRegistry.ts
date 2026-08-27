@@ -4,7 +4,7 @@ import { CrudEntityConfig } from "./crudTypes";
 
 export const CRUD_REGISTRY: Record<string, CrudEntityConfig> = {
   employee: {
-    table: "employee",
+    table: "emp_mst",
     primaryKey: "EMP_ID",
   },
   department: {

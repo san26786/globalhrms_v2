@@ -18,35 +18,21 @@ export async function GET() {
       },
     });
 
-    // 1. Fetch Bank Names (Type Code: SEBN)
-    const sebnType = await prisma.common_type.findFirst({
-      where: { TYP_CD: "SEBN" },
+    // Fetch all independent masters to ensure complete mapping
+    const allMst = await prisma.independent_mst.findMany({
+      select: { MSTR_ID: true, MSTR_NM: true, MSTR_CD: true },
     });
-    const bankNames = sebnType
-      ? await prisma.independent_mst.findMany({
-          where: { TYP_ID: sebnType.TYP_ID },
-          select: { MSTR_ID: true, MSTR_NM: true },
-        })
-      : [];
 
-    // 2. Fetch Account Types (Type Code: CTBAT)
-    const ctbatType = await prisma.common_type.findFirst({
-      where: { TYP_CD: "CTBAT" },
+    const masterMap = new Map<string, string>();
+    allMst.forEach((m) => {
+      masterMap.set(String(m.MSTR_ID), m.MSTR_NM);
+      if (m.MSTR_CD) masterMap.set(String(m.MSTR_CD), m.MSTR_NM);
     });
-    const accountTypes = ctbatType
-      ? await prisma.independent_mst.findMany({
-          where: { TYP_ID: ctbatType.TYP_ID },
-          select: { MSTR_ID: true, MSTR_NM: true },
-        })
-      : [];
 
-    const bankNameMap = new Map(bankNames.map((b) => [String(b.MSTR_ID), b.MSTR_NM]));
-    const accountTypeMap = new Map(accountTypes.map((a) => [String(a.MSTR_ID), a.MSTR_NM]));
-
-    // Map numerical values to names for the UI list display
+    // Map numerical values to human-readable names
     const mappedList = bankDetailsList.map((item) => {
-      const bankName = bankNameMap.get(item.BANK_NAME) || item.BANK_NAME;
-      const accountType = accountTypeMap.get(String(item.BANK_ACC_TYPE)) || String(item.BANK_ACC_TYPE);
+      const bankName = masterMap.get(String(item.BANK_NAME)) || item.BANK_NAME || "Corporate Bank";
+      const accountType = masterMap.get(String(item.BANK_ACC_TYPE)) || String(item.BANK_ACC_TYPE || "Standard");
 
       return {
         ...item,

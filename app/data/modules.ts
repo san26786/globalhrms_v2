@@ -54,8 +54,7 @@ export const modulesData: ModuleItem[] = [
       'Bank Account Details',
       'Bank Transaction',
       'Bank Name Master',
-      'Bank Statement Setting',
-      'Import Freeagent Transactions'
+      'Bank Statement Setting'
     ]
   },
   {

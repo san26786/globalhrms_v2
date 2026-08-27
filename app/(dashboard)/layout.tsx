@@ -42,6 +42,10 @@ export default function DashboardLayout({
       router.push("/dashboard/leave");
     } else if (subMenu === "Timesheet Dashboard") {
       router.push("/dashboard/timesheet");
+    } else if (subMenu === "Employee Manager") {
+      router.push("/employee-hub/employee-manager");
+    } else if (subMenu === "Team Employee Manager") {
+      router.push("/employee-hub/team-employee-manager");
     }
   };
 
@@ -64,7 +68,7 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div
-        className={`flex-1 transition-all duration-300 ${
+        className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ${
           isSidebarCollapsed ? "ml-20" : "ml-64"
         }`}
       >
