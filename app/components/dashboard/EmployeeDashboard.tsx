@@ -1,26 +1,109 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LayoutDashboard, Users, FileText } from 'lucide-react';
 import DonutChart from '../DonutChart';
 import BarChart from '../BarChart';
 import LineChart from '../LineChart';
-import PendingTable from '../PendingTable';
+import PendingTable from './PendingTable';
+import { EmployeeDashboardData, NamedCount } from '@/lib/dashboard/types';
+
+// ---------------------------------------------------------------------------
+// Small local donut-arc helper. Preserves the exact SVG structure/geometry
+// (r=25, strokeWidth=50, circumference≈157) that was previously hand-computed
+// and hardcoded for the Gender Split / Employee Status cards, but now derives
+// the dash-offsets/rotations from real segment percentages instead of fixed
+// numbers baked into the markup.
+// ---------------------------------------------------------------------------
+const CIRCUMFERENCE = 157; // 2 * PI * 25, rounded to match the original markup
+
+interface Arc {
+  name: string;
+  count: number;
+  percentage: number;
+  color: string;
+  strokeDashoffset: number;
+  rotation: number;
+}
+
+function buildArcs(segments: NamedCount[], colorFor: (name: string) => string): Arc[] {
+  const total = segments.reduce((sum, s) => sum + s.count, 0);
+  let accumulated = 0;
+  return segments.map((s, index) => {
+    const safeName = s.name ?? `Unknown-${index}`;
+    const percentage = total > 0 ? (s.count / total) * 100 : 0;
+    const strokeDashoffset = CIRCUMFERENCE - (percentage / 100) * CIRCUMFERENCE;
+    const rotation = (accumulated / 100) * 360;
+    accumulated += percentage;
+    return { name: safeName, count: s.count, percentage, color: colorFor(safeName), strokeDashoffset, rotation };
+  });
+}
+
+/** Best-effort color assignment so real MSTR_NM values line up with the original palette. */
+function genderColor(name: string | undefined | null): string {
+  const n = (name ?? '').toLowerCase();
+  if (n.includes('male') && !n.includes('female')) return '#f97316';
+  if (n.includes('female')) return '#ef4444';
+  return '#2563eb';
+}
+
+function statusColor(name: string | undefined | null): string {
+  const n = (name ?? '').toLowerCase();
+  if (n.includes('current')) return '#2563eb';
+  if (n.includes('former')) return '#ef4444';
+  return '#64748b';
+}
+
+function formatPct(pct: number): string {
+  return `${Math.round(pct * 10) / 10}%`;
+}
 
 export default function EmployeeDashboard() {
   const [viewMode, setViewMode] = useState<'analytics' | 'demographics'>('analytics');
+  const [data, setData] = useState<EmployeeDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch('/api/dashboard/employee');
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to load dashboard data');
+        if (!cancelled) setData(json.data as EmployeeDashboardData);
+      } catch (err: any) {
+        if (!cancelled) setError(err?.message ?? 'Failed to load dashboard data');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const kpis = [
-    { label: 'TOTAL NO OF REGISTERED EMPLOYEE', value: 75 },
-    { label: 'TOTAL NO OF CURRENT EMPLOYEE', value: 73 },
-    { label: 'TOTAL NO OF FORMER EMPLOYEE', value: 2 },
-    { label: 'TOTAL NO OF EMPLOYEES ON PROBATION', value: 51 },
-    { label: 'TOTAL NO OF EMPLOYEE REGISTERED IN CURRENT MONTH', value: 0 },
-    { label: 'TOTAL NO OF EMPLOYEE RESIGNED IN CURRENT MONTH', value: 0 }
+    { label: 'TOTAL NO OF REGISTERED EMPLOYEE', value: data?.kpis.totalRegistered ?? 0 },
+    { label: 'TOTAL NO OF CURRENT EMPLOYEE', value: data?.kpis.totalCurrent ?? 0 },
+    { label: 'TOTAL NO OF FORMER EMPLOYEE', value: data?.kpis.totalFormer ?? 0 },
+    { label: 'TOTAL NO OF EMPLOYEES ON PROBATION', value: data?.kpis.totalProbation ?? 0 },
+    { label: 'TOTAL NO OF EMPLOYEE REGISTERED IN CURRENT MONTH', value: data?.kpis.registeredThisMonth ?? 0 },
+    { label: 'TOTAL NO OF EMPLOYEE RESIGNED IN CURRENT MONTH', value: data?.kpis.resignedThisMonth ?? 0 },
   ];
+
+  const genderArcs = buildArcs(data?.genderSplit ?? [], genderColor);
+  const statusArcs = buildArcs(data?.employeeStatus ?? [], statusColor);
+  const dominantGenderPct = genderArcs.length > 0 ? formatPct(Math.max(...genderArcs.map((a) => a.percentage))) : '0%';
+  const dominantStatusPct = statusArcs.length > 0 ? formatPct(Math.max(...statusArcs.map((a) => a.percentage))) : '0%';
 
   return (
     <div className="space-y-6 animate-fade-in">
-      
+
       {/* Sliding View Mode Switcher */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-5 mb-1">
         <div>
@@ -28,12 +111,13 @@ export default function EmployeeDashboard() {
             Employee Workspace
           </h2>
           <p className="text-xs text-slate-400 font-semibold mt-0.5">
-            {viewMode === 'analytics' 
-              ? 'Real-time charts representing department engagement, salary slabs, and joinings.' 
+            {viewMode === 'analytics'
+              ? 'Real-time charts representing department engagement, salary slabs, and joinings.'
               : 'Detailed demographic proportions, status checks, and current leave pipelines.'}
+            {error && <span className="text-red-500 ml-2">({error})</span>}
           </p>
         </div>
-        
+
         {/* Toggle Pills */}
         <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 select-none border border-slate-200/40">
           <button
@@ -69,20 +153,20 @@ export default function EmployeeDashboard() {
           {/* Charts Row 1: Donut & Bar */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-full">
-              <DonutChart />
+              <DonutChart data={data?.departmentEngagement} />
             </div>
             <div className="h-full">
-              <BarChart />
+              <BarChart data={data?.salarySlabs} />
             </div>
           </div>
 
           {/* Charts Row 2: Line & Table */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-full">
-              <LineChart />
+              <LineChart data={data?.joiningTrend} />
             </div>
             <div className="h-full">
-              <PendingTable />
+              <PendingTable rows={data?.pendingLeave} />
             </div>
           </div>
         </div>
@@ -99,14 +183,14 @@ export default function EmployeeDashboard() {
                 <div className="bg-[#00b0ff] w-20 flex items-center justify-center shrink-0">
                   <FileText className="w-8 h-8 text-white stroke-[1.5]" />
                 </div>
-                
+
                 {/* Label and Count on the right */}
                 <div className="flex-1 p-4 flex flex-col justify-center items-center text-center">
                   <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-tight">
                     {kpi.label}
                   </span>
                   <span className="text-3xl font-black text-slate-700 mt-1 font-sans">
-                    {kpi.value}
+                    {loading ? '—' : kpi.value}
                   </span>
                 </div>
               </div>
@@ -115,7 +199,7 @@ export default function EmployeeDashboard() {
 
           {/* Visual Analytics Sections underneath (3 Columns) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Gender Split Card */}
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
               <div className="bg-white px-5 py-3 border-b border-slate-100 text-center">
@@ -126,59 +210,43 @@ export default function EmployeeDashboard() {
               <div className="p-6 flex-1 flex flex-col items-center justify-center">
                 <div className="relative w-44 h-44 select-none">
                   <svg width="100%" height="100%" viewBox="0 0 100 100" className="transform -rotate-90">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="25"
-                      fill="transparent"
-                      stroke="#f97316"
-                      strokeWidth="50"
-                      strokeDasharray="157"
-                      strokeDashoffset="63.6"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="25"
-                      fill="transparent"
-                      stroke="#ef4444"
-                      strokeWidth="50"
-                      strokeDasharray="157"
-                      strokeDashoffset="123"
-                      transform="rotate(214.2 50 50)"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="25"
-                      fill="transparent"
-                      stroke="#2563eb"
-                      strokeWidth="50"
-                      strokeDasharray="157"
-                      strokeDashoffset="152.7"
-                      transform="rotate(350.28 50 50)"
-                    />
+                    {genderArcs.length === 0 ? (
+                      <circle cx="50" cy="50" r="25" fill="transparent" stroke="#e2e8f0" strokeWidth="50" />
+                    ) : (
+                      genderArcs.map((arc) => (
+                        <circle
+                          key={arc.name}
+                          cx="50"
+                          cy="50"
+                          r="25"
+                          fill="transparent"
+                          stroke={arc.color}
+                          strokeWidth="50"
+                          strokeDasharray={CIRCUMFERENCE}
+                          strokeDashoffset={arc.strokeDashoffset}
+                          transform={`rotate(${arc.rotation} 50 50)`}
+                        />
+                      ))
+                    )}
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <span className="text-xs font-black text-white bg-slate-900/40 px-2 py-0.5 rounded-full">
-                      59.5%
+                      {dominantGenderPct}
                     </span>
                   </div>
                 </div>
 
                 <div className="mt-6 flex flex-wrap justify-center gap-4 text-[11px] font-semibold text-slate-600">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                    <span>Error (2.7%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-                    <span>Female (37.8%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />
-                    <span>Male (59.5%)</span>
-                  </div>
+                  {genderArcs.length === 0 ? (
+                    <span className="text-slate-400">No data available.</span>
+                  ) : (
+                    genderArcs.map((arc) => (
+                      <div key={arc.name} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: arc.color }} />
+                        <span>{arc.name} ({formatPct(arc.percentage)})</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -193,44 +261,43 @@ export default function EmployeeDashboard() {
               <div className="p-6 flex-1 flex flex-col items-center justify-center">
                 <div className="relative w-44 h-44 select-none">
                   <svg width="100%" height="100%" viewBox="0 0 100 100" className="transform -rotate-90">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="25"
-                      fill="transparent"
-                      stroke="#2563eb"
-                      strokeWidth="50"
-                      strokeDasharray="157"
-                      strokeDashoffset="4.24"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="25"
-                      fill="transparent"
-                      stroke="#ef4444"
-                      strokeWidth="50"
-                      strokeDasharray="157"
-                      strokeDashoffset="152.76"
-                      transform="rotate(350.28 50 50)"
-                    />
+                    {statusArcs.length === 0 ? (
+                      <circle cx="50" cy="50" r="25" fill="transparent" stroke="#e2e8f0" strokeWidth="50" />
+                    ) : (
+                      statusArcs.map((arc) => (
+                        <circle
+                          key={arc.name}
+                          cx="50"
+                          cy="50"
+                          r="25"
+                          fill="transparent"
+                          stroke={arc.color}
+                          strokeWidth="50"
+                          strokeDasharray={CIRCUMFERENCE}
+                          strokeDashoffset={arc.strokeDashoffset}
+                          transform={`rotate(${arc.rotation} 50 50)`}
+                        />
+                      ))
+                    )}
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <span className="text-xs font-black text-white bg-slate-900/40 px-2 py-0.5 rounded-full">
-                      97.3%
+                      {dominantStatusPct}
                     </span>
                   </div>
                 </div>
 
                 <div className="mt-6 flex flex-wrap justify-center gap-4 text-[11px] font-semibold text-slate-600">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
-                    <span>Current (97.3%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-                    <span>Former (2.7%)</span>
-                  </div>
+                  {statusArcs.length === 0 ? (
+                    <span className="text-slate-400">No data available.</span>
+                  ) : (
+                    statusArcs.map((arc) => (
+                      <div key={arc.name} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: arc.color }} />
+                        <span>{arc.name} ({formatPct(arc.percentage)})</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -252,11 +319,23 @@ export default function EmployeeDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td colSpan={3} className="py-12 text-center text-xs text-slate-400 font-medium">
-                        No pending leave records found.
-                      </td>
-                    </tr>
+                    {!data || data.pendingLeave.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-12 text-center text-xs text-slate-400 font-medium">
+                          No pending leave records found.
+                        </td>
+                      </tr>
+                    ) : (
+                      data.pendingLeave.map((row) => (
+                        <tr key={row.leaveRequestId} className="border-b border-slate-50 last:border-0">
+                          <td className="py-3 text-left text-xs font-semibold text-slate-700">{row.employeeName}</td>
+                          <td className="py-3 text-center text-xs text-slate-500">{row.reason}</td>
+                          <td className="py-3 text-right text-xs text-slate-400 font-mono">
+                            {new Date(row.dateApplied).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

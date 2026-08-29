@@ -1,6 +1,7 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, Clock, Calendar, CheckCircle2, AlertCircle, PlusCircle, ArrowUpRight, Check, Briefcase } from 'lucide-react';
+import { TimesheetDashboardData } from '@/lib/dashboard/types';
 
 interface TimesheetLog {
   id: string;
@@ -13,12 +14,41 @@ interface TimesheetLog {
 }
 
 export default function TimesheetDashboard() {
+  const [dashboardData, setDashboardData] = useState<TimesheetDashboardData | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/dashboard/timesheet');
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to load timesheet data');
+        if (!cancelled) setDashboardData(json.data as TimesheetDashboardData);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [kpis, setKpis] = useState({
     approved: 42,
     pending: 8,
     rejected: 1,
     drafted: 3
   });
+
+  // Sync KPI tiles once real data arrives. The "Log Time" form below still
+  // adjusts this same local state optimistically for its own mock entries —
+  // see the Phase 16 README for the note on why the log feed itself (as
+  // opposed to the KPI/fill-rate widgets) isn't wired to a query.
+  useEffect(() => {
+    if (dashboardData) {
+      setKpis(dashboardData.kpis);
+    }
+  }, [dashboardData]);
 
   const [logs, setLogs] = useState<TimesheetLog[]>([
     { id: '1', employee: 'Rajesh Kumar', project: 'Global HR Migration', date: '10/07/2026', hours: 8, task: 'Database migration and schema optimization', status: 'Approved' },
@@ -76,13 +106,27 @@ export default function TimesheetDashboard() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const pieCards = [
+  // pieCards — percentage + "N of M" description come from real data once
+  // loaded; label/color keep the original cosmetic palette (matching the
+  // original mock's "good/warning" color coding) since fill_rate queries
+  // don't carry a semantic label of their own.
+  const fallbackPieCards = [
     { title: 'Timesheet Today', percentage: 92, label: 'Submitted On Time', color: '#10b981', desc: '48 of 52 employees submitted' },
     { title: 'Timesheet Yesterday', percentage: 98, label: 'Submitted On Time', color: '#10b981', desc: '51 of 52 employees submitted' },
     { title: 'Timesheet Current Week', percentage: 86, label: 'Approved In Advance', color: '#3b82f6', desc: 'Core milestones fulfilled' },
     { title: 'Timesheet Last Week', percentage: 100, label: 'Completed All Logs', color: '#10b981', desc: 'All billing hours cleared' },
     { title: 'Timesheet Current Month', percentage: 95, label: 'Fidelity Validated', color: '#f59e0b', desc: 'Audit verified with corporate' }
   ];
+
+  const pieCards = dashboardData
+    ? [
+        { ...fallbackPieCards[0], percentage: dashboardData.fillRates.today.percentage, desc: `${dashboardData.fillRates.today.filled} of ${dashboardData.fillRates.today.total} timesheets submitted` },
+        { ...fallbackPieCards[1], percentage: dashboardData.fillRates.yesterday.percentage, desc: `${dashboardData.fillRates.yesterday.filled} of ${dashboardData.fillRates.yesterday.total} timesheets submitted` },
+        { ...fallbackPieCards[2], percentage: dashboardData.fillRates.currentWeek.percentage, desc: `${dashboardData.fillRates.currentWeek.filled} of ${dashboardData.fillRates.currentWeek.total} timesheets submitted` },
+        { ...fallbackPieCards[3], percentage: dashboardData.fillRates.lastWeek.percentage, desc: `${dashboardData.fillRates.lastWeek.filled} of ${dashboardData.fillRates.lastWeek.total} timesheets submitted` },
+        { ...fallbackPieCards[4], percentage: dashboardData.fillRates.currentMonth.percentage, desc: `${dashboardData.fillRates.currentMonth.filled} of ${dashboardData.fillRates.currentMonth.total} timesheets submitted` },
+      ]
+    : fallbackPieCards;
 
   const kpiCards = [
     { label: 'TIMESHEETS APPROVED', value: kpis.approved, color: 'from-[#00b0ff] to-[#0091ea]', icon: CheckCircle2, desc: 'Locked and verified for payroll' },

@@ -2,7 +2,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { JOINING_TREND_DATA } from '../data/mockData';
 
-export default function LineChart() {
+export interface JoiningTrendDatum {
+  year: number;
+  count: number;
+}
+
+interface LineChartProps {
+  /** Real data from lib/dashboard; falls back to the original mock data when omitted. */
+  data?: JoiningTrendDatum[];
+}
+
+export default function LineChart({ data: dataProp }: LineChartProps = {}) {
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 500, height: 180 });
@@ -20,8 +30,10 @@ export default function LineChart() {
     return () => resizeObserver.disconnect();
   }, []);
 
-  const data = JOINING_TREND_DATA;
-  const maxVal = 200; // Y axis maximum as shown in the image
+  const data = dataProp && dataProp.length > 0 ? dataProp : JOINING_TREND_DATA;
+  // Y axis maximum: scale to the real data (rounded up to a clean multiple of 50),
+  // keeping the original mock chart's ceiling (200) as the minimum.
+  const maxVal = Math.max(200, Math.ceil((Math.max(0, ...data.map((d) => d.count)) + 1) / 50) * 50);
 
   const paddingLeft = 35;
   const paddingRight = 20;
@@ -33,7 +45,8 @@ export default function LineChart() {
 
   // Convert coordinate points
   const points = data.map((d, index) => {
-    const x = paddingLeft + (index / (data.length - 1)) * chartWidth;
+    // const x = paddingLeft + (index / (data.length - 1)) * chartWidth;
+    const x = data.length > 1 ? index * (chartWidth / (data.length - 1)) : chartWidth / 2;
     const y = paddingTop + chartHeight - (d.count / maxVal) * chartHeight;
     return { x, y, ...d };
   });

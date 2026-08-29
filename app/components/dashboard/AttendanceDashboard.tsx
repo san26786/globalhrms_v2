@@ -1,6 +1,7 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, Clock, FileCheck, Users, Play, ArrowRight, CheckCircle2, UserCheck, AlertTriangle, Sparkles } from 'lucide-react';
+import { AttendanceDashboardData } from '@/lib/dashboard/types';
 
 interface AttendanceLog {
   id: string;
@@ -12,12 +13,47 @@ interface AttendanceLog {
 }
 
 export default function AttendanceDashboard() {
+  const [dashboardData, setDashboardData] = useState<AttendanceDashboardData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/dashboard/attendance');
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to load attendance data');
+        if (!cancelled) setDashboardData(json.data as AttendanceDashboardData);
+      } catch (err: any) {
+        if (!cancelled) setLoadError(err?.message ?? 'Failed to load attendance data');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [kpis, setKpis] = useState({
     present: 74,
     absent: 2,
     earlyGoing: 5,
     lateEntry: 3
   });
+
+  // Sync KPI tiles once real data arrives. The Quick Punch Terminal below still
+  // adjusts this same local state optimistically for its own mock punches —
+  // see the "Auth assumption" / "not backed by a query" note in the Phase 16
+  // README regarding the live punch feed.
+  useEffect(() => {
+    if (dashboardData) {
+      setKpis({
+        present: dashboardData.kpis.presentToday,
+        absent: dashboardData.kpis.absentToday,
+        earlyGoing: dashboardData.kpis.earlyGoingToday,
+        lateEntry: dashboardData.kpis.lateEntryToday,
+      });
+    }
+  }, [dashboardData]);
 
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>([
     { id: '1', name: 'Rajesh Kumar', type: 'Present', time: '09:15 AM', status: 'On Time', avatar: 'RK' },
@@ -32,32 +68,42 @@ export default function AttendanceDashboard() {
   const [punchNote, setPunchNote] = useState('');
   const [showNotification, setShowNotification] = useState<string | null>(null);
 
-  // Stats
-  const topPresent = [
-    { name: 'Rajesh Kumar', count: 24 },
-    { name: 'Sandeep Yadav', count: 23 },
-    { name: 'Priya Sharma', count: 22 },
-    { name: 'Ananya Sen', count: 22 },
-    { name: 'Amit Patel', count: 21 },
-  ];
+  // Stats — populated from /api/dashboard/attendance; fall back to the
+  // original mock rows while the request is in flight so the layout never
+  // pops empty.
+  const topPresent = dashboardData?.topPresent.length
+    ? dashboardData.topPresent
+    : [
+        { name: 'Rajesh Kumar', count: 24 },
+        { name: 'Sandeep Yadav', count: 23 },
+        { name: 'Priya Sharma', count: 22 },
+        { name: 'Ananya Sen', count: 22 },
+        { name: 'Amit Patel', count: 21 },
+      ];
 
-  const topAbsent = [
-    { name: 'Vikram Singh', count: 3 },
-    { name: 'Sneha Reddy', count: 2 },
-    { name: 'Rohan Mehra', count: 1 },
-  ];
+  const topAbsent = dashboardData?.topAbsent.length
+    ? dashboardData.topAbsent
+    : [
+        { name: 'Vikram Singh', count: 3 },
+        { name: 'Sneha Reddy', count: 2 },
+        { name: 'Rohan Mehra', count: 1 },
+      ];
 
-  const topHalfDays = [
-    { name: 'Priya Sharma', count: 2 },
-    { name: 'Amit Patel', count: 1 },
-    { name: 'Sandeep Yadav', count: 1 },
-  ];
+  const topHalfDays = dashboardData?.topHalfDays.length
+    ? dashboardData.topHalfDays
+    : [
+        { name: 'Priya Sharma', count: 2 },
+        { name: 'Amit Patel', count: 1 },
+        { name: 'Sandeep Yadav', count: 1 },
+      ];
 
-  const earlyGoingList = [
-    { name: 'Sandeep Yadav', count: 2 },
-    { name: 'Priya Sharma', count: 2 },
-    { name: 'Amit Patel', count: 1 },
-  ];
+  const earlyGoingList = dashboardData?.earlyGoingLast7Days.length
+    ? dashboardData.earlyGoingLast7Days
+    : [
+        { name: 'Sandeep Yadav', count: 2 },
+        { name: 'Priya Sharma', count: 2 },
+        { name: 'Amit Patel', count: 1 },
+      ];
 
   const handlePunch = (e: React.FormEvent) => {
     e.preventDefault();

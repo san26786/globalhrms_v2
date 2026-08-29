@@ -2,11 +2,25 @@
 import React, { useState } from 'react';
 import { DEPT_ENGAGEMENT_DATA } from '@/data/mockData';
 
-export default function DonutChart() {
+export interface DonutDatum {
+  department: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+interface DonutChartProps {
+  /** Real data from lib/dashboard; falls back to the original mock data when omitted. */
+  data?: DonutDatum[];
+  title?: string;
+}
+
+export default function DonutChart({ data, title = 'Employee Engagement By Department' }: DonutChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  
-  const totalEmployees = 152;
-  
+
+  const chartData = data && data.length > 0 ? data : DEPT_ENGAGEMENT_DATA;
+  const totalEmployees = chartData.reduce((sum, d) => sum + d.count, 0);
+
   // SVG configuration
   const radius = 65;
   const strokeWidth = 24;
@@ -15,7 +29,7 @@ export default function DonutChart() {
 
   // Compute start/end angles for segments
   let accumulatedPercentage = 0;
-  const segments = DEPT_ENGAGEMENT_DATA.map((item, index) => {
+  const segments = chartData.map((item, index) => {
     const strokeDashoffset = circumference - (item.percentage / 100) * circumference;
     const rotation = (accumulatedPercentage / 100) * 360;
     accumulatedPercentage += item.percentage;
@@ -33,7 +47,7 @@ export default function DonutChart() {
     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col h-full">
       <div className="flex justify-between items-center mb-6">
         <h3 className="font-display font-semibold text-slate-800 text-base">
-          Employee Engagement By Department
+          {title}
         </h3>
         <button className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
           View Details
@@ -61,7 +75,7 @@ export default function DonutChart() {
               const isHovered = hoveredIndex === segment.index;
               return (
                 <circle
-                  key={segment.department}
+                  key={`${segment.department ?? 'unknown'}-${segment.index}`}
                   cx={center}
                   cy={center}
                   r={radius}
@@ -88,7 +102,9 @@ export default function DonutChart() {
               {activeSegment ? activeSegment.count : totalEmployees}
             </span>
             <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-1">
-              {activeSegment ? activeSegment.department.substring(0, 15) : 'Total'}
+              {activeSegment?.department
+                ? activeSegment.department.substring(0, 15)
+                : 'Total'}
             </span>
           </div>
         </div>
@@ -100,7 +116,7 @@ export default function DonutChart() {
               const isHovered = hoveredIndex === segment.index;
               return (
                 <div
-                  key={segment.department}
+                  key={segment.index}
                   className={`flex items-center justify-between p-1.5 rounded-lg transition-all duration-200 cursor-pointer ${
                     isHovered ? 'bg-slate-50 scale-[1.02]' : 'hover:bg-slate-50/50'
                   }`}

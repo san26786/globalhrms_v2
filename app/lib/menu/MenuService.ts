@@ -196,22 +196,22 @@ export async function getMenuTree(
 
   const rows = await queryMenuLevel(params);
 
-  const nodes: MenuNode[] = [];
-  for (const row of rows) {
-    const children =
-      row.CHILD_MSTR_ID != null
-        ? await getMenuTree({ ...params, parentId: row.CHILD_MSTR_ID }, depth + 1)
-        : [];
-
-    nodes.push({
-      id: row.REL_DET_ID,
-      name: row.MENU_NAME,
-      childMstrId: row.CHILD_MSTR_ID,
-      url: row.URL,
-      smallViewIcon: row.SMALL_VIEW_ICON,
-      children,
-    });
-  }
+  const nodes: MenuNode[] = await Promise.all(
+    rows.map(async (row) => {
+      const children =
+        row.CHILD_MSTR_ID != null
+          ? await getMenuTree({ ...params, parentId: row.CHILD_MSTR_ID }, depth + 1)
+          : [];
+      return {
+        id: row.REL_DET_ID,
+        name: row.MENU_NAME,
+        childMstrId: row.CHILD_MSTR_ID,
+        url: row.URL,
+        smallViewIcon: row.SMALL_VIEW_ICON,
+        children,
+      };
+    })
+  );
 
   return nodes;
 }

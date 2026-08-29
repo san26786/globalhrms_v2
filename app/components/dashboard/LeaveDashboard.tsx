@@ -1,6 +1,7 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, Clock, FileCheck, Users, PlusCircle, Calendar, Send, ShieldAlert, Sparkles } from 'lucide-react';
+import { LeaveDashboardData } from '@/lib/dashboard/types';
 
 interface LeaveRequest {
   id: string;
@@ -13,12 +14,46 @@ interface LeaveRequest {
 }
 
 export default function LeaveDashboard() {
+  const [dashboardData, setDashboardData] = useState<LeaveDashboardData | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/dashboard/leave');
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to load leave data');
+        if (!cancelled) setDashboardData(json.data as LeaveDashboardData);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [kpis, setKpis] = useState({
     paid: 12,
     unpaid: 2,
     sick: 4,
     lieu: 1
   });
+
+  // Sync KPI tiles once real data arrives. The "Apply Leave" form below still
+  // adjusts this same local state optimistically for its own mock submissions
+  // — see the Phase 16 README for the note on why the request feed itself
+  // (as opposed to the KPI/leaderboard widgets) isn't wired to a query.
+  useEffect(() => {
+    if (dashboardData) {
+      setKpis({
+        paid: dashboardData.kpis.paidToday,
+        unpaid: dashboardData.kpis.unpaidToday,
+        sick: dashboardData.kpis.sickToday,
+        lieu: dashboardData.kpis.lieuToday,
+      });
+    }
+  }, [dashboardData]);
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([
     { id: '1', name: 'Sandeep Yadav', type: 'Paid Leave', from: '11/07/2026', to: '14/07/2026', status: 'Pending', reason: 'Family function back home' },
@@ -34,24 +69,31 @@ export default function LeaveDashboard() {
   const [formReason, setFormReason] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Stats
-  const topPaid = [
-    { name: 'Ananya Sen', count: 18 },
-    { name: 'Rajesh Kumar', count: 14 },
-    { name: 'Priya Sharma', count: 12 },
-    { name: 'Sandeep Yadav', count: 10 },
-  ];
+  // Stats — populated from /api/dashboard/leave; fall back to the original
+  // mock rows while the request is in flight so the layout never pops empty.
+  const topPaid = dashboardData?.topPaid.length
+    ? dashboardData.topPaid
+    : [
+        { name: 'Ananya Sen', count: 18 },
+        { name: 'Rajesh Kumar', count: 14 },
+        { name: 'Priya Sharma', count: 12 },
+        { name: 'Sandeep Yadav', count: 10 },
+      ];
 
-  const topUnpaid = [
-    { name: 'Amit Patel', count: 4 },
-    { name: 'Sandeep Yadav', count: 2 },
-  ];
+  const topUnpaid = dashboardData?.topUnpaid.length
+    ? dashboardData.topUnpaid
+    : [
+        { name: 'Amit Patel', count: 4 },
+        { name: 'Sandeep Yadav', count: 2 },
+      ];
 
-  const topSick = [
-    { name: 'Priya Sharma', count: 5 },
-    { name: 'Amit Patel', count: 3 },
-    { name: 'Sandeep Yadav', count: 2 },
-  ];
+  const topSick = dashboardData?.topSick.length
+    ? dashboardData.topSick
+    : [
+        { name: 'Priya Sharma', count: 5 },
+        { name: 'Amit Patel', count: 3 },
+        { name: 'Sandeep Yadav', count: 2 },
+      ];
 
   const handleApplyLeave = (e: React.FormEvent) => {
     e.preventDefault();

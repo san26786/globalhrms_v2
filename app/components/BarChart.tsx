@@ -2,19 +2,34 @@
 import React, { useState } from 'react';
 import { SALARY_SLAB_DATA } from '@/data/mockData';
 
-export default function BarChart() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  
-  const maxValue = 300; // max scale in the image X-axis
+export interface SalarySlabDatum {
+  range: string;
+  count: number;
+}
 
-  // X-axis guide ticks
-  const ticks = [0, 50, 100, 150, 200, 250, 300];
+interface BarChartProps {
+  /** Real data from lib/dashboard; falls back to the original mock data when omitted. */
+  data?: SalarySlabDatum[];
+  title?: string;
+}
+
+export default function BarChart({ data, title = 'Average Employee Count under Salary Slab' }: BarChartProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const chartData = data && data.length > 0 ? data : SALARY_SLAB_DATA;
+
+  // Scale to the highest count in the data (rounded up to a clean multiple of 50),
+  // same minimum ceiling (300) the original mock-data chart used.
+  const rawMax = Math.max(0, ...chartData.map((d) => d.count));
+  const maxValue = Math.max(300, Math.ceil((rawMax + 1) / 50) * 50);
+  const tickStep = maxValue / 6;
+  const ticks = Array.from({ length: 7 }, (_, i) => Math.round(i * tickStep));
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col h-full">
       <div className="flex justify-between items-center mb-6">
         <h3 className="font-display font-semibold text-slate-800 text-base">
-          Average Employee Count under Salary Slab
+          {title}
         </h3>
         <button className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
           View Details
@@ -31,7 +46,7 @@ export default function BarChart() {
 
         {/* Chart Rows */}
         <div className="space-y-2.5 relative z-10 pr-10">
-          {SALARY_SLAB_DATA.map((slab, index) => {
+          {chartData.map((slab, index) => {
             const percentage = (slab.count / maxValue) * 100;
             const isHovered = hoveredIndex === index;
             
