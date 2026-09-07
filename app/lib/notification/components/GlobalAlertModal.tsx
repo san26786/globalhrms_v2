@@ -11,7 +11,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { alertManager, ModalState } from "@/lib/notification/alert";
+import { alertManager, ModalState } from "../alert";
 import { AlertTriangle, AlertCircle, Info, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 

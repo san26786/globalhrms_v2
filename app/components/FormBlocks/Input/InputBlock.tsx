@@ -131,24 +131,6 @@ export function InputBlock<
               })}
             />
           )}
-
-          {/* <Input
-            id={name}
-            type={type}
-            readOnly={readOnly}
-            accept={accept}
-            placeholder={placeholder}
-            value={!isFile ? value : undefined}
-            className={`${leadingAddon ? "rounded-l-none" : ""} ${
-              readOnly ? "bg-muted cursor-not-allowed" : ""
-            }`}
-            {...(isFile
-              ? { onChange }
-              : register(name, {
-                  ...(required && { required: `${label} is required` }),
-                  ...rules,
-                }))}
-          /> */}
         </div>
 
         {/* Preview */}
