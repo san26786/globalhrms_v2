@@ -6,7 +6,8 @@ export interface AccessTokenPayload {
   username: string;
   isAdmin: boolean;
   isSysAdmin: boolean;
-  oaBrandId: string | null; 
+  oaId: number | null;
+  oaBrandId: number | null;
 }
 
 export interface RefreshTokenPayload {

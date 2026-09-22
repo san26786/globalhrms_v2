@@ -18,5 +18,7 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ success: true });
   response.cookies.delete(authConfig.accessTokenCookie);
   response.cookies.delete(authConfig.refreshTokenCookie);
+  response.cookies.delete(authConfig.activeBrandCookie);
+
   return response;
 }

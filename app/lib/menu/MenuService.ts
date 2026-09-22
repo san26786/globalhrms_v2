@@ -35,7 +35,7 @@ const EXCLUDED_MSTR_CD_LIST: string[] = ['CMFE', 'IMFE', 'FMSTM', 'OMFE'];
 // being a tree), but this costs nothing when the data is well-formed.
 const MAX_DEPTH = 8;
 
-async function queryMenuLevel(params: MenuQueryParams): Promise<RawMenuRow[]> {
+export async function queryMenuLevel(params: MenuQueryParams): Promise<RawMenuRow[]> {
   const {
     isSysAdmin,
     oaBrandId,

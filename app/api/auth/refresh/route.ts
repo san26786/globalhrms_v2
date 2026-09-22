@@ -3,6 +3,7 @@ import { verifyRefreshToken, signAccessToken } from "@/lib/auth/jwt";
 import { findValidSession } from "@/lib/auth/session-repository";
 import { authConfig } from "@/lib/auth/authConfig";
 import { prisma } from "@/lib/prisma";
+import { parseActiveBrandCookie, resolveBrandAccess } from "@/lib/auth/activeBrand";
 
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get(authConfig.refreshTokenCookie)?.value;
@@ -25,12 +26,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false }, { status: 401 });
   }
 
+  // Keep a brand the user switched to, but only if they are still allowed to be in it.
+  let oaBrandId = user.OA_BRAND_ID;
+  const switchedTo = parseActiveBrandCookie(
+    request.cookies.get(authConfig.activeBrandCookie)?.value,
+    user.USER_ID
+  );
+  if (switchedTo !== null && switchedTo !== user.OA_BRAND_ID) {
+    const access = await resolveBrandAccess(
+      {
+        isSysAdmin: user.IS_SYSADMIN,
+        isAdmin: user.IS_ADMIN,
+        oaId: user.OA_ID,
+        oaBrandId: user.OA_BRAND_ID,
+      },
+      switchedTo
+    );
+    if (access.ok) oaBrandId = access.brand.id;
+  }
+
   const accessToken = signAccessToken({
     sub: String(user.USER_ID),
     username: user.USER_NAME,
     isAdmin: user.IS_ADMIN,
     isSysAdmin: user.IS_SYSADMIN,
-    oaBrandId: user.OA_BRAND_ID ? String(user.OA_BRAND_ID) : null,
+    oaId: user.OA_ID,
+    oaBrandId,
   });
 
   const response = NextResponse.json({ success: true });

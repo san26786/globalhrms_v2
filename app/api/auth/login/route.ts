@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       username: user.username,
       isAdmin: user.isAdmin,
       isSysAdmin: user.isSysAdmin,
-      oaBrandId: String(user.oaBrandId),
+      oaId: user.oaId,
+      oaBrandId: user.oaBrandId,
     });
 
     const refreshToken = signRefreshToken({ sub: user.id });
@@ -52,11 +53,13 @@ export async function POST(request: NextRequest) {
       ...authConfig.cookie,
       maxAge: 15 * 60,
     });
+    
     response.cookies.set(authConfig.refreshTokenCookie, refreshToken, {
       ...authConfig.cookie,
       maxAge: authConfig.refreshTokenExpiresInDays * 24 * 60 * 60,
     });
-
+        // A fresh login starts in the user's home brand; drop any brand choice left from an earlier session.
+    response.cookies.delete(authConfig.activeBrandCookie);
     return response;
   } catch (error) {
     console.error(error);

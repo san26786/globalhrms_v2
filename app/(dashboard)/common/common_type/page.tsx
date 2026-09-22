@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { common_type } from "../../../generated/prisma/client";
-import { columns } from "./components/commonTypeColumns";
-import { DataTable } from "./components/CommonTypeTable";
-import BreadcrumbHeader from "./components/BreadcrumbHeader";
+import { common_type } from "@/generated/prisma/client";
+import { columns } from "@/(dashboard)/common/common_type/components/commonTypeColumns";
+import { DataTable } from "@/(dashboard)/common/common_type/components/CommonTypeTable";
+import BreadcrumbHeader from "@/(dashboard)/common/common_type/components/BreadcrumbHeader";
 
 const columnSettings = [
   { systemName: "TYP_ID", displayName: "Type ID", visibleInList: true, visibleInForm: true },
