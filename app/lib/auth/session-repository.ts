@@ -32,8 +32,9 @@ export async function findValidSession(refreshToken: string) {
 }
 
 export async function revokeSession(refreshToken: string) {
-  return prisma.auth_refresh_session.update({
-    where: { TOKEN_HASH: hashToken(refreshToken) },
+  // updateMany: a missing/already-revoked row is not an error (logout must always succeed).
+  return prisma.auth_refresh_session.updateMany({
+    where: { TOKEN_HASH: hashToken(refreshToken), REVOKED_AT: null },
     data: { REVOKED_AT: new Date() },
   });
 }

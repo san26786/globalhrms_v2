@@ -30,10 +30,7 @@ export interface DynamicField {
   label: string;
   type: string;
 
-  options?: {
-    label: string;
-    value: string;
-  }[];
+  options?: SelectOption[];
 
   placeholder?: string;
 

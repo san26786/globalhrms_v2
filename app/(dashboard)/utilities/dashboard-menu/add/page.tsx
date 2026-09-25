@@ -81,6 +81,7 @@ export default function AddDashboardMenuPage() {
     <div className="space-y-4">
       <DynamicForm
         form={form}
+        breadcrumb={['Utilities', 'Dashboard Menu']}
         title="Add New Create Menu"
         mode="add"
         fields={fields}

@@ -13,7 +13,8 @@ export async function findHeaderUser(userId: number) {
       IS_DELETED: true,
       OA_ID: true,
       OA_BRAND_ID: true,
-      LAST_LOGIN_AT: true,
+      // LAST_LOGIN_AT is NOT read here: it is NULL for users who never logged in (Prisma would throw);
+      // the header shows the previous login carried in the access token (claim pla).
       NOTIFY_COUNT: true,
     },
   });
@@ -27,8 +28,17 @@ const ACTIVE_BRAND = {
 export async function findBrand(oaBrandId: number) {
   return prisma.oa_brands.findUnique({
     where: { OA_BRAND_ID: oaBrandId },
-    select: { OA_BRAND_ID: true, OA_BRAND_NM: true },
+    select: { OA_BRAND_ID: true, OA_BRAND_NM: true, OA_BRAND_LOGO: true },
   });
+}
+
+/** CI org_accounts_m::getOrgAccountType(OA_ID) → master code (OATP partner, OATACC accountant, …). */
+export async function findOrgAccountTypeCode(oaId: number | null): Promise<string | null> {
+  if (oaId === null) return null;
+  const org = await prisma.org_accounts.findFirst({ where: { OA_ID: oaId }, select: { OA_ACC_TYPE: true } });
+  if (!org?.OA_ACC_TYPE) return null;
+  const master = await prisma.independent_mst.findFirst({ where: { MSTR_ID: org.OA_ACC_TYPE }, select: { MSTR_CD: true } });
+  return master?.MSTR_CD ?? null;
 }
 
 /** System admin: any active brand. Admin: active brands of their own organisation account. */

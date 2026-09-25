@@ -86,42 +86,35 @@ import { assertCanManageDashboardMenu, DashboardMenuAccessDeniedError } from '@/
 import { dashboardMenuService } from '@/lib/dashboard-menu/dashboardMenuService';
 import { IconUploadError } from '@/lib/dashboard-menu/iconUpload';
 import { createDashboardMenuSchema } from '@/validations/dashboardMenu.schema';
-import { getTableDtl, type TableDtlSession } from '@/lib/table-builder/getTableDtl';
+import { getTableDtl, toTableDtlSession } from '@/lib/table-builder/getTableDtl';
 import type { DashboardMenuListItem } from '@/lib/dashboard-menu/types';
 import { buildListColumns } from '@/lib/dashboard-menu/listColumns';
 
 /**
- * `subject` is whatever getSubjectFromRequest()/assertCanManageDashboardMenu()
- * already resolve for auth — reuse it instead of a second session lookup.
- * TODO: swap the field names below for whatever your `subject` actually
- * carries (role/claims). Mirrors CI's
- * $this->session->userdata('is_admin' | 'oaID' | 'oaBrandID' | 'user_id').
+ * Raw menu_config_vw row. Only the visible-for-listview columns are selected,
+ * so every field may be absent. Note the view's column is lowercase
+ * `sequence` (inherited from menu_config), not `SEQUENCE`.
  */
-
-/** menu_config_vw row -> DashboardMenuListItem (matches lib/dashboard-menu/types.ts). */
-function toListItem(row: Record<string, any>): DashboardMenuListItem {
-  return {
-    id: Number(row.ID),
-    mstrId: Number(row.MSTR_ID),
-    menuName: row.MENU_NM,
-    url: row.URL,
-    sequence: row.SEQUENCE != null ? Number(row.SEQUENCE) : null,
-    showTab: Boolean(Number(row.SHOW_TAB)),
-    showMenu: Boolean(Number(row.SHOW_MENU)),
-  };
+interface MenuConfigVwRow {
+  ID?: number;
+  MSTR_ID?: number | null;
+  MENU_NM?: string | null;
+  URL?: string;
+  sequence?: number | null;
+  SHOW_TAB?: number;
+  SHOW_MENU?: number;
 }
 
-/**
- * `subject` is whatever getSubjectFromRequest()/assertCanManageDashboardMenu()
- * already resolve for auth — reuse it instead of a second session lookup.
- * Mirrors CI's $this->session->userdata('is_admin' | 'oaID' | 'oaBrandID' | 'user_id').
- */
-function toTableDtlSession(subject: any): TableDtlSession {
+/** menu_config_vw row -> DashboardMenuListItem (matches lib/dashboard-menu/types.ts). */
+function toListItem(row: MenuConfigVwRow): DashboardMenuListItem {
   return {
-    isAdmin: (subject.isAdmin ?? subject.is_admin ?? 0) as 0 | 1 | 2,
-    oaId: subject.oaId ?? subject.orgId ?? null,
-    oaBrandId: subject.oaBrandId ?? subject.orgBrandId ?? null,
-    userId: subject.userId ?? subject.id ?? null,
+    id: Number(row.ID),
+    mstrId: Number(row.MSTR_ID ?? 0),
+    menuName: row.MENU_NM ?? '',
+    url: row.URL ?? '',
+    sequence: row.sequence != null ? Number(row.sequence) : null,
+    showTab: Number(row.SHOW_TAB) === 1,
+    showMenu: Number(row.SHOW_MENU) === 1,
   };
 }
 
@@ -142,13 +135,11 @@ export async function GET(req: NextRequest) {
     const session = toTableDtlSession(subject);
     const { searchParams } = new URL(req.url);
 
-    const result = await getTableDtl<Record<string, any>>({
+    // No org/user scoping columns: menu_config_vw is system-wide menu
+    // configuration and has no OA_BRAND_ID / CREATED_BY columns to filter on.
+    const result = await getTableDtl<MenuConfigVwRow>({
       objNm: 'menu_config_vw',
       primaryKeyColumn: 'ID',
-      orgColumnName: 'OA_BRAND_ID',
-      orgId: session.oaBrandId,
-      userColumnName: 'CREATED_BY',
-      userId: session.userId,
       session,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,

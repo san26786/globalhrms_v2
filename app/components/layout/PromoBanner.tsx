@@ -1,4 +1,8 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const BANNER_IMAGES = [
   'applicant-management.jpg',
@@ -14,45 +18,46 @@ const BANNER_IMAGES = [
   'train-skill-and-awards.jpg',
 ];
 
+/** CI: <div class="carousel fade" data-ride="carousel" data-interval="2500">, no controls. */
+const INTERVAL_MS = 2500;
+
 /**
- * Ported from the banner_visible carousel block. Source picked the org
- * logo via three branches (survey page / brand admin / super admin
- * fallback) — call site decides which logoUrl to pass in rather than
- * this component re-deriving the branch, since that logic depends on
- * whether this is a survey feedback page (a routing concern, not a
- * layout concern).
+ * Port of header_v.php's banner_visible block (brand setting SSAABV): Global HR logo linking to
+ * the dashboard, the product carousel, and the company logo chosen by the header service
+ * (brand logo / CI default / Geecon for the super admin).
  */
 export function PromoBanner({ logoUrl, logoAlt }: { logoUrl: string; logoAlt: string }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setIndex((i) => (i + 1) % BANNER_IMAGES.length), INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className="slider-div container-fluid">
-      <div className="row banner justify-content-around align-items-center">
-        <div className="text-center col-md-2 col-xs-12">
-          <a href="/dashboard">
+    <div className="bg-white border-b border-slate-100 px-4 py-3">
+      <div className="flex flex-col md:flex-row items-center justify-around gap-4">
+        <Link href="/dashboard" className="shrink-0 md:w-1/6 flex justify-center">
+          <Image src="/img/global-hr-logo-header-2.png" alt="Global HR" width={200} height={60} className="h-auto max-h-16 w-auto" />
+        </Link>
+
+        <div className="relative w-full md:w-2/3 aspect-[900/220] overflow-hidden rounded-xl" aria-hidden="true">
+          {BANNER_IMAGES.map((file, i) => (
             <Image
-              src="/img/global-hr-logo-header-2.png"
-              alt="Global HR"
-              width={200}
-              height={60}
-              className="img-fluid"
-            />
-          </a>
-        </div>
-        <div className="text-center col-md-8 col-xs-12">
-          {/* TODO: source used a Bootstrap carousel with a 2.5s interval
-              and no controls; swap in a lightweight carousel lib or a
-              small client component if fade/interval behavior matters. */}
-          <div className="carousel-static-first-slide">
-            <Image
-              src={`/img/banner/${BANNER_IMAGES[0]}`}
+              key={file}
+              src={`/img/banner/${file}`}
               alt=""
-              width={900}
-              height={220}
-              className="d-block img-fluid"
+              fill
+              sizes="(min-width: 768px) 66vw, 100vw"
+              priority={i === 0}
+              className={`object-contain transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
             />
-          </div>
+          ))}
         </div>
-        <div className="text-center col-md-2 col-xs-12 companyLogo">
-          <Image src={logoUrl} alt={logoAlt} width={150} height={100} className="img-fluid" />
+
+        <div className="shrink-0 md:w-1/6 flex justify-center">
+          {/* unoptimized: the brand logo is served by an authenticated route, not a static file */}
+          <Image src={logoUrl} alt={logoAlt} width={150} height={100} unoptimized className="h-auto max-h-20 w-auto object-contain" />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
-import React from "react";
+import ModuleSyncForm from "@/components/common/module-sync-form";
 
+/** CI common/modulesync — "Sync Employee Details". */
 export default function ModuleSyncPage() {
-  return <div>Module Sync Page</div>;
+  return <ModuleSyncForm />;
 }

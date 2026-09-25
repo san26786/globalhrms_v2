@@ -16,7 +16,8 @@ interface SelectBlockProps {
   label: string;
   name: string;
   control: any;
-  options: { label: string; value: string }[];
+  /** Values may be ids (numbers); Radix Select works on strings, so they are stringified here. */
+  options: { label: string; value: string | number }[];
   placeholder?: string;
   rules?: {
     required?: string | boolean;
@@ -48,7 +49,7 @@ export function SelectField({
         render={({ field }) => (
           <Select
             onValueChange={field.onChange}
-            value={field.value || ""}
+            value={field.value === undefined || field.value === null ? "" : String(field.value)}
           >
             <SelectTrigger
               id={name}
@@ -59,8 +60,8 @@ export function SelectField({
             <SelectContent className="max-h-60">
               {options.map((option) => (
                 <SelectItem
-                  key={option.value}
-                  value={option.value}
+                  key={String(option.value)}
+                  value={String(option.value)}
                   className="py-2"
                 >
                   {option.label}

@@ -50,6 +50,10 @@ export interface HeaderSession {
   menuConfigId?: number | null;
   globalSettingsConfigId?: number | null;
   autoLogoutMs?: number | null;
+  /** CI banner_visible (setting SSAABV): show the promo banner under the header. */
+  bannerVisible?: boolean;
+  /** Active brand logo (CI images/organisationLogo/{OA_BRAND_LOGO}); sysadmin: Geecon logo. */
+  brandLogoUrl?: string | null;
   punch?: PunchState | null;
   alerts: { count: number; recent: HeaderAlert[] };
 }
@@ -66,9 +70,6 @@ export const DEFAULT_MAIN_BG = '#e15425';
 
 export const isSuperAdmin = (s: HeaderSession) => s.userLevel === 2;
 export const isAdminOrAbove = (s: HeaderSession) => s.userLevel !== 0;
-
-/** CI href fragments are relative ('user/profile'); Next paths need a leading slash. */
-export const toAppPath = (p: string) => (p.startsWith('/') ? p : `/${p}`);
 
 const pad = (n: number) => String(n).padStart(2, '0');
 

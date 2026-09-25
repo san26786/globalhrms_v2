@@ -1,68 +1,52 @@
 /**
  * app/lib/permission/permissionRepository.ts
  *
- * Domain-facing data access. Talks only to permissionQueries.ts (never to Prisma directly),
- * so the service layer never has to know about `findMany`/`select` shapes.
+ * Domain-facing data access for authorization. Talks to permissionQueries.ts and to the
+ * permission-class resolver (lib/menu/PermissionClass.ts — the port of CI get_permission_class).
  */
+import { resolvePermissionsClassId } from '@/lib/menu/PermissionClass';
 import {
-  queryActiveRoleIdsForUser,
-  queryPermissionDtlByRefs,
-  queryPermissionDtlForRoles,
-  queryPermissionDtlForUserDirect,
-  queryPermissionDtlById,
+  queryFunctionGrants,
+  queryMenuResourceIdsByUrl,
   queryUserForPermissionCheck,
 } from './permissionQueries';
-import { PermissionRefType } from './permissionTypes';
 import type { PermissionDtlRow, PermissionSubject } from './permissionTypes';
 
+/**
+ * The permission class is resolved once per subject object. The subject is built fresh for each
+ * request (lib/auth/getSubject.ts), so this is a per-request cache that cannot go stale.
+ */
+const classCache = new WeakMap<PermissionSubject, Promise<number | null>>();
+
 export class PermissionRepository {
-  /** Active role ids for a user (via user_role, IS_DELETED = 0). */
-  async getActiveRoleIds(userId: number): Promise<number[]> {
-    return queryActiveRoleIdsForUser(userId);
+  async getPermissionsClassId(subject: PermissionSubject): Promise<number | null> {
+    if (!subject.oaBrandId) return null;
+    let pending = classCache.get(subject);
+    if (!pending) {
+      pending = resolvePermissionsClassId(subject.oaBrandId, subject.userId).then(
+        (r) => r.permissionsClassId,
+      );
+      classCache.set(subject, pending);
+    }
+    return pending;
   }
 
-  /**
-   * Every permission_dtl row that could possibly apply to this user for the given resource:
-   * role-based grants (via their active roles) + any direct per-user override rows.
-   * Pass `resourceId` to narrow to one resource; omit it to load the user's full permission set
-   * (e.g. for rendering a menu/nav where you need every resource at once).
-   */
-  async getApplicableRows(userId: number, resourceId?: number): Promise<PermissionDtlRow[]> {
-    const roleIds = await this.getActiveRoleIds(userId);
-
-    const [roleRows, userRows] = await Promise.all([
-      queryPermissionDtlByRefs(PermissionRefType.ROLE, roleIds, resourceId),
-      queryPermissionDtlByRefs(PermissionRefType.USER, [userId], resourceId),
-    ]);
-
-    return [...roleRows, ...userRows];
+  async getFunctionGrants(
+    permissionsClassId: number,
+    oaBrandId: number,
+    resourceIds?: number[],
+  ): Promise<PermissionDtlRow[]> {
+    return queryFunctionGrants(permissionsClassId, oaBrandId, resourceIds);
   }
 
-  /** All rows for a user's full set of active roles, unfiltered by resource. */
-  async getAllRoleGrantedRows(userId: number): Promise<PermissionDtlRow[]> {
-    const roleIds = await this.getActiveRoleIds(userId);
-    return queryPermissionDtlForRoles(roleIds);
+  async getMenuResourceIds(urlPrefix: string): Promise<number[]> {
+    return queryMenuResourceIdsByUrl(urlPrefix.replace(/^\/+/, ''));
   }
 
-  /** All rows granted directly to the user (per-user overrides), unfiltered by resource. */
-  async getAllUserGrantedRows(userId: number): Promise<PermissionDtlRow[]> {
-    return queryPermissionDtlForUserDirect(userId);
-  }
-
-  async getRowById(id: number): Promise<PermissionDtlRow | null> {
-    return queryPermissionDtlById(id);
-  }
-
-  /**
-   * Builds a PermissionSubject (admin flags + tenant scope) for a userId. This is the one place
-   * that reaches into user_mst on behalf of the permission engine — Phase 13 auth should already
-   * have this data on the session/JWT payload, in which case prefer calling
-   * `permissionEngine` with a subject you already built rather than round-tripping to the DB.
-   */
+  /** Builds a PermissionSubject from the database (for call sites that only have a userId). */
   async getSubject(userId: number): Promise<PermissionSubject | null> {
     const user = await queryUserForPermissionCheck(userId);
     if (!user || user.IS_DELETED) return null;
-
     return {
       userId: user.USER_ID,
       isAdmin: user.IS_ADMIN,

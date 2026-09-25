@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { headerConfig } from '@/lib/header/headerConfig';
+import { getBrandContext, hasApprovedOutdoorOn } from '@/lib/session/brandContext';
 import {
   findAttendanceEmployeeId,
   findOpenRecord,
@@ -47,6 +48,18 @@ export async function getPunchSnapshot(userId: number, clock: PunchClock): Promi
   return { attndEmpId, isPunchedIn: status === ids.punchIn };
 }
 
+/**
+ * CI login: punchDisable = brand setting SSADPBTM (default 'no'); when SSAAWPFAO is 'yes', an
+ * approved outdoor entry covering today re-enables the button. 'no' → interactive button,
+ * anything else → read-only status badge.
+ */
+export async function getHeaderPunchMode(userId: number, oaBrandId: number, clock: PunchClock): Promise<'interactive' | 'readonly'> {
+  const brand = await getBrandContext(oaBrandId);
+  if (!brand.punchButtonDisabled) return 'interactive';
+  if (brand.webPunchForApprovedOutdoor && (await hasApprovedOutdoorOn(userId, clock.dayStart))) return 'interactive';
+  return 'readonly';
+}
+
 export interface PunchParams {
   action: PunchAction;
   userId: number;
@@ -62,12 +75,13 @@ const minutesBetween = (a: Date, b: Date) => Math.abs(a.getTime() - b.getTime())
 export async function punch(params: PunchParams): Promise<PunchResult> {
   const { action, userId, oaId, oaBrandId, clock } = params;
 
-  if (headerConfig.punchMode !== 'interactive') {
-    return { ok: false, code: 'DISABLED', message: 'Punching is not enabled.' };
-  }
   if (oaBrandId === null) {
     return { ok: false, code: 'NO_ACTIVE_BRAND', message: 'No active brand on your session.' };
   }
+  if ((await getHeaderPunchMode(userId, oaBrandId, clock)) !== 'interactive') {
+    return { ok: false, code: 'DISABLED', message: 'Punching is not enabled.' };
+  }
+  const minGapMinutes = (await getBrandContext(oaBrandId)).punchMinGapMinutes;
 
   const [attndEmpId, ids] = await Promise.all([findAttendanceEmployeeId(userId), getPunchStatusIds()]);
   if (attndEmpId === null) {
@@ -119,7 +133,7 @@ export async function punch(params: PunchParams): Promise<PunchResult> {
     }
 
     // CI checkForPunchDiff(): refuse a punch-out too soon after the punch-in.
-    const min = headerConfig.punchMinGapMinutes;
+    const min = minGapMinutes;
     if (min > 0 && open.PUNCH_IN_USER_TIME && minutesBetween(open.PUNCH_IN_USER_TIME, clock.userTime) < min) {
       return {
         ok: false,

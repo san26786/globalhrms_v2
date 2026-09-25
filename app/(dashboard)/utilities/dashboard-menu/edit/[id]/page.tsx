@@ -86,6 +86,7 @@ export default function EditDashboardMenuPage() {
     <div className="space-y-4">
       <DynamicForm
         form={form}
+        breadcrumb={['Utilities', 'Dashboard Menu']}
         title="Edit Menu"
         mode="edit"
         fields={fields}

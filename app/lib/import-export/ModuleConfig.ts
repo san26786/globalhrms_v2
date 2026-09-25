@@ -174,13 +174,14 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
   "config-mapping": {
     entity: "config-mapping",
     table: "config_mapping_dtl",
-    primaryKey: "CNFG_MPPNG_ID",
-    importPolicy: "upsert",
+    primaryKey: "CNFG_MPPNG_DTL_ID",
+    importPolicy: "insert",
+    // Real config_mapping_dtl columns (the previous CNFG_MPPNG_ID / CNFG_CD / … columns do not exist).
+    defaults: () => Promise.resolve({ IS_DELETED: 0, UPDATED_ON: new Date() }),
     fields: [
-      { key: "CNFG_MPPNG_ID", label: "Mapping ID", type: "number", required: true, unique: true },
-      { key: "CNFG_CD", label: "Config Code", type: "string", required: true },
-      { key: "CNFG_NM", label: "Config Name", type: "string", required: true },
-      { key: "CNFG_VAL", label: "Config Value", type: "string" }
+      { key: "SRC_ENTTY_ID", label: "Source Entity ID", type: "number", required: true },
+      { key: "TRGT_ENTTY_ID", label: "Target Entity ID", type: "number", required: true },
+      { key: "CNFG_MPPNG_TYP_ID", label: "Mapping Type ID", type: "number" }
     ]
   }
 };

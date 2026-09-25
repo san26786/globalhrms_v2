@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { authConfig } from "./authConfig";
 
@@ -8,10 +9,17 @@ export interface AccessTokenPayload {
   isSysAdmin: boolean;
   oaId: number | null;
   oaBrandId: number | null;
+  /** concurrent_login_details.SESSION_ID of this login (CI session my_session_id). */
+  sid?: string;
+  /** ISO time of the login BEFORE this one (CI session lastLoginAt, shown as "Logged in at"). */
+  pla?: string | null;
 }
 
 export interface RefreshTokenPayload {
   sub: string;
+  sid?: string;
+  /** Carried so a refreshed access token keeps the previous-login time. */
+  pla?: string | null;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {
@@ -31,6 +39,8 @@ export function verifyAccessToken(token: string): AccessTokenPayload | null {
 export function signRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, authConfig.refreshTokenSecret, {
     expiresIn: authConfig.refreshTokenExpiresInSeconds,
+    // Unique per token: rotation may sign twice within one second (TOKEN_HASH is unique).
+    jwtid: crypto.randomUUID(),
   });
 }
 

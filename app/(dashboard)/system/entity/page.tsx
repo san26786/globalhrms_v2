@@ -1,8 +1,6 @@
+import { redirect } from "next/navigation";
+
+/** Legacy placeholder route — the Entity module lives at /entity/entity_obj (CI entity/entity_obj). */
 export default function SystemEntityPage() {
-  return (
-    <div className="p-6 text-left">
-      <h1 className="text-xl font-bold text-slate-800">System Entity</h1>
-      <p className="text-slate-500 mt-2">Under construction.</p>
-    </div>
-  );
+  redirect("/entity/entity_obj");
 }

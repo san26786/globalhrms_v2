@@ -49,6 +49,8 @@ export interface BulkAction<TData> {
 /** Server-side pagination/sorting/filtering hook-up. Omit for fully client-side tables. */
 export interface ServerSideState {
   pageCount: number;
+  /** Total matching rows reported by the server (shown in the pagination footer). */
+  totalRows?: number;
   onPaginationChange: (pagination: PaginationState) => void;
   onSortingChange?: (sorting: SortingState) => void;
   onGlobalFilterChange?: (value: string) => void;
@@ -84,7 +86,8 @@ export interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
   getRowId?: (row: TData, index: number) => string;
   className?: string;
-  entity: string;
+  /** Module slug (kept for existing callers; not required). */
+  entity?: string;
   search?: string;
 }
 

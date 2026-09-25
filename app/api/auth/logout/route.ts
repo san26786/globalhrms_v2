@@ -1,17 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revokeSession } from "@/lib/auth/session-repository";
-import { markLogout } from "@/lib/auth/auth-repository";
 import { verifyRefreshToken } from "@/lib/auth/jwt";
 import { authConfig } from "@/lib/auth/authConfig";
+import { endLoginSession } from "@/lib/auth/session-activity";
+import { withPublicApi } from "@/lib/http/withApi";
 
-export async function POST(request: NextRequest) {
-  const refreshToken = request.cookies.get(authConfig.refreshTokenCookie)?.value;
+/**
+ * CI login/login/logout: session offline (IS_ONLINE = 0 for this session), concurrent count
+ * recomputed, session destroyed. Always clears the cookies, even if bookkeeping fails.
+ */
+export const POST = withPublicApi(async ({ req }) => {
+  const refreshToken = req.cookies.get(authConfig.refreshTokenCookie)?.value;
+  const payload = refreshToken ? verifyRefreshToken(refreshToken) : null;
 
-  if (refreshToken) {
-    const payload = verifyRefreshToken(refreshToken);
-    if (payload) {
+  if (refreshToken && payload) {
+    try {
       await revokeSession(refreshToken);
-      await markLogout(Number(payload.sub));
+      await endLoginSession(Number(payload.sub), payload.sid);
+    } catch (error) {
+      console.error("[auth] logout bookkeeping failed", error);
     }
   }
 
@@ -19,6 +26,5 @@ export async function POST(request: NextRequest) {
   response.cookies.delete(authConfig.accessTokenCookie);
   response.cookies.delete(authConfig.refreshTokenCookie);
   response.cookies.delete(authConfig.activeBrandCookie);
-
   return response;
-}
+});

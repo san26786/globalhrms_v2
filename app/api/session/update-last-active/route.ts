@@ -1,20 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { withApi } from '@/lib/http/withApi';
 import { getAccessPayload } from '@/lib/auth/getAccessPayload';
 import { touchLastActive } from '@/lib/auth/session-activity';
 
 /**
- * Port of login/login/updateUserLastActive. Called every 8 minutes by the header.
- * Replaces the earlier stub that read a CookieSessionReader this project doesn't use.
+ * Port of login/login/updateUserLastActive (called every 8 minutes by the header): keeps this
+ * browser's concurrent_login_details row alive so the 20-minute idle rule does not expire it.
  */
-export async function POST(request: NextRequest) {
-  const payload = getAccessPayload(request);
-  if (!payload) return NextResponse.json({ ok: false }, { status: 401 });
-
-  try {
-    await touchLastActive(Number(payload.sub));
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('Last-active update failed:', error);
-    return NextResponse.json({ ok: false }, { status: 500 });
-  }
-}
+export const POST = withApi(async ({ req, subject }) => {
+  const sid = getAccessPayload(req)?.sid;
+  const updated = await touchLastActive(subject.userId, sid);
+  return { ok: true, updated };
+});

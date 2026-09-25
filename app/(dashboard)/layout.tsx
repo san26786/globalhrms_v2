@@ -1,92 +1,105 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import RouteGuard from "@/components/layout/RouteGuard";
+import { NavigationProvider, useNavigation } from "@/lib/navigation/NavigationContext";
+import { useHeaderSession } from "@/lib/header/useHeaderSession";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
+/**
+ * Dashboard shell — CI include/main_page_v: header_v + left_menu_v + page body + footer_v.
+ * The header session (brand, level, punch, alerts) is loaded once and shared with the sidebar;
+ * the menu and the active location come from NavigationProvider.
+ */
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeMenu, setActiveMenu] = useState("Dashboard"); // sensible default
-  const [activeSubMenu, setActiveSubMenu] = useState<string | undefined>(undefined);
-  const [activeBrand, setActiveBrand] = useState("Global HR India Ltd");
+// CI left_menu_v: localStorage 'ghr_sidebar_expanded' = 'true' when the sidebar is expanded.
+const SIDEBAR_KEY = "ghr_sidebar_expanded";
+const SIDEBAR_EVENT = "ghr-sidebar-change";
 
-  // TODO: replace with real user data from your auth/session context
-  const username = "Admin User";
+function readSidebarExpanded(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) !== "false"; // default: expanded
+  } catch {
+    return true;
+  }
+}
 
-  const handleSelectMenu = (menu: string, subMenu?: string) => {
-    setActiveMenu(menu);
-    setActiveSubMenu(subMenu);
-
-    if (subMenu === "Bank Account Details") {
-      router.push("/bank-manager/bank-details");
-    } else if (subMenu === "Bank Transaction") {
-      router.push("/bank-manager/bank-transaction");
-    } else if (subMenu === "Bank Statement Setting") {
-      router.push("/bank-manager/bank-statement-setting");
-    } else if (subMenu === "Bank Name Master") {
-      router.push("/bank-manager/bank-name-master");
-    } else if (subMenu === "Common Type") {
-      router.push("/common/common_type");
-    } else if (subMenu === "Employee Dashboard") {
-      router.push("/dashboard");
-    } else if (subMenu === "Attendance Dashboard") {
-      router.push("/dashboard/attendance");
-    } else if (subMenu === "Leave Dashboard") {
-      router.push("/dashboard/leave");
-    } else if (subMenu === "Timesheet Dashboard") {
-      router.push("/dashboard/timesheet");
-    } else if (subMenu === "Employee Manager") {
-      router.push("/employee-hub/employee-manager");
-    } else if (subMenu === "Team Employee Manager") {
-      router.push("/employee-hub/team-employee-manager");
-    }
+function subscribeSidebar(callback: () => void): () => void {
+  window.addEventListener("storage", callback);
+  window.addEventListener(SIDEBAR_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SIDEBAR_EVENT, callback);
   };
+}
 
-  const handleLogout = () => {
-    // TODO: clear session/auth token here
-    router.push("/login");
-  };
+function setSidebarExpanded(expanded: boolean) {
+  try {
+    localStorage.setItem(SIDEBAR_KEY, String(expanded));
+  } catch {
+    // storage unavailable (private mode): the toggle still works for this page view
+  }
+  window.dispatchEvent(new Event(SIDEBAR_EVENT));
+}
+
+/** CI header_v <title><?php echo $title ?></title>: the active menu item's name. */
+function DocumentTitle() {
+  const { activeTrail } = useNavigation();
+  const leaf = activeTrail[activeTrail.length - 1];
+  useEffect(() => {
+    document.title = leaf ? `${leaf.name} | Global HR` : "Global HR";
+  }, [leaf]);
+  return null;
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const headerState = useHeaderSession();
+  const expanded = useSyncExternalStore(subscribeSidebar, readSidebarExpanded, () => true);
+  const isSidebarCollapsed = !expanded;
+  const toggleSidebar = useCallback(() => setSidebarExpanded(!readSidebarExpanded()), []);
+
+  // Ctrl/⌘ + B toggles the sidebar (shown on the collapse button).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [toggleSidebar]);
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
-      {/* Sidebar */}
+      <DocumentTitle />
       <Sidebar
         isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        activeMenu={activeMenu}
-        activeSubMenu={activeSubMenu}
-        onSelectMenu={handleSelectMenu}
-        activeBrand={activeBrand}
+        onToggleCollapse={toggleSidebar}
+        activeBrand={headerState.session.activeBrand?.name}
       />
 
-      {/* Main Content */}
       <div
         className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ${
-          isSidebarCollapsed ? "ml-20" : "ml-64"
+          isSidebarCollapsed ? "ml-24" : "ml-64"
         }`}
       >
-        {/* Header */}
-        <Header
-          isSidebarCollapsed={isSidebarCollapsed}
-          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          activeMenu={activeMenu}
-          onSelectMenu={handleSelectMenu}
-          onLogout={handleLogout}
-          username={username}
-          activeBrand={activeBrand}
-          onBrandChange={setActiveBrand}
-        />
+        {/* The header performs the logout request itself; nothing else to clear here. */}
+        <Header sessionState={headerState} onLogout={() => undefined} />
 
-        {/* Page Content */}
-        <main className="p-2">{children}</main>
+        <main className="p-2">
+          <RouteGuard>{children}</RouteGuard>
+        </main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <NavigationProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </NavigationProvider>
   );
 }

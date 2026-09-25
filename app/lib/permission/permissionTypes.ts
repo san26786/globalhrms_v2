@@ -1,46 +1,28 @@
 /**
  * app/lib/permission/permissionTypes.ts
  *
- * Shared types/enums for the authorization layer built on top of `permission_dtl`.
+ * Shared types for the authorization layer built on `permission_dtl`, modelled on how the CI
+ * application (and its data) actually uses that table. `permission_dtl` holds three kinds of row,
+ * told apart by PERMISSIONS_REF_TYPE_ID (independent_mst ids of type 48 "Permission ref type"):
  *
- * SCHEMA RECAP (from prisma/schema.prisma):
- *   permission_dtl {
- *     PERMISSIONS_DTL_ID       PK
- *     PERMISSIONS_CLASS_ID     groups a set of dtl rows into a named "permission class" / profile
- *     PERMISSIONS_REF_TYPE_ID  WHO the grant applies to: ROLE | USER | GROUP (see PermissionRefType)
- *     PERMISSIONS_REF_ID       the id of that role/user/group
- *     PERMISSIONS_ID           WHAT is granted — a resource/feature/menu id (independent_mst.MSTR_ID
- *                              in the legacy app). We call this the `resourceId` everywhere below.
- *     PERMISSION_ENABLED       master switch — row grants no access at all if this is 0
- *     PERMISSION_READ_ONLY
- *     PERMISSION_MODIFY
- *     PERMISSION_DELETE
- *     PERMISSION_INSERT
- *     PERMISSION_PRINT
- *     PERMISSION_EXECUTE
- *     IS_DELETED                soft-delete flag
- *     OA_ID / OA_BRAND_ID       tenant scoping
- *     USER_ID                   NOT the grantee — this is who the row was created/scoped under
- *                                (mirrors the legacy CI model, kept for parity/audit, not used
- *                                for access decisions)
- *   }
+ *   65   USER  → CLASS   PERMISSIONS_REF_ID = user_mst.USER_ID   (user is assigned a permission class)
+ *   66   ROLE  → CLASS   PERMISSIONS_REF_ID = role_mst.ROLE_ID   (role maps to a permission class)
+ *   64   GROUP → CLASS   PERMISSIONS_REF_ID = user_group.USER_GRP_ID
+ *   1614 FUNCTION grant  PERMISSIONS_REF_ID = relationship_dtl.REL_DET_ID (a module/functional-epic
+ *                        node of the menu hierarchy; menu_config.MENU_ID points to the same id)
+ *                        with the PERMISSION_* flags, for one PERMISSIONS_CLASS_ID and OA_BRAND_ID.
  *
- * IMPORTANT — CONFIGURE BEFORE USE:
- * `PERMISSIONS_REF_TYPE_ID` is a polymorphic discriminator whose concrete numeric values live in
- * your `independent_mst` (TYP_ID = 67 in the legacy app) / equivalent lookup table, not in this
- * codebase. The values below are PLACEHOLDERS. Confirm the real ids and update
- * `PermissionRefType` before relying on this in production — every downstream file imports its
- * values from here, so this is the only place you should need to change.
+ * A user's permission class is resolved like CI login.php::get_permission_class
+ * (lib/menu/PermissionClass.ts). A "resource" in this module is therefore a REL_DET_ID, and the
+ * flags that apply are the class's 1614 row for that resource in the user's active brand.
+ * `PERMISSIONS_ID` is only used by ~100 legacy rows and is ignored.
  */
 
-/** WHO a permission_dtl row is granted to. */
 export enum PermissionRefType {
-  /** Granted to every user holding a given ROLE_ID (role_mst.ROLE_ID). Most common case. */
-  ROLE = 1,
-  /** Granted directly to a single USER_ID (user_mst.USER_ID) — per-user override. */
-  USER = 2,
-  /** Granted to every member of a GROUP_ID (user_group.*). */
-  GROUP = 3,
+  GROUP_CLASS = 64,
+  USER_CLASS = 65,
+  ROLE_CLASS = 66,
+  FUNCTION = 1614,
 }
 
 /** Action-level flags mirrored 1:1 from permission_dtl's PERMISSION_* columns. */
@@ -65,10 +47,9 @@ export const PERMISSION_ACTION_COLUMN: Record<PermissionAction, string> = {
   [PermissionAction.EXECUTE]: 'PERMISSION_EXECUTE',
 };
 
-/** The subset of the logged-in user's identity the permission engine actually needs. */
+/** The subset of the logged-in user's identity the permission engine needs. */
 export interface PermissionSubject {
   userId: number;
-  /** IS_ADMIN / IS_SYSADMIN short-circuit every check (parity with legacy `is_admin` session flag). */
   isAdmin: boolean;
   isSysAdmin: boolean;
   oaId?: number | null;
@@ -94,9 +75,9 @@ export interface PermissionDtlRow {
   OA_BRAND_ID: number | null;
 }
 
-/** Fully resolved, de-duplicated permission for a single resource, after merging all sources. */
+/** Resolved flags for one resource (or a set of resources, OR-merged). */
 export interface EffectivePermission {
-  resourceId: number;
+  resourceId: number | null;
   enabled: boolean;
   readOnly: boolean;
   modify: boolean;
@@ -104,34 +85,29 @@ export interface EffectivePermission {
   insert: boolean;
   print: boolean;
   execute: boolean;
-  /** Which ref rows contributed to this result — useful for debugging/audit. */
-  sources: Array<{ refType: PermissionRefType; refId: number; dtlId: number }>;
-}
-
-export interface PermissionCheckInput {
-  subject: PermissionSubject;
-  resourceId: number;
-  action: PermissionAction;
+  /** Which permission_dtl rows contributed — useful for debugging/audit. */
+  sources: number[];
 }
 
 export interface PermissionCheckResult {
   allowed: boolean;
   reason:
-    | 'ADMIN_BYPASS'
+    | 'SYSADMIN_BYPASS'
     | 'GRANTED'
+    | 'NO_PERMISSION_CLASS'
     | 'NO_MATCHING_ROW'
     | 'DISABLED'
     | 'ACTION_NOT_GRANTED'
-    | 'NO_ROLES';
+    | 'UNKNOWN_RESOURCE';
 }
 
 export class PermissionDeniedError extends Error {
   constructor(
-    public readonly resourceId: number,
+    public readonly resource: number | string,
     public readonly action: PermissionAction,
-    reason: string,
+    public readonly reason: string,
   ) {
-    super(`Permission denied for resource ${resourceId}, action ${action}: ${reason}`);
+    super(`Permission denied for resource ${resource}, action ${action}: ${reason}`);
     this.name = 'PermissionDeniedError';
   }
 }

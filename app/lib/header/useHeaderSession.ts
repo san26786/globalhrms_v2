@@ -13,9 +13,17 @@ import { DEFAULT_HEADER_SESSION, type HeaderSession } from './headerSession';
  *
  * If loading fails, the header falls back to the least-privileged (employee) view.
  */
-export function useHeaderSession(initial?: HeaderSession) {
+export interface HeaderSessionState {
+  session: HeaderSession;
+  loading: boolean;
+  unauthenticated: boolean;
+  refresh: () => Promise<void>;
+}
+
+export function useHeaderSession(initial?: HeaderSession, options: { enabled?: boolean } = {}): HeaderSessionState {
   const router = useRouter();
-  const serverFed = initial !== undefined;
+  const enabled = options.enabled ?? true;
+  const serverFed = initial !== undefined || !enabled;
   const [fetched, setFetched] = useState<HeaderSession | null>(null);
   const [loading, setLoading] = useState(!serverFed);
   const [unauthenticated, setUnauthenticated] = useState(false);

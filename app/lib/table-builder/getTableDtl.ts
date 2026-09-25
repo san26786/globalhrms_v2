@@ -12,14 +12,16 @@
 // no CI `$this->db` query builder — so it is safe to reuse for every module
 // (menus, assets, HR, finance, …) exactly like the original CI helper was.
 //
-// NOTE: raw dynamic-table SQL is built with `$queryRawUnsafe` + `?`
-// placeholders rather than the `Prisma.sql`/`Prisma.raw`/`Prisma.join` tag
-// helpers — this project's generated client output doesn't expose those.
-// Every identifier (table/column name) is still allow-listed before being
-// concatenated in, and every *value* is still a bound parameter, so this
-// keeps the same injection-safety property, just via a different API.
+// NOTE: raw dynamic-table SQL is built with `$queryRawUnsafe` + PostgreSQL
+// `$1, $2, …` placeholders rather than the `Prisma.sql`/`Prisma.raw`/
+// `Prisma.join` tag helpers — this project's generated client output doesn't
+// expose those. The datasource is PostgreSQL (see prisma/schema.prisma), so
+// identifiers are double-quoted (case-sensitive, e.g. `"sequence"` vs
+// `"SHOW_TAB"`), never MySQL backticks. Every identifier is allow-listed
+// before being concatenated in, and every *value* is a bound parameter.
 
 import { prisma } from "@/lib/prisma";
+import type { PermissionSubject } from "@/lib/permission";
 import { buildTable } from "./tableBuilder";
 import type { DisplayField } from "./columnBuilder";
 import type { TableFilter } from "./filterBuilder";
@@ -43,6 +45,21 @@ export interface TableDtlSession {
   oaId?: number | string | null;
   oaBrandId?: number | string | null;
   userId?: number | string | null;
+}
+
+/**
+ * Maps the authenticated PermissionSubject (boolean isAdmin/isSysAdmin JWT
+ * claims) onto CI's numeric `is_admin` level: IS_SYSADMIN → 2, IS_ADMIN → 1,
+ * everyone else → 0. Every route that calls getTableDtl() should use this
+ * rather than re-deriving the level itself.
+ */
+export function toTableDtlSession(subject: PermissionSubject): TableDtlSession {
+  return {
+    isAdmin: subject.isSysAdmin ? 2 : subject.isAdmin ? 1 : 0,
+    oaId: subject.oaId ?? null,
+    oaBrandId: subject.oaBrandId ?? null,
+    userId: subject.userId,
+  };
 }
 
 type FilterValue = string | number | boolean | null;
@@ -160,9 +177,9 @@ function assertSafeIdentifier(name: string, label: string): string {
   return name;
 }
 
-/** Backtick-quoted, allow-listed identifier for raw SQL string-building. */
+/** Double-quoted (PostgreSQL), allow-listed identifier for raw SQL string-building. */
 function ident(name: string, label = "column"): string {
-  return `\`${assertSafeIdentifier(name, label)}\``;
+  return `"${assertSafeIdentifier(name, label)}"`;
 }
 
 export function encodeTableDtlToken(params: GetTableDtlParams): string {
@@ -348,9 +365,12 @@ async function getVisibilityMap(
     select: { OBJ_ATTRBT_ID: true, [field]: true } as never,
   });
 
+  // The flag columns are SmallInt (0/1) in the schema, not booleans — coerce
+  // so callers' `!== false` checks actually hide IS_VISIBLE_FOR_LISTVIEW = 0.
   const map: Record<number, boolean | null> = {};
-  for (const d of details as unknown as Array<Record<string, boolean | null>>) {
-    map[d.OBJ_ATTRBT_ID as unknown as number] = (d[field] as boolean | null) ?? null;
+  for (const d of details as unknown as Array<{ OBJ_ATTRBT_ID: number } & Record<string, number | null>>) {
+    const flag = d[field];
+    map[d.OBJ_ATTRBT_ID] = flag == null ? null : Number(flag) !== 0;
   }
   return map;
 }
@@ -400,6 +420,12 @@ async function getTableRows<T>(
   const whereParts: string[] = [];
   const values: unknown[] = [];
 
+  /** Binds a value and returns its PostgreSQL positional placeholder ($1, $2, …). */
+  const bind = (value: unknown): string => {
+    values.push(value);
+    return `$${values.length}`;
+  };
+
   // colNm / colValue — arbitrary extra static filters (single or paired arrays).
   if (colNm && colValue !== undefined && colValue !== null) {
     const names = Array.isArray(colNm) ? colNm : [colNm];
@@ -409,16 +435,14 @@ async function getTableRows<T>(
       if (value === "NULL") {
         whereParts.push(`${ident(name)} IS NULL`);
       } else {
-        whereParts.push(`${ident(name)} = ?`);
-        values.push(value);
+        whereParts.push(`${ident(name)} = ${bind(value)}`);
       }
     });
   }
 
   // Org/brand scoping — only for org-level admins (isAdmin === 1), same as CI.
   if (session.isAdmin === 1 && orgColumnName && orgId != null) {
-    whereParts.push(`${ident(orgColumnName)} = ?`);
-    values.push(orgId);
+    whereParts.push(`${ident(orgColumnName)} = ${bind(orgId)}`);
   }
 
   // Approver scoping takes priority over the plain "my rows" filter when the
@@ -427,16 +451,13 @@ async function getTableRows<T>(
     session.isAdmin === 0 && approverId != null && String(approverId) === String(session.userId);
 
   if (isApproverMatch && approverColumnName) {
-    whereParts.push(`${ident(approverColumnName)} = ?`);
-    values.push(approverId);
+    whereParts.push(`${ident(approverColumnName)} = ${bind(approverId)}`);
   } else if (session.isAdmin === 0 && approverId == null && userColumnName && userId != null) {
-    whereParts.push(`${ident(userColumnName)} = ?`);
-    values.push(userId);
+    whereParts.push(`${ident(userColumnName)} = ${bind(userId)}`);
   }
 
   if (dropDownDbColumn && dropDownListValue != null) {
-    whereParts.push(`${ident(dropDownDbColumn)} = ?`);
-    values.push(dropDownListValue);
+    whereParts.push(`${ident(dropDownDbColumn)} = ${bind(dropDownListValue)}`);
   }
 
   // Soft-delete: only applied when the table actually has an IS_DELETED column.

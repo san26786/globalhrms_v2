@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import PunchButton from './PunchButton';
 import { authFetch } from '@/lib/auth/authFetch';
-import { useHeaderSession } from '@/lib/header/useHeaderSession';
+import { useHeaderSession, type HeaderSessionState } from '@/lib/header/useHeaderSession';
 import { useAutoLogout } from '@/lib/header/useAutoLogout';
 import { useLastActiveHeartbeat } from '@/lib/header/useLastActiveHeartbeat';
 import {
@@ -26,11 +26,48 @@ import {
   formatAlertDate,
   formatLastLogin,
   isAdminOrAbove,
-  toAppPath,
   type HeaderBrand,
   type HeaderSession,
 } from '@/lib/header/headerSession';
 import { PROFILE_MENU, SETTINGS_MENU, visibleMenuItems } from '@/lib/header/headerMenus';
+import { hrefForCi, resolveCiUrl } from '@/lib/navigation/routeRegistry';
+import { PromoBanner } from './PromoBanner';
+
+/** CI header links are CI URIs; this renders them as app links, or muted text when not migrated yet. */
+function CiLink({
+  ci,
+  className,
+  onClick,
+  title,
+  children,
+}: {
+  ci: string;
+  className: string;
+  onClick?: () => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const link = resolveCiUrl(ci);
+  if (link.kind === 'internal') {
+    return (
+      <Link href={link.href} onClick={onClick} className={className} title={title}>
+        {children}
+      </Link>
+    );
+  }
+  if (link.kind === 'external') {
+    return (
+      <a href={link.href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className} title={title}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <span aria-disabled="true" className={`${className} opacity-50 cursor-not-allowed`} title="This screen has not been migrated to the new application yet.">
+      {children}
+    </span>
+  );
+}
 
 interface HeaderProps {
   onLogout: () => void;
@@ -42,6 +79,8 @@ interface HeaderProps {
   onBrandChange?: (brand: string) => void;
   /** CI `$popup`: render no header at all (timers below still run, as in the CI page). */
   popup?: boolean;
+  /** Session state owned by the layout (shared with the sidebar). Otherwise the header loads its own. */
+  sessionState?: HeaderSessionState;
   /** Preferred: pass the session from a Server Component layout. Otherwise it is fetched from /api/header/session. */
   session?: HeaderSession;
   // Legacy props from the previous header — accepted so existing callers keep compiling, no longer used.
@@ -71,9 +110,11 @@ export default function Header({
   onBrandChange,
   popup = false,
   session: sessionProp,
+  sessionState,
 }: HeaderProps) {
   const router = useRouter();
-  const { session, unauthenticated, refresh } = useHeaderSession(sessionProp);
+  const ownState = useHeaderSession(sessionProp, { enabled: !sessionState });
+  const { session, unauthenticated, refresh } = sessionState ?? ownState;
 
   const [openDropdown, setOpenDropdown] = useState<OpenDropdown>(null);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -190,6 +231,7 @@ export default function Header({
   const initial = displayName ? displayName.charAt(0).toUpperCase() : 'D';
 
   return (
+    <>
     <header
       id="enterprise-header"
       style={{ borderTop: '3px solid var(--main-bg-color, #e15425)' }}
@@ -229,18 +271,13 @@ export default function Header({
         )}
 
         {/* Dashboard shortcut (CI: only when dashboard_url is set) */}
-        {session.dashboardUrl && (
-          <Link href={toAppPath(session.dashboardUrl)} className={LINK_BTN} title="Dashboard">
-            <LayoutDashboard className="w-4 h-4 stroke-[2]" />
-            <span className="hidden 2xl:inline">Dashboard</span>
-          </Link>
-        )}
+        
 
         {/* Main Menu */}
-        <Link href="/dashboard/dashboard" className={LINK_BTN} title="Main Menu">
+        <CiLink ci="dashboard/dashboard" className={LINK_BTN} title="Main Menu">
           <Menu className="w-4 h-4 stroke-[2]" />
           <span className="hidden 2xl:inline">Main Menu</span>
-        </Link>
+        </CiLink>
 
         {/* Notifications */}
         <div className="relative">
@@ -272,9 +309,9 @@ export default function Header({
                   <p className="px-4 py-6 text-center text-[11px] text-slate-400">You're all caught up.</p>
                 ) : (
                   session.alerts.recent.map((noti) => (
-                    <Link
+                    <CiLink
                       key={noti.id}
-                      href="/announcement/announcement"
+                      ci="announcement/announcement"
                       onClick={closeDropdowns}
                       className="p-3.5 hover:bg-slate-50 transition-colors flex gap-3"
                     >
@@ -286,18 +323,18 @@ export default function Header({
                         {noti.message && <p className="text-[11px] text-slate-500 leading-tight mt-0.5 line-clamp-2">{noti.message}</p>}
                         <span className="text-[9px] font-bold text-slate-400 mt-1 block font-mono">{formatAlertDate(noti.createdAt)}</span>
                       </div>
-                    </Link>
+                    </CiLink>
                   ))
                 )}
               </div>
               <div className="px-2 pt-2 border-t border-slate-100">
-                <Link
-                  href="/announcement/announcement"
+                <CiLink
+                      ci="announcement/announcement"
                   onClick={closeDropdowns}
                   className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors"
                 >
                   View all announcements <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
+                </CiLink>
               </div>
             </div>
           )}
@@ -326,15 +363,15 @@ export default function Header({
                   {settingsItems.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <Link
+                      <CiLink
                         key={item.key}
-                        href={toAppPath(item.href(session))}
+                      ci={item.href(session)}
                         onClick={closeDropdowns}
                         className="flex items-center gap-2.5 p-2 rounded-xl border border-slate-50 hover:border-blue-100 hover:bg-blue-50/20 text-slate-600 hover:text-blue-600 transition-all text-left text-xs font-bold"
                       >
                         <Icon className="w-4 h-4 text-slate-400 stroke-[2] shrink-0" />
                         <span className="truncate">{item.label}</span>
-                      </Link>
+                      </CiLink>
                     );
                   })}
                 </div>
@@ -395,15 +432,15 @@ export default function Header({
                 {brandError && (
                   <p role="alert" className="px-4 pt-2 text-[11px] font-bold text-red-600">{brandError}</p>
                 )}
-                {session.switchBrandUrl && (
+                {session.switchBrandUrl && hrefForCi(session.switchBrandUrl) && (
                   <div className="px-2 pt-2 border-t border-slate-100">
-                    <Link
-                      href={toAppPath(session.switchBrandUrl)}
+                    <CiLink
+                      ci={session.switchBrandUrl}
                       onClick={closeDropdowns}
                       className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors"
                     >
                       Open brand switcher <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
+                    </CiLink>
                   </div>
                 )}
               </div>
@@ -450,9 +487,9 @@ export default function Header({
                 {profileItems.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <Link
+                    <CiLink
                       key={item.key}
-                      href={toAppPath(item.href(session))}
+                      ci={item.href(session)}
                       onClick={closeDropdowns}
                       className="w-full text-left px-4 py-2 hover:bg-slate-50 text-xs text-slate-700 flex flex-col gap-0.5 border-b border-slate-50 last:border-0 transition-colors"
                     >
@@ -461,7 +498,7 @@ export default function Header({
                         <span>{item.label}</span>
                       </div>
                       {item.desc && <span className="text-[10px] text-slate-400 pl-5 leading-tight">{item.desc}</span>}
-                    </Link>
+                    </CiLink>
                   );
                 })}
               </div>
@@ -482,5 +519,9 @@ export default function Header({
         </div>
       </div>
     </header>
+    {session.bannerVisible && (
+      <PromoBanner logoUrl={session.brandLogoUrl ?? '/images/organisationLogo/company_logo2.jpg'} logoAlt={brandName || 'Company logo'} />
+    )}
+    </>
   );
 }

@@ -7,7 +7,7 @@ import { IconUploadError } from '@/lib/dashboard-menu/iconUpload';
 import { updateDashboardMenuSchema } from '@/validations/dashboardMenu.schema';
 
 interface RouteParams {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 /* ==========================================
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
     await assertCanManageDashboardMenu(subject);
 
-    const id = Number(params.id);
+    const id = Number((await params).id);
     if (!Number.isInteger(id) || id <= 0) {
       return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
     }
@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     }
     await assertCanManageDashboardMenu(subject);
 
-    const id = Number(params.id);
+    const id = Number((await params).id);
     if (!Number.isInteger(id) || id <= 0) {
       return NextResponse.json({ success: false, message: 'Invalid id' }, { status: 400 });
     }

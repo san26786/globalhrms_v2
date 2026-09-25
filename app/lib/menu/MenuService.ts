@@ -21,6 +21,7 @@
 
 import { prisma } from '@/lib/prisma';
 import type { MenuNode, MenuQueryParams, RawMenuRow } from '@/lib/menu/types';
+import { resolveCiUrl } from '@/lib/navigation/routeRegistry';
 
 // Fixed, hardcoded constants — inlined directly into the SQL text below as
 // a literal IN-list. Safe to inline (not user input), and sidesteps any
@@ -207,6 +208,7 @@ export async function getMenuTree(
         name: row.MENU_NAME,
         childMstrId: row.CHILD_MSTR_ID,
         url: row.URL,
+        link: resolveCiUrl(row.URL),
         smallViewIcon: row.SMALL_VIEW_ICON,
         children,
       };

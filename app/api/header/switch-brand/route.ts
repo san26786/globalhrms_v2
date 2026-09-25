@@ -44,8 +44,11 @@ export async function POST(request: NextRequest) {
     username: user.USER_NAME,
     isAdmin: user.IS_ADMIN,
     isSysAdmin: user.IS_SYSADMIN,
-    oaId: user.OA_ID,
+    // CI switchBrand set oaID from the chosen brand (a sysadmin may switch into another organisation).
+    oaId: access.brand.oaId,
     oaBrandId: access.brand.id,
+    sid: payload.sid,
+    pla: payload.pla ?? null,
   });
 
   const response = NextResponse.json({ success: true, brand: { id: access.brand.id, name: access.brand.name } });

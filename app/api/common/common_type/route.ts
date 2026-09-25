@@ -1,75 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { created, ok } from '@/lib/http/respond';
+import { readJson, readQuery, withApi } from '@/lib/http/withApi';
+import { commonTypeService } from '@/lib/common/commonType.service';
 
-/* ==========================================
-   GET : List Common Types
-========================================== */
-export async function GET() {
-  try {
-    const commonTypes = await prisma.common_type.findMany({
-      orderBy: {
-        TYP_ID: "desc",
-      },
-    });
+/**
+ * CI common/common_type (System Entities) — list (system_entities_vw, de-duplicated) and insert.
+ * List response: { success, data: rows, total, page, limit, permissions }.
+ */
+export const GET = withApi(async ({ req, subject }) => {
+  const [result, permissions] = await Promise.all([
+    commonTypeService.list(subject, readQuery(req)),
+    commonTypeService.permissions(subject),
+  ]);
+  return ok(result.rows, { total: result.total, page: result.page, limit: result.limit, permissions });
+});
 
-    return NextResponse.json({
-      success: true,
-      data: commonTypes,
-    });
-  } catch (error) {
-    console.error(error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch Common Types.",
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/* ==========================================
-   POST : Create Common Type
-========================================== */
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    const commonType = await prisma.common_type.create({
-      data: {
-        TYP_ID: Number(body.type_id),
-        TYP_CD: body.type_code,
-        TYP_NM: body.type_name,
-        VIEW_NM: body.view_name,
-        USER_CAN_CREATE_DATA: body.userCanCreateData,
-        IS_EDITABLE: body.isEditable,
-        ORIGINATING_SYSTEM: "1",
-        APP_CD: "GST",
-        APP_ID: 1002,
-        PARENT_TYP_ID: body.chkParentID
-          ? Number(body.parent_id)
-          : null,
-      },
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Common Type created successfully.",
-        data: commonType,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error(error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to create Common Type.",
-      },
-      { status: 500 }
-    );
-  }
-}
+export const POST = withApi(async ({ req, subject }) => created(await commonTypeService.create(subject, await readJson(req))));

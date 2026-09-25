@@ -4,7 +4,7 @@
 //
 // These are lightweight, dependency-free checks for common field shapes
 // (email, URL, phone, etc). For structural/schema validation of forms and
-// API payloads, this project already uses Zod (see lib/crud/crudValidation.ts,
+// API payloads, this project already uses Zod (see lib/resource and app/validations,
 // lib/entity/entityValidation.ts, lib/permission/permissionValidation.ts) —
 // prefer a Zod schema over hand-rolled checks when validating a whole object.
 // These predicates are best used inside custom Zod `.refine()` calls, or for

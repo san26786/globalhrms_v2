@@ -4,35 +4,51 @@ import { headerConfig } from './headerConfig';
 import {
   findBrand,
   findHeaderUser,
+  findOrgAccountTypeCode,
   listRecentAnnouncements,
   listSwitchableBrands,
 } from './header-repository';
-import { clockFor, getPunchSnapshot } from '@/lib/attendance/punch-service';
-import type { PunchState } from '@/components/layout/PunchButton';
-import type { HeaderBrand, HeaderSession, UserLevel } from './headerSession';
+import { clockFor, getHeaderPunchMode, getPunchSnapshot } from '@/lib/attendance/punch-service';
+import { getBrandContext } from '@/lib/session/brandContext';
+import type { HeaderBrand, HeaderSession, PunchState, UserLevel } from './headerSession';
 
 export interface HeaderSessionOptions {
   /** Browser UTC offset in minutes east of UTC (-new Date().getTimezoneOffset()); only used to find "today" for punch status. */
   clientOffsetMinutes?: number | null;
 }
 
-async function buildPunchState(userId: number, clientOffsetMinutes?: number | null): Promise<PunchState | null> {
-  if (headerConfig.punchMode === 'off') return null;
-  const snapshot = await getPunchSnapshot(userId, clockFor(clientOffsetMinutes));
+/** CI header_v: employees see Punch In/Out (punchDisable 'no') or a read-only punch_record badge. */
+async function buildPunchState(userId: number, oaBrandId: number, clientOffsetMinutes?: number | null): Promise<PunchState | null> {
+  const clock = clockFor(clientOffsetMinutes);
+  const snapshot = await getPunchSnapshot(userId, clock);
   if (!snapshot) return null; // no attendance-employee row: nothing to punch against
-  return headerConfig.punchMode === 'interactive'
+  const mode = await getHeaderPunchMode(userId, oaBrandId, clock);
+  return mode === 'interactive'
     ? { kind: 'interactive', isPunchedIn: snapshot.isPunchedIn }
     : { kind: 'readonly', record: snapshot.isPunchedIn ? 'Punch In' : 'Punch Out' };
 }
 
 /**
- * Builds everything the header renders from the database, keyed by the user id in the
- * access token. Roles, counts, last-login and punch state always come from the DB (so a role
- * change shows up without re-login); only the ACTIVE BRAND comes from the token, because
- * switching brand re-issues the token.
- *
- * autoLogoutMs / mainBackgroundColor / application / dashboardUrl / switchBrandUrl come from
- * env (headerConfig) until the login controller shows where CI reads them per brand.
+ * CI login.php switchBrandUrl: partners and accountants get their own brand pickers; everyone
+ * else the brand dashboard.
+ */
+function switchBrandCiUrl(orgAccountTypeCode: string | null, oaId: number | null): string {
+  if (orgAccountTypeCode === 'OATP' && oaId !== null) return `systmMngt/oa_brands/switchBrandForPartners/${oaId}`;
+  if (orgAccountTypeCode === 'OATACC' && oaId !== null) return `systmMngt/oa_brands/switchBrandForAccountant/${oaId}`;
+  return 'systmMngt/oa_brands/MyDashboard';
+}
+
+/** CI header_v banner logo: brand logo (fallback company_logo2.jpg); super admin sees geecon.png. */
+function brandLogoUrl(userLevel: UserLevel, brandId: number | null, logo: string | null | undefined): string {
+  if (userLevel === 2 || brandId === null) return '/images/organisationLogo/geecon.png';
+  return logo ? `/api/header/brand-logo/${brandId}` : '/images/organisationLogo/company_logo2.jpg';
+}
+
+/**
+ * Builds everything the header renders, keyed by the user id in the access token. Roles, counts
+ * and punch state come from the DB (a role change shows without re-login); the brand-level values
+ * CI set at login come from the brand's settings (lib/session/brandContext); the ACTIVE BRAND and
+ * the previous-login time come from the token (brand switch / login re-issue it).
  */
 export async function buildHeaderSession(
   payload: AccessTokenPayload,
@@ -47,15 +63,19 @@ export async function buildHeaderSession(
   // CI is_admin: 0 employee / 1 admin / 2 super admin  ==  IS_SYSADMIN -> 2, IS_ADMIN -> 1
   const userLevel: UserLevel = user.IS_SYSADMIN ? 2 : user.IS_ADMIN ? 1 : 0;
   const activeBrandId = toIntOrNull(payload.oaBrandId) ?? user.OA_BRAND_ID ?? null;
+  const oaId = toIntOrNull(payload.oaId) ?? user.OA_ID;
 
-  const [brandRow, brandRows, announcements, punch] = await Promise.all([
+  const [brandRow, brandRows, announcements, brand, orgType] = await Promise.all([
     activeBrandId !== null ? findBrand(activeBrandId) : Promise.resolve(null),
     userLevel !== 0
       ? listSwitchableBrands({ isSysAdmin: user.IS_SYSADMIN, oaId: user.OA_ID }, headerConfig.maxSwitchableBrands)
       : Promise.resolve([]),
     listRecentAnnouncements({ userId, oaBrandId: activeBrandId, take: headerConfig.recentAlertCount }),
-    userLevel === 0 ? buildPunchState(userId, options.clientOffsetMinutes) : Promise.resolve(null),
+    activeBrandId !== null ? getBrandContext(activeBrandId) : Promise.resolve(null),
+    userLevel !== 0 ? findOrgAccountTypeCode(oaId) : Promise.resolve(null),
   ]);
+
+  const punch = userLevel === 0 && activeBrandId !== null ? await buildPunchState(userId, activeBrandId, options.clientOffsetMinutes) : null;
 
   const activeBrand: HeaderBrand | null = brandRow
     ? { id: brandRow.OA_BRAND_ID, name: brandRow.OA_BRAND_NM }
@@ -72,19 +92,22 @@ export async function buildHeaderSession(
     isLoggedIn: true,
     userLevel,
     username: displayName || user.USER_NAME,
-    application: headerConfig.application,
-    oaId: user.OA_ID,
+    application: brand?.application ?? null,
+    oaId,
     activeBrand,
     brands,
-    lastLoginAt: user.LAST_LOGIN_AT.toISOString(),
-    mainBackgroundColor: headerConfig.mainBackgroundColor,
-    dashboardUrl: headerConfig.dashboardUrl,
-    switchBrandUrl: headerConfig.switchBrandUrl,
-    advanceSettingMenuId: headerConfig.advanceSettingMenuId,
-    helpMenuId: headerConfig.helpMenuId,
-    menuConfigId: headerConfig.menuConfigId,
-    globalSettingsConfigId: headerConfig.globalSettingsConfigId,
-    autoLogoutMs: headerConfig.autoLogoutMs,
+    lastLoginAt: payload.pla ?? null,
+    mainBackgroundColor: brand?.mainBackgroundColor ?? null,
+    // CI set dashboard_url only for admins (login) — employees never saw the Dashboard shortcut.
+    dashboardUrl: userLevel !== 0 ? brand?.dashboardUrl ?? null : null,
+    switchBrandUrl: userLevel !== 0 ? switchBrandCiUrl(orgType, oaId) : null,
+    advanceSettingMenuId: brand?.advanceSettingMenuId ?? null,
+    helpMenuId: brand?.helpMenuId ?? null,
+    menuConfigId: brand?.menuConfigTypeId ?? null,
+    globalSettingsConfigId: brand?.globalSettingsConfigTypeId ?? null,
+    autoLogoutMs: brand?.autoLogoutMs ?? null,
+    bannerVisible: brand?.bannerVisible ?? false,
+    brandLogoUrl: brandLogoUrl(userLevel, activeBrandId, brandRow?.OA_BRAND_LOGO),
     punch,
     alerts: {
       count: user.NOTIFY_COUNT,

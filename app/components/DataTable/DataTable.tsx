@@ -178,6 +178,12 @@ export function DataTable<TData, TValue>({
     },
     onGlobalFilterChange: (value) => {
       setGlobalFilter(value);
+      if (isServerSide) {
+        // A new search starts again from the first page on the server.
+        const firstPage = { pageIndex: 0, pageSize: pagination.pageSize };
+        setPagination(firstPage);
+        serverSide?.onPaginationChange(firstPage);
+      }
       serverSide?.onGlobalFilterChange?.(value);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -294,7 +300,7 @@ export function DataTable<TData, TValue>({
       <DataTablePagination
         table={table}
         pageSizeOptions={pageSizeOptions}
-        totalRows={isServerSide ? serverSide!.pageCount * pagination.pageSize : undefined}
+        totalRows={isServerSide ? (serverSide!.totalRows ?? serverSide!.pageCount * pagination.pageSize) : undefined}
       />
     </div>
   );
