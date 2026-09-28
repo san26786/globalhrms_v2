@@ -71,6 +71,25 @@ export async function findActiveObject(objId: number): Promise<ActiveObject | nu
   });
 }
 
+/**
+ * CI list views address an object by name ($pvs_objNm, usually the `_vw` view); listview_v strips
+ * `_vw` for the delete URL / apply-to-all. Exact name first, then the view/table counterpart.
+ */
+export async function findActiveObjectByName(objNm: string): Promise<ActiveObject | null> {
+  const name = objNm.trim();
+  if (!/^[A-Za-z0-9_]{1,100}$/.test(name)) return null;
+  const candidates = [name, name.endsWith('_vw') ? name.slice(0, -3) : `${name}_vw`];
+  for (const candidate of candidates) {
+    const obj = await prisma.entity_obj.findFirst({
+      where: { OBJ_NM: candidate, IS_DELETED: ACTIVE },
+      select: { OBJ_ID: true, OBJ_NM: true, OBJ_TYP: true },
+      orderBy: { OBJ_ID: 'asc' },
+    });
+    if (obj) return obj;
+  }
+  return null;
+}
+
 export interface ActiveAttribute {
   OBJ_ATTRBT_ID: number;
   OBJ_NM: string;

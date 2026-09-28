@@ -16,6 +16,7 @@ export default function UserTypeRoleMappingPage() {
     <ResourceListPage<MappingRow>
       title="User Type and Role Mapping"
       entity="user-type-role-mapping"
+      objectName="user_type_role_mapping_vw"
       apiPath="/api/user/user_type_role_mapping"
       basePath="/user/user_type_role_mapping"
       getId={(r) => r.id}

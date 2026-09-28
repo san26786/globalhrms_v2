@@ -24,6 +24,7 @@ export default function LastLoginListPage() {
     <ResourceListPage<LastLoginRow>
       title="Last Login Details"
       entity="user-lst-login"
+      objectName="user_last_login_dtl_vw"
       apiPath="/api/systmInfoMgr/user_lst_login"
       basePath="/systmInfoMgr/user_lst_login"
       getId={(r) => r.id}

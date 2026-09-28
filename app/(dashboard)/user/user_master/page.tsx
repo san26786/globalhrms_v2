@@ -59,6 +59,7 @@ export default function UserMasterPage() {
       key={version}
       title="User Master"
       entity="user-master"
+      objectName="user_mst_vw"
       apiPath="/api/user/user_master"
       basePath="/user/user_master"
       getId={(r) => r.id}

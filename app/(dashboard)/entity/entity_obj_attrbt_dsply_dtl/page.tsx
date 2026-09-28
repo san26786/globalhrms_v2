@@ -27,6 +27,7 @@ export default function EntityObjAttrbtDsplyDtlPage() {
       <ResourceListPage<DisplayDetailRow>
         title="Entity Object Attribute Display"
         entity="entity-obj-attrbt-dsply-dtl"
+        objectName="entity_obj_attrbt_dsply_dtl_vw"
         apiPath="/api/entity/entity_obj_attrbt_dsply_dtl"
         basePath="/entity/entity_obj_attrbt_dsply_dtl"
         getId={(r) => r.id}

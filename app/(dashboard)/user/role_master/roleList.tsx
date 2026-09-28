@@ -21,6 +21,7 @@ export default function RoleList({ domainId }: { domainId?: string }) {
     <ResourceListPage<RoleRow>
       title="Role Master"
       entity="role-master"
+      objectName="role_mst_vw"
       apiPath="/api/user/role_master"
       basePath="/user/role_master"
       params={domainId ? { domainId } : undefined}

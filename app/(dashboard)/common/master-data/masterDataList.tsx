@@ -73,6 +73,7 @@ export default function MasterDataList({ typeId }: { typeId: number | null }) {
     <ResourceListPage<MasterRow>
       title={title}
       entity="master-data"
+      objectName="independent_mst_vw"
       apiPath="/api/common/master-data"
       basePath="/common/master-data"
       params={typeId ? { typeId: String(typeId) } : undefined}

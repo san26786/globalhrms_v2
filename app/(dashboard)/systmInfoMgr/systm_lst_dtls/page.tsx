@@ -14,6 +14,7 @@ export default function SystemListDetailsPage() {
     <ResourceListPage<ListDetailRow>
       title="System List Details"
       entity="systm-lst-dtls"
+      objectName="systm_lst_dtl_vw"
       apiPath="/api/systmInfoMgr/systm_lst_dtls"
       basePath="/systmInfoMgr/systm_lst_dtls"
       getId={(r) => r.id}

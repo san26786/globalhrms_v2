@@ -36,6 +36,7 @@ export default function AttributeListPage({ objNm, basePath = "/entity/entity_ob
     <ResourceListPage<AttributeRow>
       title={title ?? (objNm ? `Entity Object Attribute: ${objNm}` : "Entity Object Attribute")}
       entity="entity-obj-attrbt"
+      objectName="entity_obj_attrbt_vw"
       apiPath="/api/entity/entity_obj_attrbt"
       basePath={basePath}
       getId={(r) => r.id}

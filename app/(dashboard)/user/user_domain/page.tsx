@@ -20,6 +20,7 @@ export default function UserDomainPage() {
     <ResourceListPage<DomainRow>
       title="User Domain"
       entity="user-domain"
+      objectName="user_domain_vw"
       apiPath="/api/user/user_domain"
       basePath="/user/user_domain"
       getId={(r) => r.id}

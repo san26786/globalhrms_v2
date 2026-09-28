@@ -17,6 +17,7 @@ export default function EntityObjAttrbtMppngPage() {
     <ResourceListPage<AttributeMappingRow>
       title="Entity Object Attribute Mapping"
       entity="entity-obj-attrbt-mppng"
+      objectName="entity_obj_attrbt_mppng_vw"
       apiPath="/api/entity/entity_obj_attrbt_mppng"
       basePath="/entity/entity_obj_attrbt_mppng"
       getId={(r) => r.id}

@@ -26,6 +26,7 @@ export default function ConfigMappingList({ typeId }: { typeId: number | null })
     <ResourceListPage<MappingRow>
       title="Config Mapping Details"
       entity="config-mapping"
+      objectName="config_mapping_dtl_vw"
       apiPath="/api/common/config-mapping"
       basePath="/common/config-mapping"
       params={typeId ? { typeId: String(typeId) } : undefined}

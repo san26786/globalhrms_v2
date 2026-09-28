@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import RouteGuard from "@/components/layout/RouteGuard";
 import { NavigationProvider, useNavigation } from "@/lib/navigation/NavigationContext";
 import { useHeaderSession } from "@/lib/header/useHeaderSession";
+import { HeaderSessionProvider } from "@/lib/header/HeaderSessionContext";
 
 /**
  * Dashboard shell — CI include/main_page_v: header_v + left_menu_v + page body + footer_v.
@@ -89,7 +90,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <Header sessionState={headerState} onLogout={() => undefined} />
 
         <main className="p-2">
-          <RouteGuard>{children}</RouteGuard>
+          <HeaderSessionProvider value={headerState}>
+            <RouteGuard>{children}</RouteGuard>
+          </HeaderSessionProvider>
         </main>
       </div>
     </div>

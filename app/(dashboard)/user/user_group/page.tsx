@@ -20,6 +20,7 @@ export default function UserGroupPage() {
     <ResourceListPage<GroupRow>
       title="User Group"
       entity="user-group"
+      objectName="user_group_vw"
       apiPath="/api/user/user_group"
       basePath="/user/user_group"
       getId={(r) => r.id}

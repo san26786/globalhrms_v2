@@ -95,15 +95,16 @@ function requireConfigurer(subject: RequestSubject): 1 | 2 {
 
 const norm = (s: string) => s.trim().toUpperCase();
 
-async function load(subject: RequestSubject, rawObjId: string): Promise<Loaded> {
-  const level = requireConfigurer(subject);
+async function load(subject: RequestSubject, rawObjId: string, forViewer = false): Promise<Loaded> {
+  // A viewer (columns()) reads with the brand scope unless they are the super admin.
+  const level: 1 | 2 = forViewer ? (subject.adminLevel === 2 ? 2 : 1) : requireConfigurer(subject);
   const objId = Number(rawObjId);
   if (!Number.isInteger(objId) || objId <= 0) throw new ValidationError('Invalid id.', { id: ['Must be a positive integer.'] });
   const object = await findActiveObject(objId);
   if (!object) throw new NotFoundError('Entity object not found.');
 
   const brandId = level === 1 ? subject.oaBrandId : null;
-  if (level === 1 && brandId === null) {
+  if (level === 1 && brandId === null && !forViewer) {
     throw new BusinessRuleError('Your session has no active brand; column configuration is per brand.', 'NO_ACTIVE_BRAND');
   }
 
@@ -199,7 +200,32 @@ async function nextSequence(tx: Prisma.TransactionClient, objNm: string): Promis
 
 const bit = (v: boolean) => (v ? 1 : 0);
 
+export interface ListColumn {
+  /** OBJ_ATTRBT_NM — the column name the list row carries. */
+  name: string;
+  label: string;
+  visibleInList: boolean;
+  visibleInForm: boolean;
+}
+
 export const displayConfigService = {
+  /**
+   * The list columns every caller sees (CI getTableDtl tableHeader): super admin → globally visible
+   * attributes (getVisibleCol); others → the effective brand / system list flag (getVisibleColForLV),
+   * limited to globally visible attributes. Labels follow brand → system → humanised name.
+   */
+  async columns(subject: RequestSubject, objId: string): Promise<ListColumn[]> {
+    const data = await load(subject, objId, true);
+    return toConfig(data).rows.map((r) => ({
+      name: r.name,
+      label: r.effective.label,
+      // CI getVisibleCol (level 2): IS_VISIBLE only. getVisibleColForLV (others): IS_VISIBLE and the
+      // BRAND row's list flag is not "0" (no brand row = shown; the system list flag is not consulted).
+      visibleInList: data.level === 2 ? r.isVisible : r.isVisible && (r.brand?.listView ?? true),
+      visibleInForm: r.effective.formView,
+    }));
+  },
+
   async get(subject: RequestSubject, objId: string): Promise<DisplayConfig> {
     return toConfig(await load(subject, objId));
   },

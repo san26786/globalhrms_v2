@@ -1,124 +1,51 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { RotateCcw, Save, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { authFetch } from "@/lib/auth/authFetch";
-import type { DisplayConfig, DisplayConfigRow } from "@/lib/entity/display/displayConfig.service";
+import { useDisplayConfig } from "@/lib/entity/display/useDisplayConfig";
 
 /**
  * Column configuration (CI "Form Config" flash modal of entity_obj_attrbt::updateFlashModal and
  * the inline label editor common_c::getLabel):
  *  - system admin: global visibility + SYSTEM label / list / form defaults; "Apply to all brands".
  *  - brand admin: their brand's label / list / form for globally visible columns; "Reset to default".
- * Only changed rows are sent (PUT).
+ * Only changed rows are sent (PUT). State lives in useDisplayConfig (shared with the list-view modal).
  */
-interface Draft {
-  isVisible: boolean;
-  label: string;
-  listView: boolean;
-  formView: boolean;
-}
-
-function draftOf(row: DisplayConfigRow, level: 1 | 2): Draft {
-  const scope = level === 2 ? row.system : row.brand;
-  return {
-    isVisible: row.isVisible,
-    label: scope?.label || (level === 2 ? row.defaultLabel : row.effective.label),
-    listView: scope?.listView ?? row.effective.listView,
-    formView: scope?.formView ?? row.effective.formView,
-  };
-}
-
-async function call(url: string, init?: RequestInit): Promise<unknown> {
-  const res = await authFetch(url, init);
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message ?? "Request failed.");
-  return json.data;
-}
-
 export default function DisplayConfigPanel({ objId }: { objId: number }) {
-  const base = `/api/entity/entity_obj/${objId}/display`;
-  const [config, setConfig] = useState<DisplayConfig | null>(null);
-  const [drafts, setDrafts] = useState<Record<number, Draft>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { config, error, drafts, changes, busy, update, save: saveConfig, reset: resetConfig, applyAll: applyAllConfig } =
+    useDisplayConfig(`/api/entity/entity_obj/${objId}/display`);
 
-  const apply = useCallback((next: DisplayConfig) => {
-    setConfig(next);
-    setDrafts(Object.fromEntries(next.rows.map((r) => [r.attributeId, draftOf(r, next.adminLevel)])));
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    call(base)
-      .then((data) => !cancelled && apply(data as DisplayConfig))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load configuration."));
-    return () => {
-      cancelled = true;
-    };
-  }, [base, apply]);
-
-  const changes = useMemo((): Array<{ attributeId: number } & Partial<Draft>> => {
-    if (!config) return [];
-    return config.rows.flatMap((row) => {
-      const before = draftOf(row, config.adminLevel);
-      const now = drafts[row.attributeId];
-      if (!now) return [];
-      const diff: Partial<Draft> = {};
-      if (config.adminLevel === 2 && now.isVisible !== before.isVisible) diff.isVisible = now.isVisible;
-      if (now.label.trim() !== before.label) diff.label = now.label.trim();
-      if (now.listView !== before.listView) diff.listView = now.listView;
-      if (now.formView !== before.formView) diff.formView = now.formView;
-      return Object.keys(diff).length ? [{ attributeId: row.attributeId, ...diff }] : [];
-    });
-  }, [config, drafts]);
+  const run = async (fn: () => Promise<void>) => {
+    try {
+      await fn();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Request failed.");
+    }
+  };
 
   if (error) return <p className="p-4 text-sm text-red-500">{error}</p>;
   if (!config) return <p className="p-4 text-sm text-gray-400">Loading...</p>;
 
   const sysAdmin = config.adminLevel === 2;
-  const update = (id: number, patch: Partial<Draft>) => setDrafts((d) => ({ ...d, [id]: { ...d[id], ...patch } }));
-
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true);
-    try {
-      await fn();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Request failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const save = () =>
     run(async () => {
-      if (changes.some((c) => c.label === "")) throw new Error("Labels cannot be empty.");
-      apply(
-        (await call(base, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows: changes }),
-        })) as DisplayConfig,
-      );
+      await saveConfig();
       toast.success("Successfully updated configuration.");
     });
 
   const reset = () =>
     run(async () => {
-      const data = (await call(`${base}/reset`, { method: "POST" })) as { updated: number; config: DisplayConfig };
-      apply(data.config);
+      const data = await resetConfig();
       toast.success(`Labels reset to default (${data.updated} row(s)).`);
     });
 
   const applyAll = () =>
     run(async () => {
       if (!window.confirm("Remove every brand-specific configuration of this object so all brands use the system configuration?")) return;
-      const data = (await call(`${base}/apply-all`, { method: "POST" })) as { removed: number; config: DisplayConfig };
-      apply(data.config);
+      const data = await applyAllConfig();
       toast.success(`Successfully updated for all brands (${data.removed} override(s) removed).`);
     });
 

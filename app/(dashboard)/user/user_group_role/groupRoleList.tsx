@@ -14,6 +14,7 @@ export default function GroupRoleList({ groupId }: { groupId?: string }) {
     <ResourceListPage<GroupRoleRow>
       title="User Group Role"
       entity="user-group-role"
+      objectName="user_group_role_vw"
       apiPath="/api/user/user_group_role"
       basePath="/user/user_group_role"
       params={groupId ? { groupId } : undefined}

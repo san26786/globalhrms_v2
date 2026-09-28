@@ -18,6 +18,7 @@ export default function DependentDataList({ objNm, title = "Entity Object Attrib
     <ResourceListPage<DependentDataRow>
       title={title}
       entity="entity-obj-attrbt-dependent-data"
+      objectName="entity_obj_attrbt_dependent_data_vw"
       apiPath="/api/entity/entity_obj_attrbt_dependent_data"
       basePath="/entity/entity_obj_attrbt_dependent_data"
       getId={(r) => r.id}

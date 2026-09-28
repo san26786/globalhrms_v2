@@ -42,6 +42,7 @@ export default function EntityObjPage() {
       <ResourceListPage<EntityObjRow>
         title="Entity Object"
         entity="entity-obj"
+        objectName="entity_obj_vw"
         apiPath="/api/entity/entity_obj"
         basePath="/entity/entity_obj"
         getId={(r) => r.id}

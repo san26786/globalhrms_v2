@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Database, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -17,6 +18,10 @@ interface BreadcrumbHeaderProps {
   passedUrl?: string;          // replaces `section` — used by Breadcrumb, not just displayed
   parent?: ParentMenuInfo | null; // pass through once getParentByUrl is wired up server-side
   addHref?: string;
+  /** Extra header buttons (e.g. Form Settings cog, Delete Selected), rendered after the Add button. */
+  actions?: ReactNode;
+  /** Hide the export/import controls (CI $export === false). */
+  showImportExport?: boolean;
 }
 
 export default function BreadcrumbHeader({
@@ -30,6 +35,8 @@ export default function BreadcrumbHeader({
   passedUrl,
   parent = null,
   addHref,
+  actions,
+  showImportExport = true,
 }: BreadcrumbHeaderProps) {
   return (
     <div className="rounded-3xl border bg-white p-6 shadow-sm">
@@ -48,6 +55,7 @@ export default function BreadcrumbHeader({
         </div>
 
         <div className="flex gap-3 items-center">
+          {showImportExport && (
           <ImportExportControls
             entity={entity}
             title={title}
@@ -57,6 +65,7 @@ export default function BreadcrumbHeader({
             tableRef={tableRef}
             onSuccess={onSuccess}
           />
+          )}
           {addHref && (
             <Link href={addHref}>
               <Button size="icon" className="rounded-full">
@@ -64,6 +73,7 @@ export default function BreadcrumbHeader({
               </Button>
             </Link>
           )}
+          {actions}
         </div>
       </div>
     </div>

@@ -36,14 +36,16 @@ export default function UserRoleList({ userId }: { userId?: string }) {
       <ResourceListPage<UserRoleRow>
         title="User Role"
         entity="user-role"
+        objectName="user_role_vw"
         apiPath="/api/user/user_role"
         basePath="/user/user_role"
         params={userId ? { userId } : undefined}
         getId={(r) => r.id}
         columns={[
-          { key: "userName", header: "User", sortKey: "USER_ID" },
-          { key: "roleName", header: "Role", sortKey: "ROLE_ID" },
-          { key: "brandName", header: "Brand" },
+          // Bound to user_role_vw attributes: labels / list visibility follow the Form Settings.
+          { key: "roleName", header: "Role Name", attribute: "ROLE_NM", sortKey: "ROLE_ID" },
+          { key: "userName", header: "User Name", attribute: "USER_NAME", sortKey: "USER_ID" },
+          { key: "brandName", header: "Brand", attribute: "OA_BRAND_CD" },
         ]}
       />
     </>

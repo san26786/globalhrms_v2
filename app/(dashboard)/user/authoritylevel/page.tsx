@@ -15,6 +15,7 @@ export default function AuthorityLevelPage() {
     <ResourceListPage<AuthorityRow>
       title="Authority Level"
       entity="authority-level"
+      objectName="authority_level_vw"
       apiPath="/api/user/authoritylevel"
       basePath="/user/authoritylevel"
       getId={(r) => r.id}

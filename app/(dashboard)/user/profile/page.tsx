@@ -39,7 +39,11 @@ export default function ProfilePage() {
       basePath="/dashboard"
       fields={fields}
       defaultValues={{ username: "", firstName: "", lastName: "", email: "", tPin: "", memorableWord: "", localTime: false }}
-      toPayload={(values) => { const rest = { ...values }; delete rest.username; return rest; }}
+      // The username is shown read-only here (changed via user/changeusername); never sent.
+      toPayload={({ username, ...rest }) => {
+        void username;
+        return rest;
+      }}
       onSaved={() => router.push("/dashboard")}
     />
   );

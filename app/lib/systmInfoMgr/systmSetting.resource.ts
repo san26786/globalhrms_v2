@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { ConflictError, ValidationError } from '@/lib/http/errors';
 import { ResourceService, menuPolicy, type ResourceContext, type ResourceDefinition } from '@/lib/resource';
 import { commonTypeNames, masterNames } from '@/lib/masters/masterService';
@@ -94,6 +95,13 @@ const definition: ResourceDefinition<SystemSettingInput, SystemSettingInput, Sys
   label: 'System setting',
   model: 'systm_setting',
   primaryKey: 'SYSTM_SETTING_ID',
+  // UPDATED_ON is NOT NULL in the Prisma schema but NULL in migrated rows (Prisma throws when it
+  // reads one), and the list never shows it — so every column except UPDATED_ON is selected.
+  select: Object.fromEntries(
+    Object.values(Prisma.Systm_settingScalarFieldEnum)
+      .filter((field) => field !== 'UPDATED_ON')
+      .map((field) => [field, true as const]),
+  ),
   searchFields: ['REF_CD', 'SYSTM_SETTING_VALUE', 'DESCRIPTION'],
   sortFields: ['SYSTM_SETTING_ID', 'SYSTM_ATTRBUTE_ID', 'REF_CD', 'OA_BRAND_ID'],
   defaultSort: { field: 'SYSTM_SETTING_ID', dir: 'desc' },

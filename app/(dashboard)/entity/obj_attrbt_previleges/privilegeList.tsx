@@ -23,6 +23,7 @@ export default function PrivilegeList({ objId, title = "Object Attribute Privile
       <ResourceListPage<PrivilegeRow>
         title={title}
         entity="obj-attrbt-previleges"
+        objectName="obj_attrbt_previleges_vw"
         apiPath="/api/entity/obj_attrbt_previleges"
         basePath="/entity/obj_attrbt_previleges"
         getId={(r) => r.id}

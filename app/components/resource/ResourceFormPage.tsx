@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import DynamicForm from "@/components/DynamicForm/DynamicForm";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
 import { authFetch } from "@/lib/auth/authFetch";
+import { useListColumns } from "@/lib/entity/display/useListColumns";
 
 interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
   title: string;
@@ -27,6 +28,8 @@ interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
    * (e.g. useOptions). Pass either `fields` or `useFields`, not both.
    */
   useFields?: (values: TForm) => DynamicField[];
+  /** CI $pvs_ObjNm: fields with an `attribute` follow its Form Settings "Visible in Form". */
+  objectName?: string;
   defaultValues: DefaultValues<TForm>;
   /** API record → form values (edit mode). */
   toForm?: (dto: TDto) => TForm;
@@ -56,6 +59,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   basePath,
   fields,
   useFields,
+  objectName,
   defaultValues,
   toForm,
   toPayload,
@@ -122,7 +126,14 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   // Resolved before any early return so hook order stays stable across renders.
   const values = form.watch();
   const resolveFields = useFields ?? (() => fields ?? []);
-  const resolvedFields = resolveFields(values);
+  const configuredFields = resolveFields(values);
+  const { columns: formConfig } = useListColumns(objectName);
+  // CI getVisibleColForFV: a field whose attribute is not visible in the form is not shown. Required
+  // fields stay visible — hiding one would make every save fail validation.
+  const resolvedFields = configuredFields.map((f) => {
+    const cfg = f.attribute && formConfig?.size ? formConfig.get(f.attribute.toUpperCase()) : undefined;
+    return cfg && !cfg.visibleInForm && !f.required ? { ...f, hidden: true } : f;
+  });
 
   if (loading) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
   if (loadError) return <p className="p-6 text-sm text-red-500">{loadError}</p>;

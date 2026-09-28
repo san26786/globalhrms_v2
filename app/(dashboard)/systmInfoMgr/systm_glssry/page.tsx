@@ -15,6 +15,7 @@ export default function SystemGlossaryPage() {
     <ResourceListPage<GlossaryRow>
       title="System Glossary"
       entity="systm-glssry"
+      objectName="systm_glssry_vw"
       apiPath="/api/systmInfoMgr/systm_glssry"
       basePath="/systmInfoMgr/systm_glssry"
       getId={(r) => r.id}

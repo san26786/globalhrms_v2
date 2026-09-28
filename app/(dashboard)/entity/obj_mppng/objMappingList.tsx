@@ -16,6 +16,7 @@ export default function ObjMappingList({ srcObjId, title = "Object Mapping" }: {
     <ResourceListPage<ObjMappingRow>
       title={title}
       entity="obj-mppng"
+      objectName="entity_obj_mppng_vw"
       apiPath="/api/entity/obj_mppng"
       basePath="/entity/obj_mppng"
       getId={(r) => r.id}

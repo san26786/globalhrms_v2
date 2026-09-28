@@ -19,6 +19,7 @@ export default function SystemSettingPage() {
     <ResourceListPage<SettingRow>
       title="System Setting"
       entity="systm-setting"
+      objectName="system_setting_vw"
       apiPath="/api/systmInfoMgr/systm_setting"
       basePath="/systmInfoMgr/systm_setting"
       getId={(r) => r.id}

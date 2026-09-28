@@ -51,6 +51,12 @@ export interface DynamicField {
   width?: number;
 
   order?: number;
+
+  /**
+   * Entity attribute (DB column, CI OBJ_ATTRBT_NM) behind this field: with the form page's
+   * objectName set, the field follows the object's Form Settings "Visible in Form".
+   */
+  attribute?: string;
 }
 
 export interface DynamicForm {

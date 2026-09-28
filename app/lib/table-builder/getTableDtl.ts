@@ -21,6 +21,8 @@
 // before being concatenated in, and every *value* is a bound parameter.
 
 import { prisma } from "@/lib/prisma";
+import { isInsertSafe } from "@/lib/db/sequenceGuard";
+import { ServiceUnavailableError } from "@/lib/http/errors";
 import type { PermissionSubject } from "@/lib/permission";
 import { buildTable } from "./tableBuilder";
 import type { DisplayField } from "./columnBuilder";
@@ -99,7 +101,24 @@ export interface GetTableDtlParams {
   page?: number;
   limit?: number;
 
+  /** CI DataTables global search: matched (case-insensitive) against every listed column. */
+  search?: string;
+  /** Sort column — must be one of the listed columns (CI DataTables `order`); default PK DESC. */
+  sort?: string;
+  dir?: "asc" | "desc";
+  /** CI DataTables column search: { column: text } — case-insensitive contains, listed columns only. */
+  columnFilters?: Record<string, string>;
+
   session: TableDtlSession;
+}
+
+/** One list-view column as CI getVisibleCol / getVisibleColForLV resolved it. */
+export interface ListViewColumn {
+  /** OBJ_ATTRBT_NM — the column name, also the row key. */
+  name: string;
+  /** Display label: brand → system → column name (super admin: system → column name). */
+  label: string;
+  attributeId: number;
 }
 
 export interface TableDtlResult<T = Record<string, unknown>> {
@@ -116,6 +135,9 @@ export interface TableDtlResult<T = Record<string, unknown>> {
 
   /** getVisibleCol() / getVisibleColForLV() — display names, in column order. */
   tableHeader: string[];
+
+  /** The same columns with their names (row keys), in order — what a list view renders. */
+  columns: ListViewColumn[];
 
   /** getAllEntityObjAttrbtDtl() — OBJ_ATTRBT_ID -> display name. */
   entityObjAttrbtDetails: Record<number, string>;
@@ -203,10 +225,10 @@ export function decodeTableDtlToken(
    dsply_dtl rows are auto-provisioned exactly like the PHP version did.
    ========================================================================== */
 
-async function getVisibleColumnHeaders(
+async function getVisibleColumns(
   objNm: string,
   session: TableDtlSession
-): Promise<string[]> {
+): Promise<ListViewColumn[]> {
   const attrbts = await prisma.entity_obj_attrbt.findMany({
     where: { OBJ_NM: objNm, IS_VISIBLE: true },
     orderBy: [{ OBJ_ATTRBT_SEQ: "asc" }, { OBJ_ATTRBT_ID: "asc" }],
@@ -222,13 +244,15 @@ async function getVisibleColumnHeaders(
       },
     });
     const byId = new Map(sysDetails.map((d) => [d.OBJ_ATTRBT_ID, d]));
-    return attrbts.map(
-      (a) => byId.get(a.OBJ_ATTRBT_ID)?.OBJ_ATTRBT_DSPLY_NM || a.OBJ_ATTRBT_NM
-    );
+    return attrbts.map((a) => ({
+      name: a.OBJ_ATTRBT_NM,
+      label: byId.get(a.OBJ_ATTRBT_ID)?.OBJ_ATTRBT_DSPLY_NM?.trim() || a.OBJ_ATTRBT_NM,
+      attributeId: a.OBJ_ATTRBT_ID,
+    }));
   }
 
   // getVisibleColForLV(): brand override > system default > raw column name,
-  // filtered to attributes that are visible in the list view.
+  // dropping attributes the brand explicitly hid for the list view.
   const oaBrandId = session.oaBrandId ?? null;
   const [sysDetails, brandDetails] = await Promise.all([
     prisma.entity_obj_attrbt_dsply_dtl.findMany({
@@ -249,7 +273,7 @@ async function getVisibleColumnHeaders(
   const sysById = new Map(sysDetails.map((d) => [d.OBJ_ATTRBT_ID, d]));
   const brandById = new Map(brandDetails.map((d) => [d.OBJ_ATTRBT_ID, d]));
 
-  const headers: string[] = [];
+  const columns: ListViewColumn[] = [];
   const toProvision: DsplyDtlProvisionRow[] = [];
 
   for (const a of attrbts) {
@@ -257,21 +281,21 @@ async function getVisibleColumnHeaders(
     const brand = brandById.get(a.OBJ_ATTRBT_ID);
     const listViewFlag: number | null = brand?.IS_VISIBLE_FOR_LISTVIEW ?? null;
 
-    if (listViewFlag === 0) continue; // explicitly hidden for this brand
+    if (listViewFlag !== null && Number(listViewFlag) === 0) continue; // explicitly hidden for this brand
 
-    const displayName =
-      brand?.OBJ_ATTRBT_DSPLY_NM || sys?.OBJ_ATTRBT_DSPLY_NM || a.OBJ_ATTRBT_NM;
-    headers.push(displayName);
+    const label =
+      brand?.OBJ_ATTRBT_DSPLY_NM?.trim() || sys?.OBJ_ATTRBT_DSPLY_NM?.trim() || a.OBJ_ATTRBT_NM;
+    columns.push({ name: a.OBJ_ATTRBT_NM, label, attributeId: a.OBJ_ATTRBT_ID });
 
     // Auto-provision a brand-level row the first time this attribute is
     // seen for this brand, same as the `insert_batch` at the end of the
     // legacy method.
-    if (listViewFlag === null && oaBrandId != null) {
+    if (!brand && oaBrandId != null) {
       toProvision.push({
         OBJ_ATTRBT_ID: a.OBJ_ATTRBT_ID,
         OBJ_NM: objNm,
         OBJ_ATTRBT_NM: a.OBJ_ATTRBT_NM,
-        OBJ_ATTRBT_DSPLY_NM: displayName,
+        OBJ_ATTRBT_DSPLY_NM: label,
         IS_VISIBLE_FOR_LISTVIEW: 1,
         IS_VISIBLE_FOR_FORMVIEW: sys?.IS_VISIBLE_FOR_FORMVIEW ?? 1,
         OA_ID: session.oaId != null ? Number(session.oaId) : null,
@@ -281,14 +305,17 @@ async function getVisibleColumnHeaders(
     }
   }
 
-  if (toProvision.length) {
-    await prisma.entity_obj_attrbt_dsply_dtl.createMany({
-      data: toProvision,
-      skipDuplicates: true,
-    });
+  // CI wrote these rows while reading the list. Here it is best-effort: skipped while the table's id
+  // sequence is out of sync (the insert would collide) and never allowed to fail the list itself.
+  if (toProvision.length && (await isInsertSafe("entity_obj_attrbt_dsply_dtl", "OBJ_ATTRBT_DSPLY_ID"))) {
+    try {
+      await prisma.entity_obj_attrbt_dsply_dtl.createMany({ data: toProvision, skipDuplicates: true });
+    } catch (error) {
+      console.error("getTableDtl: display-row provisioning skipped:", error);
+    }
   }
 
-  return headers;
+  return columns;
 }
 
 /* ============================================================================
@@ -387,10 +414,24 @@ async function getVisibilityMap(
    parameter — never concatenated.
    ========================================================================== */
 
+/** `%text%` for ILIKE with the LIKE wildcards (\ % _) in the user's text escaped. */
+function likePattern(text: string): string {
+  return `%${text.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+}
+
+/** Columns the table/view really has (entity metadata can list columns the relation no longer has). */
+async function getRelationColumns(objNm: string): Promise<Set<string> | null> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ column_name: string }>>(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = $1`,
+    objNm
+  );
+  return rows.length ? new Set(rows.map((r) => r.column_name)) : null;
+}
+
 async function getTableRows<T>(
   params: GetTableDtlParams,
-  visibleColumnNames: string[]
-): Promise<{ rows: T[]; total: number }> {
+  listedColumnNames: string[]
+): Promise<{ rows: T[]; total: number; selected: string[] }> {
   const {
     objNm,
     primaryKeyColumn = "ID",
@@ -407,15 +448,27 @@ async function getTableRows<T>(
     session,
     page,
     limit,
+    search,
+    sort,
+    dir,
+    columnFilters,
   } = params;
 
   const tableSql = ident(objNm, "table");
-  const pkSql = ident(primaryKeyColumn, "primary key column");
+  const relationColumns = await getRelationColumns(assertSafeIdentifier(objNm, "table"));
+  if (!relationColumns) {
+    // The CI MySQL views (*_vw) were not all migrated to PostgreSQL.
+    throw new ServiceUnavailableError(
+      `The list source "${objNm}" does not exist in the database yet.`,
+      "LIST_SOURCE_MISSING"
+    );
+  }
+  const has = (column: string) => relationColumns.has(column);
 
-  const selectColsSql =
-    visibleColumnNames.length > 0
-      ? visibleColumnNames.map((c) => ident(c, "select column")).join(", ")
-      : "*";
+  // Listed columns that exist, plus the primary key (row actions need it even when it is hidden).
+  const selected = listedColumnNames.filter(has);
+  const selectNames = has(primaryKeyColumn) && !selected.includes(primaryKeyColumn) ? [...selected, primaryKeyColumn] : selected;
+  const selectColsSql = selectNames.length > 0 ? selectNames.map((c) => ident(c, "select column")).join(", ") : "*";
 
   const whereParts: string[] = [];
   const values: unknown[] = [];
@@ -460,12 +513,24 @@ async function getTableRows<T>(
     whereParts.push(`${ident(dropDownDbColumn)} = ${bind(dropDownListValue)}`);
   }
 
-  // Soft-delete: only applied when the table actually has an IS_DELETED column.
-  const hasIsDeleted = await prisma.entity_obj_attrbt.count({
-    where: { OBJ_NM: objNm, OBJ_ATTRBT_NM: "IS_DELETED" },
-  });
-  if (hasIsDeleted > 0) {
-    whereParts.push(`${ident("IS_DELETED")} = 0`);
+  // Soft-delete: only applied when the relation actually has an IS_DELETED column.
+  // (Mixed types across tables: smallint 0/1 or boolean — compare as text.)
+  if (has("IS_DELETED")) {
+    whereParts.push(`COALESCE(${ident("IS_DELETED")}::text, '0') IN ('0', 'false')`);
+  }
+
+  // CI DataTables search: any listed column contains the text.
+  const term = search?.trim();
+  if (term && selected.length) {
+    const p = bind(likePattern(term));
+    whereParts.push(`(${selected.map((c) => `${ident(c)}::text ILIKE ${p}`).join(" OR ")})`);
+  }
+
+  // Column filters: only listed (and existing) columns can be filtered.
+  for (const [column, raw] of Object.entries(columnFilters ?? {})) {
+    const text = raw?.trim();
+    if (!text || !selected.includes(column)) continue;
+    whereParts.push(`${ident(column)}::text ILIKE ${bind(likePattern(text))}`);
   }
 
   const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
@@ -476,17 +541,20 @@ async function getTableRows<T>(
   );
   const total = Number(countRows[0]?.total ?? 0);
 
+  const orderColumn = sort && selected.includes(sort) ? sort : has(primaryKeyColumn) ? primaryKeyColumn : null;
+  const orderDir = sort && selected.includes(sort) ? (dir === "asc" ? "ASC" : "DESC") : "DESC";
+  const orderSql = orderColumn ? `ORDER BY ${ident(orderColumn)} ${orderDir} NULLS LAST` : "";
+
+  const safeLimit = limit ? Math.min(Math.max(Math.trunc(Number(limit)), 1), 500) : 0;
   const limitSql =
-    page && limit
-      ? `LIMIT ${Number(limit)} OFFSET ${(Math.max(Number(page), 1) - 1) * Number(limit)}`
-      : "";
+    page && safeLimit ? `LIMIT ${safeLimit} OFFSET ${(Math.max(Math.trunc(Number(page)), 1) - 1) * safeLimit}` : "";
 
   const rows = await prisma.$queryRawUnsafe<T[]>(
-    `SELECT ${selectColsSql} FROM ${tableSql} ${whereSql} ORDER BY ${pkSql} DESC ${limitSql}`,
+    `SELECT ${selectColsSql} FROM ${tableSql} ${whereSql} ${orderSql} ${limitSql}`,
     ...values
   );
 
-  return { rows, total };
+  return { rows, total, selected };
 }
 
 /* ============================================================================
@@ -498,30 +566,24 @@ export async function getTableDtl<T = Record<string, unknown>>(
 ): Promise<TableDtlResult<T>> {
   const { objNm, primaryKeyColumn = "ID", session, actions = [], filters = [] } = params;
 
-  const [tableHeader, entityObjAttrbtDetails, getSystemData, visibleForLV, visibleForFV] =
+  const [listed, entityObjAttrbtDetails, getSystemData, visibleForLV, visibleForFV] =
     await Promise.all([
-      getVisibleColumnHeaders(objNm, session),
+      getVisibleColumns(objNm, session),
       getEntityObjAttrbtDisplayMap(objNm, session),
       getSystemAttributeRows(objNm, session),
       getVisibilityMap(objNm, session, "IS_VISIBLE_FOR_LISTVIEW"),
       getVisibilityMap(objNm, session, "IS_VISIBLE_FOR_FORMVIEW"),
     ]);
 
-  // Column names actually selected from the target table — visible +
-  // IS_VISIBLE attributes, in sequence order (mirrors the foreach/$this->db->select loop).
-  const visibleColumnNames = getSystemData
-    .filter((a) => visibleForLV[a.OBJ_ATTRBT_ID] !== false)
-    .map((a) => a.OBJ_ATTRBT_NM);
+  const { rows: tableBody, total, selected } = await getTableRows<T>(params, listed.map((c) => c.name));
+  // Only columns the relation really has are rendered.
+  const columns = listed.filter((c) => selected.includes(c.name));
 
-  const { rows: tableBody, total } = await getTableRows<T>(params, visibleColumnNames);
-
-  const displayFields: DisplayField[] = getSystemData
-    .filter((a) => visibleForLV[a.OBJ_ATTRBT_ID] !== false)
-    .map((a) => ({
-      accessorKey: a.OBJ_ATTRBT_NM,
-      header: entityObjAttrbtDetails[a.OBJ_ATTRBT_ID] || a.OBJ_ATTRBT_NM,
-      visible: true,
-    }));
+  const displayFields: DisplayField[] = columns.map((c) => ({
+    accessorKey: c.name,
+    header: c.label,
+    visible: true,
+  }));
 
   const table = buildTable<T>(displayFields, filters, actions);
 
@@ -529,7 +591,8 @@ export async function getTableDtl<T = Record<string, unknown>>(
     objNm,
     primaryKeyColumn,
     primaryKeyValue: encodeTableDtlToken(params),
-    tableHeader,
+    tableHeader: columns.map((c) => c.label),
+    columns,
     entityObjAttrbtDetails,
     getSystemData,
     getVisibleColForLV: visibleForLV,

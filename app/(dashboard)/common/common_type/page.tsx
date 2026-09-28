@@ -26,6 +26,7 @@ export default function CommonTypePage() {
     <ResourceListPage<EntityRow>
       title="System Entities"
       entity="common-type"
+      objectName="system_entities_vw"
       apiPath="/api/common/common_type"
       basePath="/common/common_type"
       getId={(r) => r.id}
