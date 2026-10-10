@@ -4,7 +4,8 @@ import { User, Lock, Eye, EyeOff, UserPlus, Building, ArrowRight, ArrowLeft, Mai
 import GlobalHRLogo from '@/components/auth/GlobalHRLogo';
 
 interface LoginScreenProps {
-  onLogin: (username: string) => void;
+  /** Called after a successful login; `redirectTo` is the server's choice (e.g. forced password change). */
+  onLogin: (username: string, redirectTo?: string) => void;
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -17,8 +18,8 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [success, setSuccess] = useState('');
 
   // --- LOGIN STATE ---
-  const [username, setUsername] = useState('DEMOadmin');
-  const [password, setPassword] = useState('c');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -78,7 +79,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       }
 
       setLoading(false);
-      onLogin(data.user.username);
+      onLogin(data.user.username, data.redirectTo);
     } catch (err) {
       setLoading(false);
       setError('Unable to reach the server. Please try again.');
@@ -415,12 +416,8 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   </span>
                 </label>
                 <a
-                  href="#forgot-password"
+                  href="/login/forgot_pass"
                   className="text-xs font-bold text-blue-500 hover:text-blue-600 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('For demonstration purposes, you can login with the pre-filled credentials immediately!');
-                  }}
                 >
                   Forgot Password?
                 </a>
@@ -689,14 +686,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               <span className="opacity-0">Placeholder</span>
             )}
 
-            <a
-              href="#forgot-password"
-              className="hover:text-blue-500 transition-colors cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('Contact system administration or type your memorable word to trigger security recovery protocols.');
-              }}
-            >
+            <a href="/login/forgot_pass" className="hover:text-blue-500 transition-colors cursor-pointer">
               Forgot Password?
             </a>
           </div>

@@ -1,144 +1,119 @@
 /**
  * app/lib/permission/permissionEngine.ts
  *
- * The main authorization entry point — this is what API routes, server components, and
- * button-level checks should import. Everything else in this folder is an implementation detail.
+ * The authorization entry point for API routes and services.
  *
- *   Phase 13 Authentication → Logged-in User → Role/Role IDs
- *                                                     │
- *                                                     ▼
- *                                          permissionEngine.can(...)
- *                                                     │
- *                                                     ▼
- *                                     API / Page / Button Authorization
+ * Decision (parity with CI):
+ *   - system admin (IS_SYSADMIN / is_admin == 2) is never restricted — CI's menu query and its
+ *     (disabled) URL check both bypass sysadmin.
+ *   - everyone else, INCLUDING org/brand admins, is decided by their permission class's FUNCTION
+ *     grants (permission_dtl ref type 1614) in the active brand — exactly the rows that decide
+ *     which menu items CI shows them.
+ * A resource is a relationship_dtl.REL_DET_ID; `canAccessMenu` resolves it from a CI-style menu
+ * URL (e.g. 'systmInfoMgr/systm_setting'), reproducing CI's has_permission_to_access().
  */
 import { permissionRepository } from './permissionRepository';
 import { permissionService } from './permissionService';
-import {
-  PermissionAction,
-  PermissionDeniedError,
-} from './permissionTypes';
+import { PermissionAction, PermissionDeniedError } from './permissionTypes';
 import type {
   EffectivePermission,
   PermissionCheckResult,
   PermissionSubject,
 } from './permissionTypes';
 
-/**
- * Core decision function. Admins (IS_ADMIN / IS_SYSADMIN) always pass, matching the legacy
- * `session->userdata('is_admin')` bypass used throughout the CI codebase.
- */
-async function evaluate(
+function decide(permission: EffectivePermission, hasClass: boolean, action: PermissionAction): PermissionCheckResult {
+  if (!hasClass) return { allowed: false, reason: 'NO_PERMISSION_CLASS' };
+  if (!permission.enabled) {
+    return { allowed: false, reason: permission.sources.length ? 'DISABLED' : 'NO_MATCHING_ROW' };
+  }
+  const flags: Record<PermissionAction, boolean> = {
+    [PermissionAction.ENABLED]: permission.enabled,
+    [PermissionAction.READ_ONLY]: permission.readOnly,
+    [PermissionAction.MODIFY]: permission.modify,
+    [PermissionAction.DELETE]: permission.delete,
+    [PermissionAction.INSERT]: permission.insert,
+    [PermissionAction.PRINT]: permission.print,
+    [PermissionAction.EXECUTE]: permission.execute,
+  };
+  return flags[action] ? { allowed: true, reason: 'GRANTED' } : { allowed: false, reason: 'ACTION_NOT_GRANTED' };
+}
+
+async function evaluateResources(
   subject: PermissionSubject,
-  resourceId: number,
+  resourceIds: number[],
   action: PermissionAction,
 ): Promise<PermissionCheckResult> {
-  if (subject.isAdmin || subject.isSysAdmin) {
-    return { allowed: true, reason: 'ADMIN_BYPASS' };
-  }
+  if (subject.isSysAdmin) return { allowed: true, reason: 'SYSADMIN_BYPASS' };
+  if (resourceIds.length === 0) return { allowed: false, reason: 'UNKNOWN_RESOURCE' };
+  const { permission, hasClass } = await permissionService.getEffectivePermission(subject, resourceIds);
+  return decide(permission, hasClass, action);
+}
 
-  const effective = await permissionService.getEffectivePermission(subject.userId, resourceId);
-
-  if (!effective.enabled) {
-    return { allowed: false, reason: effective.sources.length ? 'DISABLED' : 'NO_MATCHING_ROW' };
-  }
-
-  if (action === PermissionAction.ENABLED) {
-    return { allowed: true, reason: 'GRANTED' };
-  }
-
-  const actionMap: Record<PermissionAction, boolean> = {
-    [PermissionAction.ENABLED]: effective.enabled,
-    [PermissionAction.READ_ONLY]: effective.readOnly,
-    [PermissionAction.MODIFY]: effective.modify,
-    [PermissionAction.DELETE]: effective.delete,
-    [PermissionAction.INSERT]: effective.insert,
-    [PermissionAction.PRINT]: effective.print,
-    [PermissionAction.EXECUTE]: effective.execute,
-  };
-
-  return actionMap[action]
-    ? { allowed: true, reason: 'GRANTED' }
-    : { allowed: false, reason: 'ACTION_NOT_GRANTED' };
+async function evaluateMenu(
+  subject: PermissionSubject,
+  menuUrl: string,
+  action: PermissionAction,
+): Promise<PermissionCheckResult> {
+  if (subject.isSysAdmin) return { allowed: true, reason: 'SYSADMIN_BYPASS' };
+  const resourceIds = await permissionRepository.getMenuResourceIds(menuUrl);
+  return evaluateResources(subject, resourceIds, action);
 }
 
 export const permissionEngine = {
-  /**
-   * Boolean check — use for `if (await permissionEngine.can(subject, resourceId, action))`.
-   */
+  /** Boolean check on one relationship_dtl resource. */
   async can(
     subject: PermissionSubject,
     resourceId: number,
     action: PermissionAction = PermissionAction.ENABLED,
   ): Promise<boolean> {
-    const result = await evaluate(subject, resourceId, action);
-    return result.allowed;
+    return (await evaluateResources(subject, [resourceId], action)).allowed;
   },
 
-  /**
-   * Same as `can`, but resolves the subject from a userId first. Prefer `can()` with a subject
-   * you already have (e.g. from the JWT payload / session) to avoid an extra DB round trip —
-   * this convenience method exists for call sites (e.g. server actions) that only have a userId.
-   */
-  async canByUserId(
-    userId: number,
-    resourceId: number,
-    action: PermissionAction = PermissionAction.ENABLED,
-  ): Promise<boolean> {
-    const subject = await permissionRepository.getSubject(userId);
-    if (!subject) return false;
-    return this.can(subject, resourceId, action);
-  },
-
-  /**
-   * Throws PermissionDeniedError if not allowed. Use in API routes / server actions where a
-   * denial should hard-stop execution.
-   */
+  /** Throws PermissionDeniedError if not allowed. */
   async assert(
     subject: PermissionSubject,
     resourceId: number,
     action: PermissionAction = PermissionAction.ENABLED,
   ): Promise<void> {
-    const result = await evaluate(subject, resourceId, action);
-    if (!result.allowed) {
-      throw new PermissionDeniedError(resourceId, action, result.reason);
-    }
+    const result = await evaluateResources(subject, [resourceId], action);
+    if (!result.allowed) throw new PermissionDeniedError(resourceId, action, result.reason);
   },
 
-  /** Full detail (allowed + reason) — use when you need to log/report why access was denied. */
   async evaluate(
     subject: PermissionSubject,
     resourceId: number,
     action: PermissionAction = PermissionAction.ENABLED,
   ): Promise<PermissionCheckResult> {
-    return evaluate(subject, resourceId, action);
+    return evaluateResources(subject, [resourceId], action);
   },
 
-  /** Full effective-permission set for a user — for rendering menus/pages/buttons in one shot. */
-  async getMenu(userId: number): Promise<Map<number, EffectivePermission>> {
-    return permissionService.getEffectivePermissionMap(userId);
+  /** CI has_permission_to_access(): decision for the menu entries of a CI-style URL. */
+  async evaluateMenu(
+    subject: PermissionSubject,
+    menuUrl: string,
+    action: PermissionAction = PermissionAction.ENABLED,
+  ): Promise<PermissionCheckResult> {
+    return evaluateMenu(subject, menuUrl, action);
   },
 
-  /** Effective permission for a single resource — powers per-button enable/disable state. */
-  async getResourcePermission(userId: number, resourceId: number): Promise<EffectivePermission> {
-    return permissionService.getEffectivePermission(userId, resourceId);
+  async canAccessMenu(
+    subject: PermissionSubject,
+    menuUrl: string,
+    action: PermissionAction = PermissionAction.ENABLED,
+  ): Promise<boolean> {
+    return (await evaluateMenu(subject, menuUrl, action)).allowed;
+  },
+
+  /** Every FUNCTION grant of the subject, keyed by REL_DET_ID — for menus and button states. */
+  async getMenu(subject: PermissionSubject): Promise<Map<number, EffectivePermission>> {
+    return permissionService.getEffectivePermissionMap(subject);
   },
 };
 
 /**
- * API route helper. Wrap a Next.js route handler to require a permission before it runs.
- *
- *   // app/api/employees/route.ts
- *   export const DELETE = withPermission(EMPLOYEE_RESOURCE_ID, PermissionAction.DELETE,
- *     async (req, { subject }) => {
- *       // subject.userId is guaranteed authorized for DELETE on EMPLOYEE_RESOURCE_ID here
- *       return NextResponse.json({ ok: true });
- *     }
- *   );
- *
- * `getSubject` must be supplied by your Phase 13 auth layer (e.g. reading the verified JWT
- * payload set by middleware.ts) — this file intentionally has no dependency on jwt.ts so the two
- * phases stay decoupled. See index.ts for the recommended wiring.
+ * Route helper: require a FUNCTION permission before the handler runs.
+ * New routes should prefer `withApi` + a resource policy (lib/resource); this remains for
+ * handlers that authorise against a known REL_DET_ID.
  */
 export function withPermission<TContext = unknown>(
   resourceId: number,
@@ -149,17 +124,15 @@ export function withPermission<TContext = unknown>(
   return async (req: Request, ctx: TContext): Promise<Response> => {
     const subject = await getSubject(req);
     if (!subject) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ success: false, message: 'You are not logged in.', code: 'UNAUTHORIZED' }, { status: 401 });
     }
-
-    const result = await evaluate(subject, resourceId, action);
+    const result = await evaluateResources(subject, [resourceId], action);
     if (!result.allowed) {
       return Response.json(
-        { error: 'Forbidden', reason: result.reason },
+        { success: false, message: 'You do not have permission to perform this action.', code: 'FORBIDDEN' },
         { status: 403 },
       );
     }
-
     return handler(req, { ...ctx, subject });
   };
 }

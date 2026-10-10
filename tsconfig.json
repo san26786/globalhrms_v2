@@ -20,8 +20,6 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/lib/notification": ["./lib/notification"],
-      "@/lib/notification/*": ["./lib/notification/*"],
       "@/*": ["./app/*"]
     }
   },
@@ -33,5 +31,18 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", ".next", "app/generated/prisma"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "app/generated/prisma",
+    "app/components/DashboardScreen.tsx",
+    "app/components/layout/TopNav.tsx",
+    "app/components/layout/ProfileDropdown.tsx",
+    "app/components/layout/SettingsDropdown.tsx",
+    "app/infrastructure",
+    "app/services/PunchApplicationService.ts",
+    "app/domain",
+    "app/hooks/useAutoLogout.ts",
+    "app/hooks/useLastActiveHeartbeat.ts"
+  ]
 }

@@ -269,19 +269,16 @@ export async function sendEmail(params: SendEmailParams): Promise<EmailResult> {
       return { success: true, messageId: `sg-${Date.now()}` };
     }
 
-    // 3. Fallback / Local Development Mock Dispatcher
-    const mockId = `mock-email-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`[GlobalHRMS Email Service] Sent email successfully:`);
-      console.log(`  To: ${toAddress}`);
-      console.log(`  Subject: ${params.subject}`);
-      console.log(`  Message ID: ${mockId}`);
+    // 3. No provider configured: never pretend in production that the mail went out.
+    if (process.env.NODE_ENV === "production") {
+      console.error("[GlobalHRMS Email Service] No email provider configured (RESEND_API_KEY / SENDGRID_API_KEY).");
+      return { success: false, error: "Email service is not configured." };
     }
 
-    return {
-      success: true,
-      messageId: mockId,
-    };
+    // Local development mock dispatcher.
+    const mockId = `mock-email-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[GlobalHRMS Email Service] (mock) To: ${toAddress} | Subject: ${params.subject} | Id: ${mockId}`);
+    return { success: true, messageId: mockId };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Failed to send email";
     console.error("[GlobalHRMS Email Service Error]:", errorMessage);

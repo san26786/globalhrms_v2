@@ -49,9 +49,17 @@ export interface BulkAction<TData> {
 /** Server-side pagination/sorting/filtering hook-up. Omit for fully client-side tables. */
 export interface ServerSideState {
   pageCount: number;
+  /** Total matching rows reported by the server (shown in the pagination footer). */
+  totalRows?: number;
   onPaginationChange: (pagination: PaginationState) => void;
   onSortingChange?: (sorting: SortingState) => void;
   onGlobalFilterChange?: (value: string) => void;
+  /**
+   * Per-column filters (the filter row under the headers), already debounced, as { columnId: text }.
+   * With server-side paging a column filter is only offered when this is supplied — filtering
+   * just the current page on the client would silently hide matching rows on other pages.
+   */
+  onColumnFiltersChange?: (filters: Record<string, string>) => void;
   isFetching?: boolean;
 }
 
@@ -70,6 +78,13 @@ export interface DataTableProps<TData, TValue> {
   addLabel?: string;
   /** Per-row actions rendered via <DataTableActions />. Omit if you add your own actions column. */
   rowActions?: RowAction<TData>[];
+  /**
+   * "menu" (default): kebab menu in a trailing column. "inline": CI listview style — an "Actions"
+   * column right after the checkbox with one icon button per action (edit / delete / …).
+   */
+  rowActionsVariant?: "menu" | "inline";
+  /** Show the row checkbox column even without bulk actions (CI: always a checkbox column). */
+  selectable?: boolean;
   /** Actions available once >=1 row is selected. Enables row selection automatically. */
   bulkActions?: BulkAction<TData>[];
   /** Wire up server-side pagination/sorting instead of TanStack's client-side row models. */
@@ -80,11 +95,19 @@ export interface DataTableProps<TData, TValue> {
   emptyDescription?: string;
   /** Called with the currently selected rows whenever selection changes. */
   onRowSelectionChange?: (rows: TData[]) => void;
+  /** Called with the ids (getRowId) of the selected rows whenever selection changes. */
+  onSelectionChange?: (ids: string[]) => void;
+  /**
+   * Text filter row under the headers (CI DataTables column search). Default: on. A column opts out
+   * with `enableColumnFilter: false` (columnBuilder: `filterable: false`).
+   */
+  columnFilterRow?: boolean;
   /** Row click handler, e.g. to navigate to a detail page. */
   onRowClick?: (row: TData) => void;
   getRowId?: (row: TData, index: number) => string;
   className?: string;
-  entity: string;
+  /** Module slug (kept for existing callers; not required). */
+  entity?: string;
   search?: string;
 }
 

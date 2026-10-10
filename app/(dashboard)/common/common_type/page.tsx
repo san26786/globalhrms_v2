@@ -1,54 +1,48 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Database } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { common_type } from "../../../generated/prisma/client";
-import { columns } from "./components/commonTypeColumns";
-import { DataTable } from "./components/CommonTypeTable";
-import BreadcrumbHeader from "./components/BreadcrumbHeader";
+import ResourceListPage from "@/components/resource/ResourceListPage";
+import { typeQuery } from "@/components/common/master-data-form";
 
-const columnSettings = [
-  { systemName: "TYP_ID", displayName: "Type ID", visibleInList: true, visibleInForm: true },
-  { systemName: "TYP_CD", displayName: "Type Code", visibleInList: true, visibleInForm: true },
-  { systemName: "TYP_NM", displayName: "Type Name", visibleInList: true, visibleInForm: true },
-  { systemName: "VIEW_NM", displayName: "View Name", visibleInList: true, visibleInForm: true }
-];
+interface EntityRow {
+  id: number;
+  typeId: number;
+  code: string;
+  name: string;
+  viewName: string | null;
+  dataType: string | null;
+  parentTypeName: string | null;
+  userCanCreateData: boolean;
+}
 
-export default function CommonType() {
-  const [commonTypes, setCommonTypes] = useState<common_type[]>([]);
+/**
+ * CI common/common_type::index() — System Entities (system_entities_vw). CI's "Independent Master"
+ * tab of a type is the row action "Master Data" (→ /common/master-data?typeId=…).
+ */
+export default function CommonTypePage() {
   const router = useRouter();
-  const tableRef = useRef<any>(null);
-
-  useEffect(() => {
-    fetchCommonTypes();
-  }, []);
-
-  const fetchCommonTypes = async () => {
-    try {
-      const res = await fetch("/api/common/common_type");
-      const json = await res.json();
-      setCommonTypes(json.data ?? []);
-    } catch (error) {
-      console.error("Failed to fetch common types", error);
-    }
-  };
-
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <BreadcrumbHeader 
-        entity="common-type"
-        title="Common Type"
-        filename="CommonTypes"
-        columnSettings={columnSettings}
-        data={commonTypes}
-        tableRef={tableRef}
-        onSuccess={fetchCommonTypes}
-      />
-      <DataTable 
-        columns={columns} 
-        data={commonTypes} 
-        onTableInstance={(instance) => { tableRef.current = instance; }}
-      />
-    </div>
+    <ResourceListPage<EntityRow>
+      title="System Entities"
+      entity="common-type"
+      objectName="system_entities_vw"
+      apiPath="/api/common/common_type"
+      basePath="/common/common_type"
+      getId={(r) => r.id}
+      searchPlaceholder="Search type code, name or view..."
+      extraRowActions={[
+        { label: "Master Data", icon: Database, onClick: (r) => router.push(`/common/master-data${typeQuery(r.typeId)}`) },
+      ]}
+      columns={[
+        { key: "typeId", header: "Type Id", sortKey: "TYP_ID" },
+        { key: "code", header: "Type Code", sortKey: "TYP_CD" },
+        { key: "name", header: "Type Name", sortKey: "TYP_NM" },
+        { key: "viewName", header: "View Name", sortKey: "VIEW_NM" },
+        { key: "dataType", header: "Data Type", sortKey: "TABLE_TYPE" },
+        { key: "parentTypeName", header: "Parent Type" },
+        { key: "userCanCreateData", header: "User Can Create Data", cell: (r) => (r.userCanCreateData ? "Yes" : "No") },
+      ]}
+    />
   );
 }

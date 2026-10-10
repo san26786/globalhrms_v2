@@ -1,14 +1,16 @@
 /**
  * Phase 15 — Dynamic Sidebar/Menu
  *
- * Shape returned by /api/menu and consumed by useSidebarMenu().
+ * Shape returned by /api/menu and consumed by the navigation context (lib/navigation).
  * Mirrors the recursive structure the legacy left_menu_v.php built by
  * calling get_menu_from_relationship() again for every module's
  * CHILD_MSTR_ID.
  */
 
+import type { ResolvedLink } from '@/lib/navigation/routeRegistry';
+
 export interface MenuNode {
-  /** REL_DET_ID — unique id of this relationship_dtl row */
+  /** REL_DET_ID — unique id of this relationship_dtl row (CI: data-menu-id="menu_{id}") */
   id: number;
   /** im.MSTR_NM — display label */
   name: string;
@@ -19,9 +21,11 @@ export interface MenuNode {
    * the row but not being able to recurse into it.
    */
   childMstrId: number | null;
-  /** md.URL — raw url fragment as stored (already relative to site root) */
+  /** menu_config.URL — raw CI URI as stored (relative to site root, '#' for groups) */
   url: string | null;
-  /** md.SMALL_VIEW_ICON — legacy uploaded icon filename, if you want to use it later */
+  /** Where `url` lives in this app (lib/navigation/routeRegistry): resolved on the server. */
+  link: ResolvedLink;
+  /** menu_config.SMALL_VIEW_ICON — legacy uploaded icon filename (CI img/SMALL_VIEW_ICON/…) */
   smallViewIcon: string | null;
   /** Recursively resolved children */
   children: MenuNode[];
@@ -33,7 +37,7 @@ export interface MenuQueryParams {
   oaBrandId: number;
   /** null only valid when isSysAdmin is true */
   permissionsClassId: number | null;
-  /** old session->userdata('brandApplicationID'); see permissionClass.ts / route.ts TODO */
+  /** CI session brandApplicationID: brand setting SSABAN, default 370 (set at login). */
   brandApplicationId: number | null;
   showTabs: boolean;
   parentId: number;

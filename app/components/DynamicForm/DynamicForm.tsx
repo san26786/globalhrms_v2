@@ -18,6 +18,10 @@ interface DynamicFormProps<T extends FieldValues> {
   cancelText?: string;
   onCancel?: () => void;
   children?: React.ReactNode;
+  /** Breadcrumb trail shown above the title, e.g. ["User", "User Master"]. The Add/Edit crumb is appended. */
+  breadcrumb?: string[];
+  /** Disables the save buttons while a request is in flight. */
+  submitting?: boolean;
 }
 
 export default function DynamicForm<T extends FieldValues>({
@@ -31,6 +35,8 @@ export default function DynamicForm<T extends FieldValues>({
   cancelText = "Cancel",
   onCancel,
   children,
+  breadcrumb = ["Bank Manager", "Bank Account Details"],
+  submitting = false,
 }: DynamicFormProps<T>) {
   const {
     register,
@@ -56,10 +62,12 @@ export default function DynamicForm<T extends FieldValues>({
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span>Bank Account Details</span>
-              <ChevronRight size={15} className="text-slate-400" />
+              {breadcrumb.map((crumb) => (
+                <React.Fragment key={crumb}>
+                  <span>{crumb}</span>
+                  <ChevronRight size={15} className="text-slate-400" />
+                </React.Fragment>
+              ))}
               <span className="font-semibold text-blue-600">
                 {mode === "add" ? "Add" : "Edit"}
               </span>
@@ -78,6 +86,7 @@ export default function DynamicForm<T extends FieldValues>({
             <Button
               type="submit"
               form="dynamic-form"
+              disabled={submitting}
               onClick={() => setSubmitType("save")}
               size="icon"
               className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 hover:scale-105 active:scale-95 transition-all duration-200"
@@ -137,6 +146,7 @@ export default function DynamicForm<T extends FieldValues>({
           <Button
             type="submit"
             form="dynamic-form"
+            disabled={submitting}
             onClick={() => setSubmitType("save")}
             className="rounded-full !bg-none !bg-blue-600 hover:!bg-blue-700 text-white px-6 h-10 text-sm font-semibold shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 transition-all duration-200 active:scale-95 border-0"
           >

@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import {
+  type Column,
   type ColumnDef,
   type ColumnFiltersState,
+  type FilterFn,
   type PaginationState,
   type RowSelectionState,
   type SortingState,
@@ -27,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import { DataTableToolbar } from "./DataTableToolbar";
@@ -34,7 +37,7 @@ import { DataTablePagination } from "./DataTablePagination";
 import { DataTableSkeleton } from "./DataTableSkeleton";
 import { DataTableBulkActions } from "./DataTableBulkActions";
 import { DataTableEmpty } from "./DataTableEmpty";
-import { DataTableActions } from "./DataTableActions";
+import { DataTableActions, DataTableInlineActions } from "./DataTableActions";
 import type { DataTableProps } from "./types";
 
 /**
@@ -87,6 +90,8 @@ export function DataTable<TData, TValue>({
   onAdd,
   addLabel,
   rowActions,
+  rowActionsVariant = "menu",
+  selectable = false,
   bulkActions,
   serverSide,
   pageSize = 10,
@@ -94,6 +99,8 @@ export function DataTable<TData, TValue>({
   emptyTitle,
   emptyDescription,
   onRowSelectionChange,
+  onSelectionChange,
+  columnFilterRow = true,
   onRowClick,
   getRowId,
   className,
@@ -118,13 +125,30 @@ export function DataTable<TData, TValue>({
   });
 
   const isServerSide = !!serverSide;
-  const enableRowSelection = !!bulkActions?.length;
+  const enableRowSelection = selectable || !!bulkActions?.length;
 
   // Auto-append a kebab-menu actions column when `rowActions` is supplied,
   // unless the caller already defined their own `id: "actions"` column.
   const resolvedColumns = React.useMemo<ColumnDef<TData, TValue>[]>(() => {
-    if (!rowActions?.length) return columns;
-    if (columns.some((c) => c.id === "actions")) return columns;
+    // Leading checkbox column whenever rows are selectable (header = select all / indeterminate).
+    const withSelect = (cols: ColumnDef<TData, TValue>[]) =>
+      enableRowSelection && !cols.some((c) => c.id === "select")
+        ? [selectionColumn<TData>() as ColumnDef<TData, TValue>, ...cols]
+        : cols;
+    if (!rowActions?.length) return withSelect(columns);
+    if (columns.some((c) => c.id === "actions")) return withSelect(columns);
+
+    if (rowActionsVariant === "inline") {
+      const inlineColumn: ColumnDef<TData, TValue> = {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => <DataTableInlineActions row={row.original} actions={rowActions} />,
+        enableSorting: false,
+        enableHiding: false,
+        size: 96,
+      };
+      return withSelect([inlineColumn, ...columns]);
+    }
 
     const actionsColumn: ColumnDef<TData, TValue> = {
       id: "actions",
@@ -136,8 +160,8 @@ export function DataTable<TData, TValue>({
       enableHiding: false,
       size: 48,
     };
-    return [...columns, actionsColumn];
-  }, [columns, rowActions]);
+    return withSelect([...columns, actionsColumn]);
+  }, [columns, rowActions, rowActionsVariant, enableRowSelection]);
 
   const table = useReactTable({
     data,
@@ -152,6 +176,7 @@ export function DataTable<TData, TValue>({
     },
     enableRowSelection,
     getRowId,
+    defaultColumn: { filterFn: includesText as FilterFn<TData> },
     manualPagination: isServerSide,
     manualSorting: isServerSide,
     manualFiltering: isServerSide,
@@ -163,7 +188,19 @@ export function DataTable<TData, TValue>({
         serverSide.onSortingChange(next);
       }
     },
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: (updater) => {
+      const next = typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(next);
+      if (isServerSide && serverSide?.onColumnFiltersChange) {
+        // Server paging: the filter must be applied by the API across all pages, from page 1.
+        const firstPage = { pageIndex: 0, pageSize: pagination.pageSize };
+        setPagination(firstPage);
+        serverSide.onPaginationChange(firstPage);
+        serverSide.onColumnFiltersChange(
+          Object.fromEntries(next.filter((f) => typeof f.value === "string" && f.value !== "").map((f) => [f.id, f.value as string]))
+        );
+      }
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       setRowSelection(updater);
@@ -178,6 +215,12 @@ export function DataTable<TData, TValue>({
     },
     onGlobalFilterChange: (value) => {
       setGlobalFilter(value);
+      if (isServerSide) {
+        // A new search starts again from the first page on the server.
+        const firstPage = { pageIndex: 0, pageSize: pagination.pageSize };
+        setPagination(firstPage);
+        serverSide?.onPaginationChange(firstPage);
+      }
       serverSide?.onGlobalFilterChange?.(value);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -209,6 +252,21 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange(selected);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowSelection]);
+
+  React.useEffect(() => {
+    onSelectionChange?.(Object.keys(rowSelection).filter((id) => rowSelection[id]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowSelection]);
+
+  // Filter row: columns with an accessor that allow filtering. On server-paged tables only when the
+  // server applies the filters (onColumnFiltersChange) — never filter just the current page.
+  const [filterResetKey, setFilterResetKey] = React.useState(0);
+  const canFilterColumn = (column: Column<TData, unknown>) =>
+    columnFilterRow &&
+    column.getCanFilter() &&
+    typeof column.accessorFn !== "undefined" &&
+    (!isServerSide || !!serverSide?.onColumnFiltersChange);
+  const showFilterRow = table.getAllLeafColumns().some((c) => canFilterColumn(c as Column<TData, unknown>));
 
   const rows = table.getRowModel().rows;
   const isFiltered = searchValue.length > 0 || columnFilters.length > 0;
@@ -252,6 +310,22 @@ export function DataTable<TData, TValue>({
                   ))}
                 </TableRow>
               ))}
+              {showFilterRow && (
+                <TableRow className="hover:bg-transparent">
+                  {table.getVisibleLeafColumns().map((column) => (
+                    <TableHead key={column.id} className="py-2">
+                      {canFilterColumn(column as Column<TData, unknown>) ? (
+                        <ColumnFilterInput
+                          key={`${column.id}:${filterResetKey}`}
+                          label={typeof column.columnDef.header === "string" ? column.columnDef.header : column.id}
+                          initialValue={(column.getFilterValue() as string) ?? ""}
+                          onChange={(value) => column.setFilterValue(value || undefined)}
+                        />
+                      ) : null}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              )}
             </TableHeader>
             <TableBody>
               {rows.length ? (
@@ -281,6 +355,7 @@ export function DataTable<TData, TValue>({
                       onClearFilters={() => {
                         handleSearchChange("");
                         table.resetColumnFilters();
+                        setFilterResetKey((k) => k + 1);
                       }}
                     />
                   </TableCell>
@@ -294,8 +369,56 @@ export function DataTable<TData, TValue>({
       <DataTablePagination
         table={table}
         pageSizeOptions={pageSizeOptions}
-        totalRows={isServerSide ? serverSide!.pageCount * pagination.pageSize : undefined}
+        totalRows={isServerSide ? (serverSide!.totalRows ?? serverSide!.pageCount * pagination.pageSize) : undefined}
       />
     </div>
+  );
+}
+
+
+/**
+ * Default column filter: case-insensitive "contains" on the cell's text (CI DataTables column
+ * search). An array value (faceted filters) matches any of its entries exactly.
+ */
+function includesText(row: { getValue: (id: string) => unknown }, columnId: string, filterValue: unknown): boolean {
+  const cell = row.getValue(columnId);
+  if (Array.isArray(filterValue)) return filterValue.length === 0 || filterValue.includes(String(cell));
+  const needle = String(filterValue ?? "").trim().toLowerCase();
+  return needle === "" || String(cell ?? "").toLowerCase().includes(needle);
+}
+includesText.autoRemove = (value: unknown) => value === undefined || value === "" || (Array.isArray(value) && value.length === 0);
+
+/** One filter box in the filter row; reports its value 300 ms after the user stops typing. */
+function ColumnFilterInput({
+  label,
+  initialValue,
+  onChange,
+}: {
+  label: string;
+  initialValue: string;
+  onChange: (value: string) => void;
+}) {
+  const [value, setValue] = React.useState(initialValue);
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+  const first = React.useRef(true);
+  React.useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const t = setTimeout(() => onChangeRef.current(value.trim()), 300);
+    return () => clearTimeout(t);
+  }, [value]);
+  return (
+    <Input
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      aria-label={`Filter ${label}`}
+      className="h-8 min-w-20 bg-white text-xs font-normal"
+    />
   );
 }

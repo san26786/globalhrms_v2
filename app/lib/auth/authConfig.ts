@@ -12,6 +12,8 @@ export const authConfig = {
 
   accessTokenCookie: "globalhr_access_token",
   refreshTokenCookie: "globalhr_refresh_token",
+  // Remembers a brand switch across token refreshes (validated again in /api/auth/refresh).
+  activeBrandCookie: "globalhr_active_brand",
 
   cookie: {
     httpOnly: true,

@@ -21,6 +21,7 @@
 
 import { prisma } from '@/lib/prisma';
 import type { MenuNode, MenuQueryParams, RawMenuRow } from '@/lib/menu/types';
+import { resolveCiUrl } from '@/lib/navigation/routeRegistry';
 
 // Fixed, hardcoded constants — inlined directly into the SQL text below as
 // a literal IN-list. Safe to inline (not user input), and sidesteps any
@@ -35,7 +36,7 @@ const EXCLUDED_MSTR_CD_LIST: string[] = ['CMFE', 'IMFE', 'FMSTM', 'OMFE'];
 // being a tree), but this costs nothing when the data is well-formed.
 const MAX_DEPTH = 8;
 
-async function queryMenuLevel(params: MenuQueryParams): Promise<RawMenuRow[]> {
+export async function queryMenuLevel(params: MenuQueryParams): Promise<RawMenuRow[]> {
   const {
     isSysAdmin,
     oaBrandId,
@@ -207,6 +208,7 @@ export async function getMenuTree(
         name: row.MENU_NAME,
         childMstrId: row.CHILD_MSTR_ID,
         url: row.URL,
+        link: resolveCiUrl(row.URL),
         smallViewIcon: row.SMALL_VIEW_ICON,
         children,
       };

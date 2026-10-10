@@ -66,3 +66,46 @@ export function DataTableActions<TData>({
     </DropdownMenu>
   );
 }
+
+/**
+ * CI listview style row actions: one small icon button per action (edit = blue, delete = red),
+ * rendered in the "Actions" column (DataTable rowActionsVariant="inline").
+ */
+export function DataTableInlineActions<TData>({
+  row,
+  actions,
+}: DataTableActionsProps<TData>) {
+  const visibleActions = actions.filter((a) => a.show?.(row) ?? true);
+  if (visibleActions.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1">
+      {visibleActions.map((action) => {
+        const Icon = action.icon ?? MoreHorizontal;
+        return (
+          <Button
+            key={action.label}
+            type="button"
+            variant="ghost"
+            size="icon"
+            title={action.label}
+            aria-label={action.label}
+            disabled={action.disabled?.(row) ?? false}
+            className={cn(
+              "h-7 w-7",
+              action.variant === "destructive"
+                ? "text-red-600 hover:text-red-700 hover:bg-red-50"
+                : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              action.onClick(row);
+            }}
+          >
+            <Icon className="h-4 w-4" />
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
