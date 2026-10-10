@@ -67,3 +67,12 @@ export async function markLogout(userId: number) {
     data: { IS_ONLINE: false },
   });
 }
+export async function updatePasswordHash(userId: number, passwordHash: string) {
+  return prisma.user_mst.update({
+    where: { USER_ID: userId },
+    data: {
+      PASSWORD: passwordHash,
+      PASSWORD_CHANGED_TIME: new Date(),
+    },
+  });
+}
