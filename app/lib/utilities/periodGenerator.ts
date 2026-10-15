@@ -259,7 +259,10 @@ export async function generatePeriods(
   subject: RequestSubject,
   brand: ScopedBrand,
   now: Date = new Date(),
+  /** Limit generation to these period type codes (period_mst "Syncronize Period"); default all. */
+  options: { onlyTypeCodes?: readonly string[] } = {},
 ): Promise<PeriodGenerationResult> {
+  const only = options.onlyTypeCodes ? new Set(options.onlyTypeCodes) : null;
   const [configs, statusId, verifyValue] = await Promise.all([
     loadConfig(brand.oaBrandId),
     getMasterId(STATUS_ACTIVE_CODE),
@@ -303,6 +306,7 @@ export async function generatePeriods(
       }> = [];
 
       for (const { def, startRaw, frequencyRaw, typeId } of configs) {
+        if (only && !only.has(def.typeCode)) continue;
         const type = def.periodType;
         const missing = [
           !startRaw ? 'start date' : null,

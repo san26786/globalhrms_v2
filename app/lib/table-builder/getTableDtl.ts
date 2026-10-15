@@ -75,6 +75,16 @@ export interface GetTableDtlParams {
   /** colNm / colValue — extra static WHERE column(s), single or array. */
   colNm?: string | string[];
   colValue?: FilterValue | FilterValue[];
+  /**
+   * CI raw $colNm "COLUMN IN (…)" (e.g. period_mst: PERIOD_TYPE_ID IN (enabled types)). An empty
+   * list matches no row, like CI's "1 = 2" fallback.
+   */
+  whereIn?: { column: string; values: FilterValue[] };
+  /**
+   * Columns fetched with every row but not listed (CI row-action conditions such as
+   * IS_VERIFIED = 'No' read them). Ignored when the relation does not have them.
+   */
+  extraSelect?: string[];
 
   /** Org/brand scoping — applied only when session.isAdmin === 1. */
   orgColumnName?: string;
@@ -437,6 +447,8 @@ async function getTableRows<T>(
     primaryKeyColumn = "ID",
     colNm,
     colValue,
+    whereIn,
+    extraSelect = [],
     orgColumnName,
     orgId,
     userColumnName,
@@ -467,7 +479,9 @@ async function getTableRows<T>(
 
   // Listed columns that exist, plus the primary key (row actions need it even when it is hidden).
   const selected = listedColumnNames.filter(has);
-  const selectNames = has(primaryKeyColumn) && !selected.includes(primaryKeyColumn) ? [...selected, primaryKeyColumn] : selected;
+  const selectNames = [
+    ...new Set([...selected, ...[primaryKeyColumn, ...extraSelect].filter(has)]),
+  ];
   const selectColsSql = selectNames.length > 0 ? selectNames.map((c) => ident(c, "select column")).join(", ") : "*";
 
   const whereParts: string[] = [];
@@ -491,6 +505,12 @@ async function getTableRows<T>(
         whereParts.push(`${ident(name)} = ${bind(value)}`);
       }
     });
+  }
+
+  if (whereIn) {
+    whereParts.push(
+      whereIn.values.length ? `${ident(whereIn.column)} IN (${whereIn.values.map(bind).join(", ")})` : "1 = 2",
+    );
   }
 
   // Org/brand scoping — only for org-level admins (isAdmin === 1), same as CI.
@@ -534,7 +554,7 @@ async function getTableRows<T>(
   }
 
   const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
-
+  console.log('LISTSCOPE', { level: session.isAdmin, orgColumnName, orgId, whereSql });
   const countRows = await prisma.$queryRawUnsafe<Array<{ total: bigint | number }>>(
     `SELECT COUNT(*) AS total FROM ${tableSql} ${whereSql}`,
     ...values

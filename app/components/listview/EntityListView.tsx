@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table';
-import { Pencil, PlusCircle, Trash2 } from 'lucide-react';
+import { Pencil, PlusCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { DataTable } from '@/components/DataTable';
@@ -30,27 +30,49 @@ interface ListResponse {
   primaryKey: string;
   objNm: string;
   title: string;
-  links: { add: string | null; edit: string | null; deleteApi: string | null; deleteAll: boolean };
+  links: { add: string | null; edit: string | null; deleteApi: string | null; deleteAll: boolean; rowDelete?: boolean; sync: string | null };
 }
+
+/** A DATE column arrives as midnight UTC ("2024-04-01T00:00:00.000Z"): shown as the date only. */
+const DATE_ONLY = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000)?Z$/;
 
 function formatCell(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
+  const text = String(value);
+  return DATE_ONLY.exec(text)?.[1] ?? text;
+}
+
+/** What module-specific actions get: the selected rows and a list reload. */
+export interface ListContext {
+  selected: Row[];
+  refresh: () => void;
 }
 
 export default function EntityListView({
   list,
   title,
   listActions = [],
+  rowActions: extraRowActions,
+  query,
+  filters,
+  tabs,
 }: {
   /** Key of lib/listview/listDefinitions.ts. */
   list: string;
   /** Overrides the definition's title. */
   title?: string;
-  /** Module-specific header buttons after Add (CI $listActions). */
-  listActions?: ListAction[];
+  /** Module-specific header buttons after Add (CI $listActions); a function gets the selection. */
+  listActions?: ListAction[] | ((ctx: ListContext) => ListAction[]);
+  /** Module-specific row actions after Edit / Delete (CI $actions, e.g. period_mst 'verify'). */
+  rowActions?: (ctx: ListContext) => RowAction<Row>[];
+  /** Page parameters forwarded to the list API (CI index($arg…), e.g. periodTypeId). */
+  query?: Record<string, string>;
+  /** CI $customFields: filter controls above the table. */
+  filters?: ReactNode;
+  /** CI tabs_v (e.g. the brand tabs OA Brands / Company Documents / Company Attributes). */
+  tabs?: ReactNode;
 }) {
   const router = useRouter();
   const [meta, setMeta] = useState<Omit<ListResponse, 'data' | 'total' | 'success' | 'message'> | null>(null);
@@ -68,17 +90,27 @@ export default function EntityListView({
   const [pendingDelete, setPendingDelete] = useState<Row[] | null>(null);
   const [deleting, setDeleting] = useState(false);
   const tableRef = useRef(null);
-
+  const [syncing, setSyncing] = useState(false);
+  
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(t);
   }, [search]);
 
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
+  const queryKey = useMemo(() => new URLSearchParams(query ?? {}).toString(), [query]);
+  // A new filter starts again on page 1.
+  const [seenQueryKey, setSeenQueryKey] = useState(queryKey);
+  if (seenQueryKey !== queryKey) {
+    setSeenQueryKey(queryKey);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
+  }
 
   useEffect(() => {
     let cancelled = false;
-    const qs = new URLSearchParams({ page: String(pagination.pageIndex + 1), limit: String(pagination.pageSize) });
+    const qs = new URLSearchParams(queryKey);
+    qs.set('page', String(pagination.pageIndex + 1));
+    qs.set('limit', String(pagination.pageSize));
     if (debounced) qs.set('search', debounced);
     for (const [column, text] of Object.entries(columnFilters)) qs.set(`filter.${column}`, text);
     if (sorting[0]) {
@@ -108,7 +140,7 @@ export default function EntityListView({
     return () => {
       cancelled = true;
     };
-  }, [list, pagination, sorting, debounced, columnFilters, version]);
+  }, [list, queryKey, pagination, sorting, debounced, columnFilters, version]);
 
   const pk = meta?.primaryKey ?? 'ID';
   const idOf = useCallback((row: Row) => String(row[pk] ?? ''), [pk]);
@@ -128,9 +160,10 @@ export default function EntityListView({
   const links = meta?.links;
   const rowActions: RowAction<Row>[] = [
     ...(links?.edit ? [{ label: 'Edit', icon: Pencil, onClick: (row: Row) => router.push(`${links.edit}/${encodeURIComponent(idOf(row))}`) }] : []),
-    ...(links?.deleteApi
+    ...(links?.deleteApi && links.rowDelete !== false
       ? [{ label: 'Delete', icon: Trash2, variant: 'destructive' as const, onClick: (row: Row) => setPendingDelete([row]) }]
       : []),
+    ...(extraRowActions ? extraRowActions({ selected, refresh }) : []),
   ];
   const bulkActions: BulkAction<Row>[] | undefined = links?.deleteAll
     ? [{ label: 'Delete Selected', icon: Trash2, variant: 'destructive', onClick: (sel) => setPendingDelete(sel) }]
@@ -156,6 +189,24 @@ export default function EntityListView({
     refresh();
   };
 
+  const handleSync = async () => {
+    if (!links?.sync || syncing) return;
+    // Sync replaces data on the server (Permission Class: every permission row of the brand), so ask first.
+    if (!window.confirm('Sync replaces the current data with the default configuration. Continue?')) return;
+    setSyncing(true);
+    try {
+      const res = await authFetch(links.sync, { method: 'POST' });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) throw new Error(json?.message ?? 'Sync failed.');
+      toast.success(json.message ?? 'Permissions synced.');
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Sync failed.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const columnSettings: ColumnSetting[] = (meta?.columns ?? []).map((c) => ({
     systemName: c.name,
     displayName: c.label,
@@ -165,7 +216,8 @@ export default function EntityListView({
 
   const headerActions: ListAction[] = [
     ...(links?.add ? [{ key: 'add', title: `Add New ${title ?? meta?.title ?? ''}`.trim(), icon: PlusCircle, href: links.add }] : []),
-    ...listActions,
+    ...(links?.sync ? [{ key: 'sync', title: 'Sync', icon: RefreshCw, onClick: handleSync, disabled: syncing }] : []),
+    ...(typeof listActions === 'function' ? listActions({ selected, refresh }) : listActions),
   ];
 
   return (
@@ -177,6 +229,8 @@ export default function EntityListView({
       onConfigSaved={refresh}
       onDeleteSelected={bulkActions ? () => setPendingDelete(selected) : undefined}
       selectedCount={selected.length}
+      filters={filters}
+      tabs={tabs}
     >
       {error && <p className="text-sm text-red-500">{error}</p>}
 

@@ -48,6 +48,19 @@ export async function getMasterCode(id: number | null | undefined): Promise<stri
   return row?.MSTR_CD ?? null;
 }
 
+/**
+ * CI getAllIndpMstDataByCode(code)->row()->MSTR_NM — configurable message texts such as
+ * EMTSI00002 ("Access Denied: …"). Falls back to `fallback` when the code is missing.
+ */
+export async function getMasterText(code: string, fallback: string): Promise<string> {
+  const row = await prisma.independent_mst.findFirst({
+    where: { MSTR_CD: code, ...NOT_DELETED },
+    select: { MSTR_NM: true },
+    orderBy: { MSTR_ID: 'asc' },
+  });
+  return row?.MSTR_NM?.trim() || fallback;
+}
+
 /** Type id of a known code, e.g. typeIdOf('USA') → the user-status type. */
 export async function typeIdOf(code: string): Promise<number | null> {
   const row = await prisma.independent_mst.findFirst({

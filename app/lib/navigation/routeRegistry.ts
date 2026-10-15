@@ -44,6 +44,9 @@ const SAME_PATH: readonly string[] = [
   'user/changeusername',
   'user/changepassword',
   'user/security_questions',
+  // Profile and Permissions
+  'user/permission_class',
+  'user/permission_dtl',
   // System Settings
   'systmInfoMgr/systm_glssry',
   'systmInfoMgr/systm_lst_dtls',
@@ -65,6 +68,25 @@ const SAME_PATH: readonly string[] = [
   'utilities/export_employee',
   // Master Data Manager
   'common/common_type',
+  // Period Manager
+  'periodMngt/period_mst',
+  // System Manager — payroll setup and documents
+  'systmMngt/salary_component_settings',
+  'systmMngt/payComponentTypeConfig',
+  'systmMngt/gross_earnings_pay_distribution_config',
+  'systmMngt/gross_earnings_pay_distribution_calc',
+  'systmMngt/company_documents',
+  'systmMngt/document_template',
+  'systmMngt/document_templates_variables',
+  'payslip/payslip_settings',
+  // System Manager — employee salary
+  'systmMngt/employee_payment_details',
+  'systmMngt/emp_monthly_payment_details',
+  'systmMngt/emp_yearly_payment_details',
+  // System Manager — organisation & brands
+  'systmMngt/oa_brands',
+  'systmMngt/org_accounts',
+  'systmMngt/oa_brand_settings',
 ];
 
 /** Screens whose Next folder differs from the CI URI. */
@@ -89,8 +111,66 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'common/modulesync', next: '/common/module-sync' },
   // Security Manager
   { ci: 'authoritylevel/authoritylevel', next: '/user/authoritylevel' },
+  // Setting Manager (CI change_module_settings/index/{module}/{funcArea}/{group}/{CS|SS})
+  { ci: 'setting_manager/change_module_settings', next: '/setting_manager/change_module_settings' },
+  { ci: 'setting_manager/change_module_settings/index/0/0/0/CS', next: '/setting_manager/change_module_settings?screen=CS' },
+  { ci: 'setting_manager/change_module_settings/index/0/0/0/SS', next: '/setting_manager/change_module_settings?screen=SS' },
+  {
+    ci: 'setting_manager/change_module_settings/index/:moduleId/:funcAreaId/:settingGroupId',
+    next: '/setting_manager/change_module_settings?moduleId=:moduleId&funcAreaId=:funcAreaId&settingGroupId=:settingGroupId',
+  },
+  // Profile and Permissions (CI's permission form lived in the permission_dtl controller)
+  { ci: 'user/permission_dtl/newPermissionDtl', next: '/user/permission_class/add' },
+  { ci: 'user/permission_dtl/editPermissionDtl/:id', next: '/user/permission_class/edit/:id' },
   // Utilities Manager
   { ci: 'utilities/dashboard_menu', next: '/utilities/dashboard-menu' },
+  // Period Manager. changeType/{type} is listed before index/{type}: both open the same page, and
+  // the reverse lookup (active menu item + permission) must find the "… Period Details" menu entries.
+  { ci: 'periodMngt/period_mst/changeType/:periodTypeId', next: '/periodMngt/period_mst?periodTypeId=:periodTypeId' },
+  { ci: 'periodMngt/period_mst/index/:periodTypeId', next: '/periodMngt/period_mst?periodTypeId=:periodTypeId' },
+  {
+    ci: 'periodMngt/period_mst/index/:periodTypeId/:periodStatusId',
+    next: '/periodMngt/period_mst?periodTypeId=:periodTypeId&periodStatusId=:periodStatusId',
+  },
+  { ci: 'periodMngt/period_mst/addPeriod', next: '/periodMngt/period_mst/add' },
+  { ci: 'periodMngt/period_mst/editPeriod/:id', next: '/periodMngt/period_mst/edit/:id' },
+  // System Manager — payroll setup
+  { ci: 'systmMngt/salary_component_settings/addSalaryComponentSettings', next: '/systmMngt/salary_component_settings/add' },
+  { ci: 'systmMngt/salary_component_settings/editSalaryComponentSettings/:id', next: '/systmMngt/salary_component_settings/edit/:id' },
+  { ci: 'systmMngt/payComponentTypeConfig/editPayComponentTypeConfig/:id', next: '/systmMngt/payComponentTypeConfig' },
+  { ci: 'systmMngt/gross_earnings_pay_distribution_config/editGrossEarningsPay/:id', next: '/systmMngt/gross_earnings_pay_distribution_config' },
+  { ci: 'systmMngt/payslip_setting', next: '/payslip/payslip_settings' },
+  { ci: 'payslip/payslip_settings/newPayslipSettings', next: '/payslip/payslip_settings' },
+  { ci: 'payslip/payslip_settings/editPayslip_settings/:id', next: '/payslip/payslip_settings' },
+  // System Manager — employee salary
+  { ci: 'systmMngt/employee_payment_details/index/:empId', next: '/systmMngt/employee_payment_details?empId=:empId' },
+  { ci: 'systmMngt/employee_payment_details/displayDetails/:empId', next: '/systmMngt/employee_payment_details?empId=:empId' },
+  { ci: 'systmMngt/employee_payment_details/editEmployeePayment/:id', next: '/systmMngt/employee_payment_details/edit/:id' },
+  // System Manager — organisation & brands
+  { ci: 'systmMngt/org_accounts/editOrgAccounts/:id', next: '/systmMngt/org_accounts/edit/:id' },
+  { ci: 'systmMngt/oa_brands/MyDashboard', next: '/systmMngt/oa_brands/my_dashboard' },
+  { ci: 'systmMngt/oa_brands/editOaBrands/:id', next: '/systmMngt/oa_brands/edit/:id' },
+  { ci: 'systmMngt/oa_brands/index/:oaId', next: '/systmMngt/oa_brands' },
+  { ci: 'systmMngt/oa_brands/switchBrandForPartners/:oaId', next: '/systmMngt/oa_brands/my_dashboard?view=partner' },
+  { ci: 'systmMngt/oa_brands/switchBrandForAccountant/:oaId', next: '/systmMngt/oa_brands/my_dashboard?view=accountant' },
+  {
+    ci: 'systmMngt/oa_brand_settings/index/:brandId/:type',
+    next: '/systmMngt/oa_brand_settings?brandId=:brandId&type=:type',
+  },
+  { ci: 'systmMngt/oa_brand_settings/index/:brandId', next: '/systmMngt/oa_brand_settings?brandId=:brandId' },
+  { ci: 'systmMngt/oa_brand_settings/newOabBrandSettings/:brandId/:type', next: '/systmMngt/oa_brand_settings/add?brandId=:brandId&type=:type' },
+  { ci: 'systmMngt/oa_brand_settings/editOaBrandSettings/:id/:brandId/:type', next: '/systmMngt/oa_brand_settings/edit/:id' },
+  // System Manager — documents (CI's company document form lived in user/member_file_upload, BRAND_ID path)
+  { ci: 'systmMngt/company_documents/index/:oaBrandId', next: '/systmMngt/company_documents' },
+  { ci: 'user/member_file_upload/newFileUpload/:oaBrandId/BRAND_ID', next: '/systmMngt/company_documents/add' },
+  { ci: 'user/member_file_upload/editFileUpload/:id/:oaBrandId/BRAND_ID', next: '/systmMngt/company_documents/edit/:id' },
+  { ci: 'systmMngt/document_template/newDocumentTemplate', next: '/systmMngt/document_template/add' },
+  { ci: 'systmMngt/document_template/editDocument_template/:id', next: '/systmMngt/document_template/edit/:id' },
+  { ci: 'systmMngt/document_templates_variables/newDocumentTemplatesVariables', next: '/systmMngt/document_templates_variables/add' },
+  {
+    ci: 'systmMngt/document_templates_variables/editDocument_templates_variables/:id',
+    next: '/systmMngt/document_templates_variables/edit/:id',
+  },
 ];
 
 export const ROUTE_RULES: readonly RouteRule[] = [
@@ -231,6 +311,9 @@ export function ciUrlForLocation(pathname: string, search: URLSearchParams): str
       else captures[value.slice(1)] = v;
     }
     if (!complete || /:[A-Za-z_]/.test(target.path)) continue;
+    // A legacy-only rule whose CI parameters the Next URL does not carry (e.g. editX/:id → a page
+    // without the id) cannot name the CI screen: skip it so the plain screen rule wins.
+    if (c.segments.some((s) => s.startsWith(':') && !(s.slice(1) in captures))) continue;
     const href = fillTemplate(c.rule.next, captures);
     const score = matchScore(href, pathname, search);
     if (score > 0 && (!best || score > best.score)) {

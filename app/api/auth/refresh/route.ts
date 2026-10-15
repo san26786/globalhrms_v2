@@ -52,13 +52,18 @@ export const POST = withPublicApi(async ({ req }) => {
 
   // Keep a brand the user switched to, but only if they are still allowed to be in it.
   let oaBrandId = user.OA_BRAND_ID;
+  // The organisation of the active brand (as the switch route signs it; a sysadmin or partner may be in another organisation).
+  let oaId = user.OA_ID;
   const switchedTo = parseActiveBrandCookie(req.cookies.get(authConfig.activeBrandCookie)?.value, user.USER_ID);
   if (switchedTo !== null && switchedTo !== user.OA_BRAND_ID) {
     const access = await resolveBrandAccess(
       { isSysAdmin: user.IS_SYSADMIN, isAdmin: user.IS_ADMIN, oaId: user.OA_ID, oaBrandId: user.OA_BRAND_ID },
       switchedTo,
     );
-    if (access.ok) oaBrandId = access.brand.id;
+    if (access.ok) {
+      oaBrandId = access.brand.id;
+      oaId = access.brand.oaId;
+    }
   }
 
   const accessToken = signAccessToken({
@@ -66,7 +71,7 @@ export const POST = withPublicApi(async ({ req }) => {
     username: user.USER_NAME,
     isAdmin: user.IS_ADMIN,
     isSysAdmin: user.IS_SYSADMIN,
-    oaId: user.OA_ID,
+    oaId,
     oaBrandId,
     sid: payload.sid,
     pla: payload.pla ?? null,

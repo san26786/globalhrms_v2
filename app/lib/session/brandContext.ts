@@ -112,6 +112,16 @@ export function getBrandContext(oaBrandId: number): Promise<BrandContext> {
   return value;
 }
 
+/**
+ * Drop the cached context after the brand's settings changed (CI cache_delete_all() in
+ * change_module_settings). Brand 0 holds the system defaults every brand falls back to, so
+ * clearing it clears all brands.
+ */
+export function invalidateBrandContext(oaBrandId: number): void {
+  if (oaBrandId === 0) cache.clear();
+  else cache.delete(oaBrandId);
+}
+
 /** CI monthly_register_m::checkODExists(today, user, ODSA): an approved outdoor entry covers `day`. */
 export async function hasApprovedOutdoorOn(userId: number, day: Date): Promise<boolean> {
   const approvedId = await getMasterId('ODSA');

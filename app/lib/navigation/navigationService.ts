@@ -4,7 +4,29 @@ import { permissionEngine, PermissionAction } from '@/lib/permission';
 import { permissionRepository } from '@/lib/permission/permissionRepository';
 import type { RequestSubject } from '@/lib/auth/getSubject';
 import { getBrandContext } from '@/lib/session/brandContext';
-import { ciUrlForLocation } from './routeRegistry';
+import { PROFILE_MENU, SETTINGS_MENU, visibleMenuItems } from '@/lib/header/headerMenus';
+import type { HeaderSession } from '@/lib/header/headerSession';
+import { ciUrlForLocation, normalizeCiPath } from './routeRegistry';
+
+/**
+ * CI header_v links (Profile / Settings dropdowns) are shown by admin level alone, and their
+ * controllers did not check menu grants — e.g. Settings → Brand Settings / Module Settings for every
+ * admin. A page the caller's header links to is therefore allowed even without a menu grant. The
+ * header's own visibility rules (lib/header/headerMenus) decide, so the two can never disagree.
+ */
+function headerLinkedCiPaths(subject: RequestSubject): Set<string> {
+  const session: HeaderSession = {
+    isLoggedIn: true,
+    userLevel: subject.adminLevel,
+    oaId: subject.oaId,
+    alerts: { count: 0, recent: [] },
+  };
+  return new Set(
+    visibleMenuItems([...PROFILE_MENU, ...(subject.adminLevel !== 0 ? SETTINGS_MENU : [])], session).map((item) =>
+      normalizeCiPath(item.href(session)),
+    ),
+  );
+}
 
 /** CI left_menu_v: get_menu_from_relationship($oa_brand_id, …, $parent_id = 370). */
 export const MENU_ROOT_PARENT_ID = 370;
@@ -59,6 +81,7 @@ export async function checkPageAccess(
 ): Promise<AccessDecision> {
   const ciUrl = ciUrlForLocation(pathname, search);
   if (!ciUrl || subject.isSysAdmin) return { allowed: true, ciUrl };
+  if (headerLinkedCiPaths(subject).has(normalizeCiPath(ciUrl))) return { allowed: true, ciUrl };
 
   const resourceIds = await permissionRepository.getMenuResourceIds(ciUrl);
   if (resourceIds.length === 0) return { allowed: true, ciUrl };

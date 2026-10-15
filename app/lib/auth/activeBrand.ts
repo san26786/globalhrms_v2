@@ -35,9 +35,12 @@ export type BrandAccessResult =
 /**
  * Who may act in which brand.
  *  - system admin: any active brand
- *  - admin: any active brand under their own organisation account (OA_ID)
+ *  - admin: any active brand under their own organisation account (OA_ID), and — partner / accountant
+ *    organisations — any active brand of a client organisation whose org_accounts.PARTNER_ID is theirs
+ *    (CI oa_brands::switchBrandForPartners listed exactly those)
  *  - employee: only their home brand
- * ASSUMED from the schema/menu code — confirm against the CI switch-brand controller.
+ * CI's switchBrand itself checked nothing (any logged-in user could switch to any brand id); these
+ * are the brands CI's pickers offered.
  */
 export async function resolveBrandAccess(
   subject: BrandAccessSubject,
@@ -53,10 +56,19 @@ export async function resolveBrandAccess(
   });
   if (!brand) return { ok: false, reason: 'not_found' };
 
-  const allowed =
+  let allowed =
     subject.isSysAdmin ||
     (subject.isAdmin && subject.oaId !== null && brand.OA_ID === subject.oaId) ||
     brand.OA_BRAND_ID === subject.oaBrandId;
+
+  if (!allowed && subject.isAdmin && subject.oaId !== null) {
+    // Partner admin → a client organisation's brand.
+    const client = await prisma.org_accounts.findFirst({
+      where: { OA_ID: brand.OA_ID, PARTNER_ID: subject.oaId, IS_DELETED: 0 },
+      select: { OA_ID: true },
+    });
+    allowed = client !== null;
+  }
 
   return allowed
     ? { ok: true, brand: { id: brand.OA_BRAND_ID, name: brand.OA_BRAND_NM, oaId: brand.OA_ID } }

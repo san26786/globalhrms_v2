@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, type DefaultValues, type FieldValues, type Path } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 
 import DynamicForm from "@/components/DynamicForm/DynamicForm";
@@ -43,7 +43,16 @@ interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
   allowSaveAndAdd?: boolean;
   /** Called with the response data after a successful save instead of navigating to basePath. */
   onSaved?: (data: unknown) => void;
+  /**
+   * Hook run on every render with the form (CI form scripts that fill fields on a change, e.g.
+   * period_mst: picking a period type fills the dates). May use hooks.
+   */
+  useFormEffects?: (form: UseFormReturn<TForm>) => void;
+  /** Extra content between the header card and the form (CI $data['buttons']). */
+  children?: ReactNode;
 }
+
+function noFormEffects(): void {}
 
 /**
  * Standard CI formview_v on the shared DynamicForm: loads the record in edit mode, posts/puts the
@@ -68,9 +77,12 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   submitMethod,
   allowSaveAndAdd = true,
   onSaved,
+  useFormEffects = noFormEffects,
+  children,
 }: ResourceFormPageProps<TForm, TDto>) {
   const router = useRouter();
   const form = useForm<TForm>({ defaultValues });
+  useFormEffects(form);
   const shouldLoad = !!loadUrl || (mode === "edit" && !!id);
   const [loading, setLoading] = useState(shouldLoad);
   const [submitting, setSubmitting] = useState(false);
@@ -150,7 +162,9 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
         onSubmit={(v) => save(v, false)}
         onSaveAndAdd={mode === "add" && allowSaveAndAdd ? (v) => save(v, true) : undefined}
         onCancel={() => router.push(basePath)}
-      />
+      >
+        {children}
+      </DynamicForm>
     </div>
   );
 }

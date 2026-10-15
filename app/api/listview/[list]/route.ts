@@ -3,6 +3,7 @@ import { readQuery, withApi } from '@/lib/http/withApi';
 import { ForbiddenError, NotFoundError } from '@/lib/http/errors';
 import { getListDefinition } from '@/lib/listview/listDefinitions';
 import { getTableDtl, toTableDtlSession } from '@/lib/table-builder/getTableDtl';
+import { getTitleByCode } from '@/lib/table-builder/getTitleByCode';
 
 /**
  * GET /api/listview/{list}?page=1&limit=10&search=&sort=COLUMN&dir=asc&filter.COLUMN=text
@@ -24,17 +25,35 @@ export const GET = withApi<{ list: string }>(async ({ req, params, subject }) =>
   const query = readQuery(req);
   const page = Math.max(1, Math.trunc(Number(query.page) || 1));
   const limit = Math.min(MAX_LIMIT, Math.max(1, Math.trunc(Number(query.limit) || 10)));
+  const canSync = !!def.syncApi && subject.adminLevel === 1 && (await def.policy.check(subject, 'update'));
+  // Sysadmin ko bhi active brand ki rows dikhao (brand admin ko getTableDtl khud filter karta hai).
+  // CI $orgID: the session brand, or the session organisation for lists scoped by org.
+  const orgValue = def.orgScope === 'org' ? subject.oaId : subject.oaBrandId;
+  const staticWhere =
+    def.orgColumn && orgValue != null && subject.adminLevel === 2
+      ? { column: def.orgColumn, value: orgValue }
+      : def.scope
+        ? undefined
+        : def.where;
+  // CI index($args…): per-request $colNm / $colValue (e.g. period type / status filter).
+  const scope = def.scope ? await def.scope(subject, query) : {};
+  const equals = [...(staticWhere ? [staticWhere] : []), ...(scope.equals ?? [])];
+
+  // Promise.all ke baad:
+  const title = (def.titleCode ? await getTitleByCode(def.titleCode) : null) ?? def.title;
 
   const [result, canCreate, canUpdate, canDelete] = await Promise.all([
     getTableDtl<Record<string, unknown>>({
       objNm: def.objNm,
       primaryKeyColumn: def.primaryKey,
-      colNm: def.where?.column,
-      colValue: def.where?.value,
+      colNm: equals.map((w) => w.column),
+      colValue: equals.map((w) => w.value),
+      whereIn: scope.in,
+      extraSelect: def.extraColumns,
       orgColumnName: def.orgColumn,
-      orgId: subject.oaBrandId,
+      orgId: orgValue,
       userColumnName: def.userColumn,
-      userId: subject.userId,
+      userId: def.userScope === 'brand' ? subject.oaBrandId : subject.userId,
       session: toTableDtlSession(subject),
       page,
       limit,
@@ -60,13 +79,15 @@ export const GET = withApi<{ list: string }>(async ({ req, params, subject }) =>
     columns: result.columns.map((c) => ({ name: c.name, label: c.label })),
     primaryKey: def.primaryKey,
     objNm: def.objNm,
-    title: def.title,
+    title: title,
     permissions: { create: canCreate, update: canUpdate, delete: canDelete },
     links: {
       add: canCreate ? def.addHref ?? null : null,
       edit: canUpdate ? def.editHref ?? null : null,
       deleteApi: canDelete ? def.deleteApi ?? null : null,
       deleteAll: canDelete && (def.deleteAll ?? true),
+      rowDelete: canDelete && (def.rowDelete ?? true),
+      sync: canSync ? def.syncApi : null,
     },
   });
 });
