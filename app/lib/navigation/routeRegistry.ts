@@ -72,6 +72,7 @@ const SAME_PATH: readonly string[] = [
   'periodMngt/period_mst',
   // System Manager — payroll setup and documents
   'systmMngt/salary_component_settings',
+  'salaryComponentMember/salarycomponentmember',
   'systmMngt/payComponentTypeConfig',
   'systmMngt/gross_earnings_pay_distribution_config',
   'systmMngt/gross_earnings_pay_distribution_calc',

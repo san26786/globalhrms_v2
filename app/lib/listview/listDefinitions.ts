@@ -129,7 +129,21 @@ export const LIST_DEFINITIONS = {
     policy: menuPolicy('systmMngt/salary_component_settings'),
     addHref: '/systmMngt/salary_component_settings/add',
     editHref: '/systmMngt/salary_component_settings/edit',
+    syncApi: '/api/systmMngt/salary_component_settings/sync',
     deleteApi: '/api/systmMngt/salary_component_settings',
+    orgColumn: 'OABRANDID',
+    userColumn: 'USERID',
+  },
+  /** CI salaryComponentMember/salarycomponentmember::index() ("Component Member") */
+  salary_component_member: {
+    title: 'Component Member',
+    objNm: 'salarycomponentmember_vw',      // view: prisma/sql/views/salarycomponentmember_vw.sql
+    primaryKey: 'SALARY_COMP_MEMBER_ID',
+    policy: menuPolicy('salaryComponentMember/salarycomponentmember'),
+    addHref: '/salaryComponentMember/salarycomponentmember/add',
+    editHref: '/salaryComponentMember/salarycomponentmember/edit',
+    syncApi: '/api/salaryComponentMember/salarycomponentmember/sync',
+    deleteApi: '/api/salaryComponentMember/salarycomponentmember',
     orgColumn: 'OABRANDID',
     userColumn: 'USERID',
   },
