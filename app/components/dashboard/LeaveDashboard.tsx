@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Clock, FileCheck, Users, PlusCircle, Calendar, Send, ShieldAlert, Sparkles } from 'lucide-react';
 import { LeaveDashboardData } from '@/lib/dashboard/types';
+import { authFetch } from '@/lib/auth/authFetch';
 
 interface LeaveRequest {
   id: string;
@@ -20,7 +21,7 @@ export default function LeaveDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/dashboard/leave');
+        const res = await authFetch('/api/dashboard/leave');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load leave data');
         if (!cancelled) setDashboardData(json.data as LeaveDashboardData);

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Clock, FileCheck, Users, Play, ArrowRight, CheckCircle2, UserCheck, AlertTriangle, Sparkles } from 'lucide-react';
 import { AttendanceDashboardData } from '@/lib/dashboard/types';
+import { authFetch } from '@/lib/auth/authFetch';
 
 interface AttendanceLog {
   id: string;
@@ -20,7 +21,7 @@ export default function AttendanceDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/dashboard/attendance');
+        const res = await authFetch('/api/dashboard/attendance');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load attendance data');
         if (!cancelled) setDashboardData(json.data as AttendanceDashboardData);
