@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { SALARY_SLAB_DATA } from '@/data/mockData';
 
 export interface SalarySlabDatum {
@@ -26,12 +27,12 @@ export default function BarChart({ data, title = 'Average Employee Count under S
   const ticks = Array.from({ length: 7 }, (_, i) => Math.round(i * tickStep));
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col h-full">
+    <div className="flex h-full flex-col rounded-2xl bg-white dark:bg-[#111a2e] p-6 ring-1 ring-slate-200 dark:ring-white/10 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-shadow duration-300 hover:shadow-[0_18px_40px_-24px_rgba(6,27,49,0.3)]">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-display font-semibold text-slate-800 text-base">
+        <h3 className="text-[15px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">
           {title}
         </h3>
-        <button className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+        <button className="rounded-full bg-[#e3edf9] dark:bg-[#16233d] px-3.5 py-1.5 text-[13px] font-medium text-[#083f72] dark:text-[#cfe1fa] transition-colors duration-200 hover:bg-[#d3e3f6] dark:hover:bg-[#1d2d4d] cursor-pointer">
           View Details
         </button>
       </div>
@@ -40,7 +41,7 @@ export default function BarChart({ data, title = 'Average Employee Count under S
         {/* Background Vertical Gridlines */}
         <div className="absolute inset-0 left-[140px] right-[40px] top-0 bottom-6 flex justify-between pointer-events-none select-none">
           {ticks.map((_, i) => (
-            <div key={i} className="h-full border-r border-slate-100 border-dashed first:border-solid" />
+            <div key={i} className="h-full border-r border-slate-100 dark:border-white/10 border-dashed first:border-solid" />
           ))}
         </div>
 
@@ -58,22 +59,24 @@ export default function BarChart({ data, title = 'Average Employee Count under S
                 onMouseLeave={() => setHoveredIndex(null)}
               >
                 {/* Y-Axis Label */}
-                <span className="w-[130px] pr-3 text-[11px] font-medium text-slate-500 font-mono text-left truncate">
+                <span className="w-[130px] pr-3 text-[12px] tabular-nums text-[#535768] dark:text-[#aab3c5] text-left truncate">
                   {slab.range}
                 </span>
 
                 {/* Progress Bar Container */}
                 <div className="flex-1 h-5 flex items-center relative">
-                  <div
-                    className={`h-3.5 rounded-full bg-blue-600 transition-all duration-500 ease-out relative cursor-pointer ${
-                      isHovered ? 'shadow-md shadow-blue-200 brightness-110 h-4' : 'opacity-90'
+                  <motion.div
+                    className={`h-3.5 rounded-full bg-gradient-to-r transition-[background-color,box-shadow,height] duration-300 relative cursor-pointer ${
+                      isHovered ? 'from-[#da5427] to-[#f08a5d] shadow-[0_6px_14px_-6px_rgba(218,84,39,0.7)] h-4' : 'from-[#0b5394] to-[#3b82f6]'
                     }`}
-                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(percentage, 100)}%` }}
+                    transition={{ duration: 0.9, delay: 0.15 + index * 0.06, ease: [0.515, 0.147, 0.25, 1] }}
                   />
                   {/* Floating Count Label */}
                   <span
-                    className={`text-[11px] font-bold text-slate-700 font-mono ml-3 transition-transform duration-200 ${
-                      isHovered ? 'scale-110 text-blue-600' : ''
+                    className={`text-[12px] font-semibold tabular-nums text-[#1a1818] dark:text-[#f1f3f8] ml-3 transition-transform duration-200 ${
+                      isHovered ? 'scale-110 text-[#7a2e12] dark:text-[#f8d3c3]' : ''
                     }`}
                   >
                     {slab.count}
@@ -85,14 +88,14 @@ export default function BarChart({ data, title = 'Average Employee Count under S
         </div>
 
         {/* X-Axis Labels */}
-        <div className="flex items-center pt-4 border-t border-slate-100 mt-2">
+        <div className="flex items-center pt-4 border-t border-slate-100 dark:border-white/10 mt-2">
           {/* Spacing alignment matches label column */}
           <div className="w-[130px]" />
           <div className="flex-1 flex justify-between px-0.5 relative">
             {ticks.map((tick) => (
               <span
                 key={tick}
-                className="text-[10px] font-bold text-slate-400 font-mono -translate-x-1/2"
+                className="text-[11px] font-medium tabular-nums text-[#535768] dark:text-[#aab3c5] -translate-x-1/2"
               >
                 {tick}
               </span>

@@ -7,6 +7,8 @@ import GlobalHRLogo from '@/components/auth/GlobalHRLogo';
 import { getModuleIcon } from '@/lib/menu/iconMap';
 import { useNavigation } from '@/lib/navigation/NavigationContext';
 import type { MenuNode } from '@/lib/menu/types';
+import { poppins } from '@/components/auth/AuthUi';
+import { ThemeScope } from '@/components/dashboard/DashboardUi';
 
 /**
  * Left menu — port of CI include/left_menu_v.php.
@@ -90,9 +92,9 @@ function SubMenu({ nodes, onNavigate, depth = 1 }: { nodes: MenuNode[]; onNaviga
               node={sub}
               active={active}
               onNavigate={onNavigate}
-              className="block w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all truncate"
-              activeClassName="text-blue-600 bg-blue-50/50"
-              inactiveClassName="text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+              className="block w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 truncate"
+              activeClassName="text-[#7a2e12] dark:text-[#f8d3c3] bg-[#fbe6dd] dark:bg-[#da5427]/15"
+              inactiveClassName="text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:translate-x-0.5"
             >
               {sub.name}
             </MenuEntry>
@@ -105,8 +107,8 @@ function SubMenu({ nodes, onNavigate, depth = 1 }: { nodes: MenuNode[]; onNaviga
               type="button"
               onClick={() => setOpen((o) => ({ ...o, [sub.id]: !isOpen }))}
               aria-expanded={isOpen}
-              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                active ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 cursor-pointer ${
+                active ? 'text-[#7a2e12] dark:text-[#f8d3c3]' : 'text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white hover:bg-[#f6f7f9] dark:hover:bg-white/5'
               }`}
               title={sub.name}
             >
@@ -114,7 +116,7 @@ function SubMenu({ nodes, onNavigate, depth = 1 }: { nodes: MenuNode[]; onNaviga
               {isOpen ? <ChevronUp className="w-3 h-3 opacity-70 shrink-0" /> : <ChevronDown className="w-3 h-3 opacity-70 shrink-0" />}
             </button>
             {isOpen && (
-              <div className="ml-3 pl-2 border-l border-slate-100 flex flex-col gap-0.5">
+              <div className="ml-3 pl-2 border-l border-slate-200 dark:border-white/10 flex flex-col gap-0.5">
                 <SubMenu nodes={sub.children} onNavigate={onNavigate} depth={depth + 1} />
               </div>
             )}
@@ -160,15 +162,16 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
   const flyoutNode = isCollapsed && hoverId !== null ? menu.find((m) => m.id === hoverId) ?? null : null;
 
   return (
+    <ThemeScope contents>
     <aside
-      className={`bg-white border-r border-slate-100 flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 z-50 ${
+      className={`${poppins.className} bg-white dark:bg-[#111a2e] border-r border-slate-200 dark:border-white/10 flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 z-50 ${
         isCollapsed ? 'w-24' : 'w-64'
       }`}
       aria-label="Main navigation"
     >
       {/* Brand Logo Container */}
-      <div className={`${isCollapsed ? 'h-24 py-2' : 'h-20 px-4'} flex items-center justify-center border-b border-slate-50 shrink-0 overflow-hidden`}>
-        <Link href="/dashboard" title={activeBrand || 'Global HR'}>
+      <div className={`${isCollapsed ? 'h-24 py-2' : 'h-20 px-4'} flex items-center justify-center border-b border-slate-50 dark:border-white/5 shrink-0 overflow-hidden`}>
+        <Link href="/dashboard" title={activeBrand || 'Global HR'} className="flex items-center justify-center dark:rounded-xl dark:bg-white dark:px-2.5 dark:py-1">
           {isCollapsed ? <GlobalHRLogo size="sm" stacked activeBrand={activeBrand} /> : <GlobalHRLogo size="md" activeBrand={activeBrand} />}
         </Link>
       </div>
@@ -178,18 +181,18 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
         {loading && (
           <div className="space-y-2" aria-busy="true" aria-label="Loading menu">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+              <div key={i} className="h-10 rounded-xl bg-slate-100 dark:bg-white/10 animate-pulse" />
             ))}
           </div>
         )}
 
         {!loading && error && (
           <div className="px-2 py-3 text-center">
-            <p className="text-[11px] font-bold text-red-500 mb-2">{isCollapsed ? 'Menu error' : error}</p>
+            <p className="text-[12px] font-medium text-rose-800 mb-2">{isCollapsed ? 'Menu error' : error}</p>
             <button
               type="button"
               onClick={reload}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 border border-slate-200 hover:bg-slate-50"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium text-[#323338] dark:text-[#d5dae4] border border-slate-200 dark:border-white/10 hover:bg-[#f6f7f9] dark:hover:bg-white/5 cursor-pointer"
             >
               <RefreshCw className="w-3 h-3" /> {!isCollapsed && 'Retry'}
             </button>
@@ -197,7 +200,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
         )}
 
         {!loading && !error && menu.length === 0 && !isCollapsed && (
-          <p className="px-3 py-4 text-[11px] font-bold text-slate-400 text-center">No modules are assigned to your account.</p>
+          <p className="px-3 py-4 text-[13px] text-[#535768] dark:text-[#aab3c5] text-center">No modules are assigned to your account.</p>
         )}
 
         {!loading &&
@@ -209,15 +212,16 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
             const isExpanded = !isCollapsed && expandedId === item.id;
 
             const baseClass = isCollapsed
-              ? 'w-full flex flex-col items-center justify-center text-center gap-1 py-3 px-1 rounded-xl text-[10px] font-black tracking-normal transition-all duration-200 select-none group relative'
-              : 'w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 select-none group relative';
-            const activeClass = isCollapsed ? 'bg-orange-600 text-white shadow-md shadow-orange-100' : 'bg-blue-600 text-white shadow-md shadow-blue-100';
+              ? 'w-full flex flex-col items-center justify-center text-center gap-1 py-3 px-1 rounded-xl text-[10.5px] font-medium tracking-normal transition-all duration-200 select-none group relative cursor-pointer'
+              : 'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 select-none group relative cursor-pointer';
+            const activeClass = 'bg-[#e15425] text-white shadow-[0_10px_22px_-12px_rgba(225,84,37,0.9)]';
             const inactiveClass = isCollapsed
-              ? 'text-orange-600 hover:bg-orange-50/40 hover:text-orange-700'
-              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800';
+              ? 'text-[#323338] dark:text-[#d5dae4] hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:text-[#1a1818] dark:hover:text-white'
+              : 'text-[#323338] dark:text-[#d5dae4] hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:text-[#1a1818] dark:hover:text-white hover:translate-x-0.5';
 
             const content = (
               <>
+                {active && <span aria-hidden="true" className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-white/80" />}
                 <div className={`flex min-w-0 ${isCollapsed ? 'flex-col items-center gap-1 w-full' : 'items-center gap-3.5'}`}>
                   <Icon
                     className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${
@@ -231,11 +235,11 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
                     }`}
                   />
                   {isCollapsed ? (
-                    <span className="text-[9.5px] leading-[1.15] font-black mt-1 select-none tracking-tight whitespace-normal break-words w-full text-center block px-0.5">
+                    <span className="text-[10.5px] leading-[1.15] font-medium mt-1 select-none tracking-tight whitespace-normal break-words w-full text-center block px-0.5">
                       {item.name}
                     </span>
                   ) : (
-                    <span className="truncate tracking-wide">{item.name}</span>
+                    <span className="truncate">{item.name}</span>
                   )}
                 </div>
                 {!isCollapsed && withChildren && (
@@ -283,7 +287,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
                 )}
 
                 {isExpanded && withChildren && (
-                  <div className="mt-1 ml-6 pl-3 border-l border-slate-100 flex flex-col gap-0.5 animate-fade-in" aria-label={`${item.name} sub-menu`}>
+                  <div className="mt-1 ml-6 pl-3 border-l border-slate-200 dark:border-white/10 flex flex-col gap-0.5 animate-in fade-in-0 slide-in-from-top-1 duration-200" aria-label={`${item.name} sub-menu`}>
                     <SubMenu nodes={item.children} />
                   </div>
                 )}
@@ -299,14 +303,14 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
           onMouseEnter={clearHoverTimer}
           onMouseLeave={() => setHoverId(null)}
           role="menu"
-          className="fixed left-[92px] ml-1 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 w-64 z-50 text-left transition-all duration-200 animate-fade-in"
+          className="fixed left-[92px] ml-1 bg-white dark:bg-[#111a2e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-[0_24px_50px_-20px_rgba(6,27,49,0.4)] py-2 w-64 z-50 text-left animate-in fade-in-0 slide-in-from-left-2 duration-200"
         >
-          <div className="px-4 pb-1.5 mb-1 border-b border-slate-100 text-[10px] font-black uppercase tracking-wider text-slate-400">{flyoutNode.name}</div>
+          <div className="px-4 pb-2 mb-1 border-b border-slate-100 dark:border-white/10 text-[12px] font-medium uppercase tracking-wider text-[#535768] dark:text-[#aab3c5]">{flyoutNode.name}</div>
           <div className="max-h-[75vh] overflow-y-auto px-2 space-y-1 scrollbar-thin">
             {flyoutNode.children.map((sub) =>
               hasChildren(sub) ? (
                 <div key={sub.id} className="px-2 py-1">
-                  <p className="px-2 text-[10px] font-black uppercase text-slate-400">{sub.name}</p>
+                  <p className="px-2 text-[11px] font-medium uppercase text-[#535768] dark:text-[#aab3c5]">{sub.name}</p>
                   <SubMenu nodes={sub.children} onNavigate={() => setHoverId(null)} />
                 </div>
               ) : (
@@ -315,9 +319,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
                   node={sub}
                   active={isActive(sub)}
                   onNavigate={() => setHoverId(null)}
-                  className="block w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-150"
-                  activeClassName="bg-orange-600 text-white shadow-sm"
-                  inactiveClassName="text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                  className="block w-full text-left px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150"
+                  activeClassName="bg-[#e15425] text-white shadow-sm"
+                  inactiveClassName="text-[#323338] dark:text-[#d5dae4] hover:bg-[#fbe6dd] dark:hover:bg-[#da5427]/15 hover:text-[#7a2e12] dark:hover:text-[#f8d3c3]"
                 >
                   {sub.name}
                 </MenuEntry>
@@ -328,21 +332,22 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
       )}
 
       {/* Collapse Bottom Panel */}
-      <div className="p-3 border-t border-slate-50 bg-slate-50/50 shrink-0">
+      <div className="p-3 border-t border-slate-200 dark:border-white/10 shrink-0">
         <button
           id="sidebar-toggle-collapse"
           type="button"
           onClick={onToggleCollapse}
           aria-label="Toggle sidebar"
-          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:bg-white hover:text-slate-800 transition-all duration-200 shadow-sm border border-transparent hover:border-slate-100"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-full text-[13px] font-medium text-[#323338] dark:text-[#d5dae4] hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:text-[#1a1818] dark:hover:text-white transition-all duration-200 border border-slate-200 dark:border-white/10 cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
-            {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronLeft className="w-4 h-4 text-slate-400" />}
-            {!isCollapsed && <span className="tracking-wide">Collapse</span>}
+            {isCollapsed ? <ChevronRight className="w-4 h-4 text-[#535768] dark:text-[#aab3c5]" /> : <ChevronLeft className="w-4 h-4 text-[#535768] dark:text-[#aab3c5]" />}
+            {!isCollapsed && <span>Collapse</span>}
           </div>
-          {!isCollapsed && <span className="text-[9px] text-slate-300 font-mono">Ctrl/⌘B</span>}
+          {!isCollapsed && <span className="text-[11px] text-[#535768] dark:text-[#aab3c5] font-mono">Ctrl/⌘B</span>}
         </button>
       </div>
     </aside>
+    </ThemeScope>
   );
 }

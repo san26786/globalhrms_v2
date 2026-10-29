@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import AuthCard, { buttonClass, inputClass, postJson } from "../AuthCard";
+import { KeyRound, Mail } from "lucide-react";
+import AuthCard, { postJson } from "../AuthCard";
+import { Field, LINK, PrimaryButton, StatusMessage } from "@/components/auth/AuthUi";
 
 /** CI login/forgot_pass — request a password reset link by email. */
 export default function ForgotPasswordPage() {
@@ -19,17 +21,37 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthCard title="Forgot Password" subtitle="Enter your registered email address and we will send you a reset link.">
+    <AuthCard
+      icon={KeyRound}
+      title="Forgot your password?"
+      subtitle="No worries. Enter your registered email address and we will send you a reset link."
+      footer={
+        <Link href="/login/forgot_username" className={LINK}>
+          Forgot username?
+        </Link>
+      }
+    >
       <form onSubmit={submit} className="space-y-4">
-        <input type="email" required autoComplete="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
-        {message && <p className={`text-sm ${message.ok ? "text-emerald-600" : "text-red-500"}`}>{message.text}</p>}
-        <button type="submit" disabled={loading} className={buttonClass}>
-          {loading ? "Sending…" : "Send Reset Link"}
-        </button>
+        <Field
+          id="forgot-pass-email"
+          label="Email address"
+          icon={Mail}
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="name@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        {message && (
+          <StatusMessage key={message.text} ok={message.ok}>
+            {message.text}
+          </StatusMessage>
+        )}
+        <PrimaryButton loading={loading} loadingText="Sending…">
+          Send reset link
+        </PrimaryButton>
       </form>
-      <p className="text-center text-xs text-slate-500">
-        Forgot your username? <Link href="/login/forgot_username" className="font-semibold text-blue-500">Recover it</Link>
-      </p>
     </AuthCard>
   );
 }

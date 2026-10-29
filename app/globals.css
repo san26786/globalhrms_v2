@@ -3,6 +3,9 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* `brand:` styles apply only inside a redesigned module (BrandModule adds .brand-scope), so shared
+   components can carry the new look there and keep their current look everywhere else. */
+@custom-variant brand (&:where(.brand-scope, .brand-scope *));
 
 @theme inline {
   --color-background: var(--background);
@@ -115,6 +118,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Redesigned modules (e.g. Bank Manager): shared UI components inside pick up the brand orange
+   for primary actions and focus rings. Scoped, so other screens keep their current look. */
+.brand-scope {
+  --primary: #e15425;
+  --primary-foreground: #ffffff;
+  --ring: #e15425;
 }
 
 @layer base {

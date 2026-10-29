@@ -82,20 +82,20 @@ export default function AddBankNamePage() {
   return (
     <div className="container mx-auto p-4 space-y-6 text-left max-w-4xl">
       {/* Header Panel */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-[#535768] dark:text-[#aab3c5]">
               <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
               <span>Bank Name Master</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span className="font-semibold text-blue-600">Add</span>
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
+              <span className="font-semibold text-[#0b5394] dark:text-[#8cb8f0]">Add</span>
             </div>
 
             <div className="mt-2 flex items-center gap-2">
-              <Database className="text-blue-600 h-6 w-6" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+              <Database className="text-[#0b5394] dark:text-[#8cb8f0] h-6 w-6" />
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#1a1818] dark:text-[#f1f3f8]">
                 Add Bank Name
               </h1>
             </div>
@@ -108,7 +108,7 @@ export default function AddBankNamePage() {
               disabled={saving}
               onClick={() => performSubmit("save")}
               size="icon"
-              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full bg-[#e15425] hover:bg-[#c2431c] text-white shadow-md shadow-[#e15425]/25 dark:shadow-black/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Save"
             >
               {saving && submitType === "save" ? (
@@ -124,7 +124,7 @@ export default function AddBankNamePage() {
               disabled={saving}
               onClick={() => performSubmit("saveAndAdd")}
               size="icon"
-              className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200/50 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/20 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Save and Add"
             >
               {saving && submitType === "saveAndAdd" ? (
@@ -139,7 +139,7 @@ export default function AddBankNamePage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+                className="rounded-full border-slate-200 dark:border-white/10 hover:bg-[#f6f7f9] dark:hover:bg-white/5 text-[#323338] dark:text-[#d5dae4] shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
                 title="Cancel"
               >
                 <X className="h-5 w-5 stroke-[2.5]" />
@@ -150,15 +150,15 @@ export default function AddBankNamePage() {
       </div>
 
       {/* Main Card Form */}
-      <Card className="rounded-3xl border shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-3xl border shadow-sm bg-white dark:bg-[#111a2e] overflow-hidden">
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
             
             {/* Menu Code Row */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 space-y-0 text-end">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
-                  Menu Code <span className="text-red-500">*</span>
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
+                  Menu Code <span className="text-rose-700 dark:text-rose-300">*</span>
                 </label>
               </div>
               <div className="w-3/4 space-y-0">
@@ -167,7 +167,7 @@ export default function AddBankNamePage() {
                   placeholder="e.g. BNSBI"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  className="h-10 rounded-xl border-slate-200 bg-white font-semibold focus:ring-2 focus:ring-blue-500/20"
+                  className="h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] font-semibold focus:ring-2 focus:ring-[#e15425]/20"
                 />
               </div>
             </div>
@@ -175,8 +175,8 @@ export default function AddBankNamePage() {
             {/* Menu Name Row */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 space-y-0 text-end">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
-                  Menu Name <span className="text-red-500">*</span>
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
+                  Menu Name <span className="text-rose-700 dark:text-rose-300">*</span>
                 </label>
               </div>
               <div className="w-3/4 space-y-0">
@@ -185,7 +185,7 @@ export default function AddBankNamePage() {
                   placeholder="e.g. State Bank of India"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-10 rounded-xl border-slate-200 bg-white font-semibold focus:ring-2 focus:ring-blue-500/20"
+                  className="h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] font-semibold focus:ring-2 focus:ring-[#e15425]/20"
                 />
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function AddBankNamePage() {
             {/* Description Row */}
             <div className="flex gap-2 items-start">
               <div className="w-1/4 space-y-0 text-end pt-2">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                   Description
                 </label>
               </div>
@@ -202,7 +202,7 @@ export default function AddBankNamePage() {
                   placeholder="Description details..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="rounded-xl border-slate-200 bg-white min-h-24 p-3 focus:ring-2 focus:ring-blue-500/20"
+                  className="rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] min-h-24 p-3 focus:ring-2 focus:ring-[#e15425]/20"
                 />
               </div>
             </div>
@@ -210,12 +210,12 @@ export default function AddBankNamePage() {
           </CardContent>
 
           {/* Shaded CardFooter buttons section */}
-          <CardFooter className="flex items-center gap-2 pt-4 border-t border-slate-100 px-6 pb-6 bg-slate-50/50">
+          <CardFooter className="flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-white/10 px-6 pb-6 bg-[#f6f7f9] dark:bg-[#0e1628]">
             <Button
               type="submit"
               disabled={saving}
               onClick={() => setSubmitType("save")}
-              className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1.5 shadow-md shadow-blue-200/50 border-0 cursor-pointer"
+              className="h-10 px-5 rounded-xl bg-[#e15425] hover:bg-[#c2431c] text-white font-semibold gap-1.5 shadow-md shadow-[#e15425]/25 dark:shadow-black/30 border-0 cursor-pointer"
             >
               {saving && submitType === "save" ? (
                 <>
@@ -231,7 +231,7 @@ export default function AddBankNamePage() {
               type="submit"
               disabled={saving}
               onClick={() => setSubmitType("saveAndAdd")}
-              className="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 shadow-md shadow-emerald-200/50 border-0 cursor-pointer"
+              className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold gap-1.5 shadow-md shadow-emerald-700/20 border-0 cursor-pointer"
             >
               {saving && submitType === "saveAndAdd" ? (
                 <>
@@ -244,7 +244,7 @@ export default function AddBankNamePage() {
             </Button>
 
             <Link href="/bank-manager/bank-name-master">
-              <Button type="button" variant="outline" className="h-10 px-5 rounded-xl border-slate-200 hover:bg-slate-100/50 font-bold text-slate-600 bg-white cursor-pointer">
+              <Button type="button" variant="outline" className="h-10 px-5 rounded-xl border-slate-200 dark:border-white/10 hover:bg-[#f1f3f8] dark:hover:bg-white/5 font-semibold text-[#323338] dark:text-[#d5dae4] bg-white dark:bg-[#111a2e] cursor-pointer">
                 Cancel
               </Button>
             </Link>

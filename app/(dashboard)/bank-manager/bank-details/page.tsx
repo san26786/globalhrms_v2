@@ -101,9 +101,9 @@ export default function BankDetailsPage() {
       },
       {
         id: "sr_no",
-        header: () => <span className="font-bold text-slate-700">S.No.</span>,
+        header: () => <span className="font-semibold text-[#1a1818] dark:text-[#e6e9f0]">S.No.</span>,
         cell: ({ row }: any) => {
-          return <span className="text-slate-500 font-medium">{row.index + 1}</span>;
+          return <span className="text-[#535768] dark:text-[#aab3c5] font-medium">{row.index + 1}</span>;
         },
       },
       {
@@ -117,7 +117,7 @@ export default function BankDetailsPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
                 onClick={() => router.push(`/bank-manager/bank-details/edit/${bankDetail.BANK_ID}`)}
                 title="Edit"
               >
@@ -126,7 +126,7 @@ export default function BankDetailsPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
                 onClick={() => handleDelete(bankDetail.BANK_ID, bankDetail.BANK_NAME)}
                 title="Delete"
               >
@@ -149,14 +149,14 @@ export default function BankDetailsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                  className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                  className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
                 >
                   {setting.displayName}
-                  <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                  <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
                 </Button>
               );
             }
-            return <span className="font-bold text-slate-700">{setting.displayName}</span>;
+            return <span className="font-semibold text-[#1a1818] dark:text-[#e6e9f0]">{setting.displayName}</span>;
           },
         });
       }

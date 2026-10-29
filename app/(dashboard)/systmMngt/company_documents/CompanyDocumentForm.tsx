@@ -120,9 +120,9 @@ function Editor({ init, id }: { init: CompanyDocumentInit; id?: string }) {
             type="file"
             accept={init.allowedExtensions.map((e) => `.${e}`).join(",")}
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-1.5 file:text-sm file:font-medium file:text-blue-700"
+            className="block w-full text-sm text-[#323338] dark:text-[#d5dae4] file:mr-3 file:rounded-full file:border-0 file:bg-[#fbe6dd] dark:file:bg-[#da5427]/15 file:px-4 file:py-1.5 file:text-sm file:font-medium file:text-[#7a2e12] dark:file:text-[#f8d3c3]"
           />
-          {v?.imageName && !file && <p className="text-xs text-slate-500">Current file: {v.imageName}</p>}
+          {v?.imageName && !file && <p className="text-xs text-[#535768] dark:text-[#aab3c5]">Current file: {v.imageName}</p>}
         </Row>
         <Row label="User Group" htmlFor="userGroup" error={errors.userGroup}>
           <select id="userGroup" className={selectCls} value={userGroup} onChange={(e) => setUserGroup(e.target.value)}>
@@ -133,7 +133,7 @@ function Editor({ init, id }: { init: CompanyDocumentInit; id?: string }) {
           </select>
         </Row>
       </div>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-[#1a1818] dark:text-[#e6e9f0]">
         <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
         Is Public
       </label>
@@ -143,7 +143,7 @@ function Editor({ init, id }: { init: CompanyDocumentInit; id?: string }) {
 
 export default function CompanyDocumentForm({ mode, id }: { mode: "add" | "edit"; id?: string }) {
   const { data, error } = useInit<CompanyDocumentInit>(`${API}/init${mode === "edit" && id ? `?id=${encodeURIComponent(id)}` : ""}`);
-  if (error) return <p className="p-6 text-sm text-red-500">{error}</p>;
-  if (!data) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
+  if (error) return <p className="p-6 text-sm text-rose-700 dark:text-rose-300">{error}</p>;
+  if (!data) return <p className="p-6 text-sm text-[#535768] dark:text-[#aab3c5]">Loading…</p>;
   return <Editor init={data} id={mode === "edit" ? id : undefined} />;
 }

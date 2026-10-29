@@ -93,7 +93,7 @@ export interface ListViewShellProps {
 
 // Same look as the header's existing export / add buttons.
 const ICON_BTN =
-  'rounded-full border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer';
+  'rounded-full border-slate-200 dark:border-white/10 hover:bg-slate-50 brand:hover:bg-[#f6f7f9] dark:hover:bg-white/5 text-slate-600 brand:text-[#323338] dark:text-[#d5dae4] shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer';
 
 function HeaderActionButton({ action }: { action: ListAction }) {
   const Icon = action.icon;

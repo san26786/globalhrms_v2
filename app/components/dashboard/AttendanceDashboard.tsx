@@ -1,7 +1,10 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { FileText, Clock, FileCheck, Users, Play, ArrowRight, CheckCircle2, UserCheck, AlertTriangle, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { FileText, Clock, FileCheck, Users, UserCheck, AlertTriangle, Sparkles, Radio, Hourglass, TimerOff } from 'lucide-react';
 import { AttendanceDashboardData } from '@/lib/dashboard/types';
+import { PrimaryButton } from '@/components/auth/AuthUi';
+import { Avatar, Badge, DashboardPage, InsightCard, Panel, RankTable, Section, StatCard, Toast, fieldInput, fieldLabel, type Tone } from './DashboardUi';
 
 interface AttendanceLog {
   id: string;
@@ -155,85 +158,50 @@ export default function AttendanceDashboard() {
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in font-sans">
-      
+    <DashboardPage>
       {/* Toast Alert */}
-      {showNotification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-800 animate-slide-up">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-xs font-bold">{showNotification}</span>
-        </div>
-      )}
+      <AnimatePresence>{showNotification && <Toast key={showNotification}>{showNotification}</Toast>}</AnimatePresence>
 
       {/* Top row: 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {kpiCards.map((kpi, idx) => {
-          const IconComponent = kpi.icon;
-          return (
-            <div
-              key={idx}
-              className="bg-white rounded-2xl shadow-sm border border-slate-150 overflow-hidden flex items-stretch h-24 hover:shadow-md hover:border-slate-300 transition-all group"
-            >
-              {/* Colored left container block */}
-              <div className={`bg-gradient-to-br ${kpi.color} w-20 flex items-center justify-center shrink-0`}>
-                <IconComponent className="w-8 h-8 text-white stroke-[1.5] group-hover:scale-110 transition-transform" />
-              </div>
-              
-              {/* Value and Label on the right */}
-              <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                  {kpi.label}
-                </span>
-                <span className="text-2xl font-black text-slate-800 mt-1 font-sans leading-none">
-                  {kpi.value}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-1 font-medium truncate max-w-[150px]">
-                  {kpi.desc}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <Section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        {kpiCards.map((kpi, idx) => (
+          <StatCard key={idx} icon={kpi.icon} label={kpi.label} value={kpi.value} hint={kpi.desc} tone={KPI_TONES[idx]} />
+        ))}
+      </Section>
 
       {/* Dynamic Action Section: Left: Interactive Punch Card, Right: Live Activity Log */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      <Section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Interactive Punch In Widget */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-orange-500" />
-              <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-                Quick Punch Terminal
-              </h3>
-            </div>
-            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${
-              activePunchState === 'in' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50' : 'bg-slate-100 text-slate-500'
-            }`}>
-              {activePunchState === 'in' ? 'ACTIVE: IN' : 'ACTIVE: OUT'}
-            </span>
-          </div>
-
-          <form onSubmit={handlePunch} className="p-5 flex-1 flex flex-col justify-between gap-4">
-            <div className="space-y-3.5">
-              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+        <Panel
+          title="Quick punch terminal"
+          icon={Sparkles}
+          tone="orange"
+          badge={
+            <Badge tone={activePunchState === 'in' ? 'emerald' : 'slate'} pulse={activePunchState === 'in'}>
+              {activePunchState === 'in' ? 'Active: In' : 'Active: Out'}
+            </Badge>
+          }
+        >
+          <form onSubmit={handlePunch} className="flex h-full flex-col justify-between gap-5 p-5">
+            <div className="space-y-4">
+              <p className="text-[13.5px] leading-relaxed text-[#535768] dark:text-[#aab3c5]">
                 Register your mock office entrance, late entry check-in, or early going sign-off directly inside the sandbox environment.
               </p>
 
               {activePunchState === 'out' && (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Punch Log Type</label>
+                <div>
+                  <span className={fieldLabel}>Punch log type</span>
                   <div className="grid grid-cols-3 gap-2">
                     {(['Present', 'Early Going', 'Late Entry'] as const).map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => setPunchType(type)}
-                        className={`py-1.5 px-1 rounded-xl text-[10px] font-bold border transition-all ${
-                          punchType === type 
-                            ? 'bg-blue-50 text-blue-600 border-blue-400' 
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        aria-pressed={punchType === type}
+                        className={`h-10 rounded-full border px-2 text-[13px] font-medium transition-all duration-200 cursor-pointer ${
+                          punchType === type
+                            ? 'border-[#da5427] bg-[#fbe6dd] dark:bg-[#da5427]/15 text-[#7a2e12] dark:text-[#f8d3c3] shadow-[0_6px_16px_-10px_rgba(218,84,39,0.8)]'
+                            : 'border-[#e2e4ea] dark:border-[#2a3550] bg-white dark:bg-[#111a2e] text-[#323338] dark:text-[#d5dae4] hover:border-[#c9ccd6] dark:hover:border-[#3a4767] hover:bg-[#f6f7f9] dark:hover:bg-white/5'
                         }`}
                       >
                         {type}
@@ -243,234 +211,116 @@ export default function AttendanceDashboard() {
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Log Memo / Note</label>
+              <div>
+                <label htmlFor="punch-note" className={fieldLabel}>Log memo / note</label>
                 <input
+                  id="punch-note"
                   type="text"
                   placeholder="e.g. Remote work log, Client meeting, Doctor visit"
                   value={punchNote}
                   onChange={(e) => setPunchNote(e.target.value)}
-                  className="w-full bg-slate-50/50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-700 font-medium"
+                  className={fieldInput}
                 />
               </div>
             </div>
 
-            <button
-              type="submit"
-              className={`w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 ${
-                activePunchState === 'out' 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100' 
-                  : 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-100'
-              }`}
-            >
-              {activePunchState === 'out' ? (
-                <>
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  Punch In Now
-                </>
-              ) : (
-                <>
-                  <Clock className="w-3.5 h-3.5" />
-                  Punch Out
-                </>
-              )}
-            </button>
+            <PrimaryButton loading={false} loadingText="" tone={activePunchState === 'out' ? 'brand' : 'dark'}>
+              {activePunchState === 'out' ? 'Punch in now' : 'Punch out'}
+            </PrimaryButton>
           </form>
-        </div>
+        </Panel>
 
         {/* Live Attendance Activity Log */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col min-h-[250px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Todays Registered Logs & Feed
-            </h3>
-            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">Live Stream</span>
-          </div>
-
-          <div className="p-4 flex-1 flex flex-col justify-start overflow-y-auto max-h-[220px] divide-y divide-slate-100">
-            {attendanceLogs.map((log) => (
-              <div key={log.id} className="py-2.5 flex items-center justify-between hover:bg-slate-50/50 px-2 rounded-xl transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600">
-                    {log.avatar}
+        <Panel
+          title="Today's registered logs & feed"
+          icon={Radio}
+          tone="blue"
+          className="lg:col-span-2"
+          badge={<Badge tone="blue" pulse>Live stream</Badge>}
+        >
+          <ul className="max-h-[320px] divide-y divide-slate-100 dark:divide-white/10 overflow-y-auto px-2 py-2">
+            <AnimatePresence initial={false}>
+              {attendanceLogs.map((log) => (
+                <motion.li
+                  key={log.id}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="flex items-center justify-between gap-4 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-[#f6f7f9] dark:hover:bg-white/5"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar tone={logTone(log.type)}>{log.avatar}</Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate text-[14px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{log.name}</p>
+                      <p className="truncate text-[12.5px] text-[#535768] dark:text-[#aab3c5]">{log.status}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-black text-slate-800 leading-none">{log.name}</h4>
-                    <span className="text-[9px] text-slate-400 font-medium block mt-1">{log.status}</span>
+                  <div className="flex shrink-0 items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-[13px] font-medium tabular-nums text-[#1a1818] dark:text-[#f1f3f8]">{log.time}</p>
+                      <p className="text-[12px] text-[#535768] dark:text-[#aab3c5]">Clock time</p>
+                    </div>
+                    <Badge tone={logTone(log.type)}>{log.type}</Badge>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-4 text-right">
-                  <div className="flex flex-col items-end leading-none">
-                    <span className="text-[10px] font-bold text-slate-500">{log.time}</span>
-                    <span className="text-[9px] text-slate-400 font-medium block mt-1">Clock Time</span>
-                  </div>
-                  <span className={`text-[9px] font-bold px-2.5 py-1 rounded-md border ${
-                    log.type === 'Present' 
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                      : log.type === 'Late Entry' 
-                      ? 'bg-blue-50 text-blue-600 border-blue-100'
-                      : 'bg-amber-50 text-amber-600 border-amber-100'
-                  }`}>
-                    {log.type}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        </Panel>
+      </Section>
 
       {/* Middle row: Stats grids & Top Performers */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Present leaderboard */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[240px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Top Presenties (Current Month)
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-between">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Present Days</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {topPresent.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {row.name}
-                    </td>
-                    <td className="py-2 text-xs font-black text-slate-800 text-right font-mono">{row.count} / 26</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Absentee records */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[240px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Top Absentees (Unplanned)
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-start">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Absent Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {topAbsent.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2.5 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 text-xs font-black text-rose-600 text-right font-mono">{row.count} days</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Half days list */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[240px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Top Half Days Summary
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-start">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Half Days</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {topHalfDays.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2.5 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 text-xs font-black text-amber-600 text-right font-mono">{row.count} Count</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
+      <Section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Panel title="Top presenties (current month)" icon={UserCheck} tone="emerald">
+          <RankTable nameHeader="Employee name" valueHeader="Present days" rows={topPresent} tone="emerald" formatValue={(count) => `${count} / 26`} />
+        </Panel>
+        <Panel title="Top absentees (unplanned)" icon={AlertTriangle} tone="rose">
+          <RankTable nameHeader="Employee name" valueHeader="Absent count" rows={topAbsent} tone="rose" formatValue={(count) => `${count} days`} />
+        </Panel>
+        <Panel title="Top half days summary" icon={Hourglass} tone="sky">
+          <RankTable nameHeader="Employee name" valueHeader="Half days" rows={topHalfDays} tone="sky" formatValue={(count) => `${count} Count`} />
+        </Panel>
+      </Section>
 
       {/* Bottom Row: Last 7 Days Summary with early going details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Early leaving list */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[240px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Early Going - Last 7 Days
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-start">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Occurrences</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {earlyGoingList.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2.5 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 text-xs font-black text-emerald-600 text-right font-mono">{row.count} times</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <Section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Panel title="Early going - last 7 days" icon={TimerOff} tone="amber">
+          <RankTable nameHeader="Employee name" valueHeader="Occurrences" rows={earlyGoingList} tone="amber" formatValue={(count) => `${count} times`} />
+        </Panel>
 
         {/* Corporate Attendance Insights */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 flex flex-col justify-between min-h-[240px]">
+        <InsightCard className="min-h-[240px]">
           <div className="space-y-3">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">System Insight</span>
+            <div className="flex items-center gap-2">
+              <Sparkles aria-hidden="true" className="h-4 w-4 text-[#fde4d8]" />
+              <span className="text-[12px] font-medium uppercase tracking-widest text-[#fde4d8]">System insight</span>
             </div>
-            <h4 className="text-sm font-black text-slate-800">Sandbox Attendance Terminal active</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+            <h4 className="text-[20px] font-medium leading-snug tracking-[-0.01em]">Sandbox attendance terminal active</h4>
+            <p className="text-[14px] leading-relaxed text-white/90">
               Daily logs are synced securely with the active enterprise corporate workspace. Use the quick punch log on the left to simulate live events. All counters instantly recalibrate to preserve system fidelity.
             </p>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
-            <span>Terminal status: <span className="text-emerald-500">ONLINE</span></span>
-            <span>Version: v2.4.1</span>
+          <div className="flex items-center justify-between border-t border-white/15 pt-4 text-[13px]">
+            <span className="flex items-center gap-2">
+              Terminal status:
+              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-200">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
+                ONLINE
+              </span>
+            </span>
+            <span className="text-white/90">Version: v2.4.1</span>
           </div>
-        </div>
-
-      </div>
-
-    </div>
+        </InsightCard>
+      </Section>
+    </DashboardPage>
   );
+}
+
+// Present, absent, early going, late entry.
+const KPI_TONES: Tone[] = ['emerald', 'rose', 'amber', 'blue'];
+
+function logTone(type: AttendanceLog['type']): Tone {
+  return type === 'Present' ? 'emerald' : type === 'Late Entry' ? 'blue' : 'amber';
 }

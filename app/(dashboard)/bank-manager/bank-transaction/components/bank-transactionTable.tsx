@@ -80,17 +80,17 @@ export function DataTable<TData, TValue>({
           onChange={(event) =>
             table.getColumn("PARTICULARS")?.setFilterValue(event.target.value)
           }
-          className="w-1/2 h-11 text-base rounded-xl border-slate-200"
+          className="w-1/2 h-11 text-base rounded-xl border-slate-200 dark:border-white/10"
         />
       </div>
-      <div className="rounded-md border w-full overflow-x-auto bg-white">
+      <div className="rounded-md border w-full overflow-x-auto bg-white dark:bg-[#111a2e]">
         <Table className="min-w-[1600px] text-base">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="h-14 text-sm font-bold">
+                    <TableHead key={header.id} className="h-14 text-sm font-semibold">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -109,10 +109,10 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-slate-50/40"
+                  className="hover:bg-[#f6f7f9] dark:hover:bg-white/5"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-4 px-4 text-sm font-medium text-slate-600">
+                    <TableCell key={cell.id} className="py-4 px-4 text-sm font-medium text-[#323338] dark:text-[#d5dae4]">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -125,7 +125,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-slate-400"
+                  className="h-24 text-center text-[#535768] dark:text-[#aab3c5]"
                 >
                   No results.
                 </TableCell>
@@ -135,19 +135,19 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       
-      <div className="flex items-center justify-between py-4 border-t border-slate-100 mt-4">
+      <div className="flex items-center justify-between py-4 border-t border-slate-100 dark:border-white/10 mt-4">
         <Button
           variant="outline"
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
-          className="flex items-center gap-1.5 px-4 h-10 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-40 transition-all font-bold active:scale-95 shadow-sm text-sm"
+          className="flex items-center gap-1.5 px-4 h-10 rounded-xl border-slate-200 dark:border-white/10 text-[#323338] dark:text-[#d5dae4] hover:text-[#1a1818] dark:hover:text-white disabled:opacity-40 transition-all font-semibold active:scale-95 shadow-sm text-sm"
         >
           <ChevronLeft className="h-4.5 w-4.5" />
           Previous
         </Button>
 
-        <div className="text-sm md:text-base text-slate-500 font-semibold font-sans">
+        <div className="text-sm md:text-base text-[#535768] dark:text-[#aab3c5] font-semibold font-sans">
           {(() => {
             const pageIndex = table.getState().pagination.pageIndex;
             const pageSize = table.getState().pagination.pageSize;
@@ -165,7 +165,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
-          className="flex items-center gap-1.5 px-4 h-10 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-40 transition-all font-bold active:scale-95 shadow-sm text-sm"
+          className="flex items-center gap-1.5 px-4 h-10 rounded-xl border-slate-200 dark:border-white/10 text-[#323338] dark:text-[#d5dae4] hover:text-[#1a1818] dark:hover:text-white disabled:opacity-40 transition-all font-semibold active:scale-95 shadow-sm text-sm"
         >
           Next
           <ChevronRight className="h-4.5 w-4.5" />

@@ -48,32 +48,32 @@ export default function BrandPicker({ view }: { view: PickerView }) {
     }
   };
 
-  if (error) return <p className="p-6 text-sm text-red-500">{error}</p>;
-  if (!data) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
+  if (error) return <p className="p-6 text-sm text-rose-700 dark:text-rose-300">{error}</p>;
+  if (!data) return <p className="p-6 text-sm text-[#535768] dark:text-[#aab3c5]">Loading…</p>;
 
   return (
     <div className="p-4">
       <div className="mx-auto max-w-6xl space-y-6">
-        <div className="rounded-3xl border bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-[#535768] dark:text-[#aab3c5]">
             <span>System Manager</span>
-            <ChevronRight size={15} className="text-slate-400" />
-            <span className="font-semibold text-blue-600">{data.title}</span>
+            <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
+            <span className="font-semibold text-[#0b5394] dark:text-[#8cb8f0]">{data.title}</span>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-blue-600" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">{data.title}</h1>
+            <Building2 className="h-6 w-6 text-[#0b5394] dark:text-[#8cb8f0]" />
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1a1818] dark:text-[#f1f3f8] md:text-3xl">{data.title}</h1>
           </div>
         </div>
 
-        <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="space-y-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] p-6 shadow-sm">
           <div className="relative max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#535768] dark:text-[#aab3c5]" />
             <Input aria-label="Search brands" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="pl-9" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+              <thead className="border-b border-slate-200 dark:border-white/10 text-xs uppercase text-[#535768] dark:text-[#aab3c5]">
                 <tr>
                   {["Brand ID", "Brand", "Brand Name", "Account Name", "Country", "Is Active", "Primary Brand", "Actions"].map((h) => (
                     <th key={h} className="px-3 py-2 font-semibold">{h}</th>
@@ -82,17 +82,17 @@ export default function BrandPicker({ view }: { view: PickerView }) {
               </thead>
               <tbody>
                 {rows.map((b) => (
-                  <tr key={b.oaBrandId} className={`border-b border-slate-100 ${b.isCurrent ? "bg-blue-50/60" : ""}`}>
+                  <tr key={b.oaBrandId} className={`border-b border-slate-100 dark:border-white/10 ${b.isCurrent ? "bg-[#e3edf9] dark:bg-[#16233d]" : ""}`}>
                     <td className="px-3 py-2">{b.oaBrandId}</td>
                     <td className="px-3 py-2">{b.code}</td>
-                    <td className="px-3 py-2 font-medium text-slate-800">{b.name}</td>
+                    <td className="px-3 py-2 font-medium text-[#1a1818] dark:text-[#f1f3f8]">{b.name}</td>
                     <td className="px-3 py-2">{b.organisation}</td>
                     <td className="px-3 py-2">{b.country}</td>
                     <td className="px-3 py-2">{b.isActive ? "Yes" : "No"}</td>
                     <td className="px-3 py-2">{b.isPrimary ? "Yes" : "No"}</td>
                     <td className="px-3 py-2">
                       {b.isCurrent ? (
-                        <span className="text-xs font-medium text-blue-700">Current brand</span>
+                        <span className="text-xs font-medium text-[#083f72] dark:text-[#cfe1fa]">Current brand</span>
                       ) : (
                         <Button
                           type="button"
@@ -112,7 +112,7 @@ export default function BrandPicker({ view }: { view: PickerView }) {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-3 py-6 text-center text-slate-400">No brands found.</td>
+                    <td colSpan={8} className="px-3 py-6 text-center text-[#535768] dark:text-[#aab3c5]">No brands found.</td>
                   </tr>
                 )}
               </tbody>

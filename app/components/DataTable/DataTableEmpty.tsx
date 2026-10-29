@@ -29,8 +29,8 @@ export function DataTableEmpty({
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-        <Icon className="h-6 w-6 text-muted-foreground" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted brand:bg-[#fbe6dd] dark:bg-[#da5427]/15">
+        <Icon className="h-6 w-6 text-muted-foreground brand:text-[#b4441f] dark:text-[#f8a27e]" />
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium">{resolvedTitle}</p>

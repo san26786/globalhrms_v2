@@ -2,7 +2,9 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import AuthCard, { buttonClass, inputClass, postJson } from "../../../AuthCard";
+import { Lock, LockKeyhole } from "lucide-react";
+import AuthCard, { postJson } from "../../../AuthCard";
+import { Field, LINK, PendingNote, PrimaryButton, StatusMessage } from "@/components/auth/AuthUi";
 
 /** CI login/forgot_pass/reset_pass/{token} → changepass: choose a new password (brand policy applies). */
 export default function ResetPasswordPage({ params }: { params: Promise<{ token: string }> }) {
@@ -32,22 +34,54 @@ export default function ResetPasswordPage({ params }: { params: Promise<{ token:
   };
 
   return (
-    <AuthCard title="Reset Password">
-      {valid === null && <p className="text-sm text-center text-slate-400">Checking your link…</p>}
+    <AuthCard
+      icon={LockKeyhole}
+      title="Choose a new password"
+      subtitle={valid === false ? undefined : "Pick something strong that you have not used before."}
+    >
+      {valid === null && <PendingNote>Checking your link…</PendingNote>}
       {valid === false && (
-        <p className="text-sm text-center text-red-500">
-          This password reset link is invalid or has expired. <Link href="/login/forgot_pass" className="font-semibold text-blue-500">Request a new one</Link>.
-        </p>
+        <StatusMessage ok={false}>
+          This password reset link is invalid or has expired.{" "}
+          <Link href="/login/forgot_pass" className={LINK}>
+            Request a new one
+          </Link>
+          .
+        </StatusMessage>
       )}
-      {valid && done && <p className="text-sm text-center text-emerald-600">Password Reset Successfully Done. You can now log in.</p>}
+      {valid && done && <StatusMessage ok>Password Reset Successfully Done. You can now log in.</StatusMessage>}
       {valid && !done && (
         <form onSubmit={submit} className="space-y-4">
-          <input type="password" required autoComplete="new-password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
-          <input type="password" required autoComplete="new-password" placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass} />
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button type="submit" disabled={loading} className={buttonClass}>
-            {loading ? "Saving…" : "Reset Password"}
-          </button>
+          <Field
+            id="reset-password"
+            label="New password"
+            icon={Lock}
+            type="password"
+            required
+            autoComplete="new-password"
+            placeholder="Enter a new password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Field
+            id="reset-confirm-password"
+            label="Confirm new password"
+            icon={Lock}
+            type="password"
+            required
+            autoComplete="new-password"
+            placeholder="Repeat the new password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          {error && (
+            <StatusMessage key={error} ok={false}>
+              {error}
+            </StatusMessage>
+          )}
+          <PrimaryButton loading={loading} loadingText="Saving…">
+            Reset password
+          </PrimaryButton>
         </form>
       )}
     </AuthCard>

@@ -150,9 +150,9 @@ export default function BankNameMasterPage() {
         },
         {
           id: "sr_no",
-          header: () => <span className="font-bold text-slate-700">S.No.</span>,
+          header: () => <span className="font-semibold text-[#1a1818] dark:text-[#e6e9f0]">S.No.</span>,
           cell: ({ row }) => {
-            return <span className="text-slate-500 font-medium">{row.index + 1}</span>;
+            return <span className="text-[#535768] dark:text-[#aab3c5] font-medium">{row.index + 1}</span>;
           },
         },
         {
@@ -166,7 +166,7 @@ export default function BankNameMasterPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                  className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
                   onClick={() => router.push(`/bank-manager/bank-name-master/edit/${record.MSTR_ID}`)}
                   title="Edit"
                 >
@@ -175,7 +175,7 @@ export default function BankNameMasterPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                  className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
                   onClick={() => handleDelete(record.MSTR_ID)}
                   title="Delete"
                 >
@@ -199,25 +199,25 @@ export default function BankNameMasterPage() {
                   <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                    className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
                   >
                     {setting.displayName}
-                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
                   </Button>
                 );
               }
-              return <span className="font-bold text-slate-700">{setting.displayName}</span>;
+              return <span className="font-semibold text-[#1a1818] dark:text-[#e6e9f0]">{setting.displayName}</span>;
             },
             cell: ({ getValue }) => {
               const val = getValue();
               if (setting.systemName === "MSTR_NM") {
-                return <span className="text-slate-800 font-bold">{val !== null && val !== undefined ? String(val) : "-"}</span>;
+                return <span className="text-[#1a1818] dark:text-[#f1f3f8] font-semibold">{val !== null && val !== undefined ? String(val) : "-"}</span>;
               }
               if (setting.systemName === "MSTR_CD") {
-                return <span className="text-slate-600 font-semibold">{val !== null && val !== undefined ? String(val) : "-"}</span>;
+                return <span className="text-[#323338] dark:text-[#d5dae4] font-semibold">{val !== null && val !== undefined ? String(val) : "-"}</span>;
               }
               return (
-                <span className="text-slate-500 font-medium max-w-xs truncate block font-sans">
+                <span className="text-[#535768] dark:text-[#aab3c5] font-medium max-w-xs truncate block font-sans">
                   {val !== null && val !== undefined ? String(val) : "-"}
                 </span>
               );
@@ -252,8 +252,8 @@ export default function BankNameMasterPage() {
       />
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-          <span className="text-sm font-semibold text-slate-400">Loading bank list...</span>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-white/10 border-t-blue-600" />
+          <span className="text-sm font-semibold text-[#535768] dark:text-[#aab3c5]">Loading bank list...</span>
         </div>
       ) : (
         <DataTable 

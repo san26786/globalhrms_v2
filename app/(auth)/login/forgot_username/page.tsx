@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import AuthCard, { buttonClass, inputClass, postJson } from "../AuthCard";
+import Link from "next/link";
+import { Lightbulb, Mail, UserRound } from "lucide-react";
+import AuthCard, { postJson } from "../AuthCard";
+import { Field, LINK, PrimaryButton, StatusMessage } from "@/components/auth/AuthUi";
 
 /** CI login/forgot_username — email + memorable word (or passcode) → username sent by email. */
 export default function ForgotUsernamePage() {
@@ -19,14 +22,47 @@ export default function ForgotUsernamePage() {
   };
 
   return (
-    <AuthCard title="Forgot Username" subtitle="Enter your registered email and your memorable word or passcode.">
+    <AuthCard
+      icon={UserRound}
+      title="Forgot your username?"
+      subtitle="Enter your registered email and your memorable word or passcode, and we will email your username to you."
+      footer={
+        <Link href="/login/forgot_pass" className={LINK}>
+          Forgot password?
+        </Link>
+      }
+    >
       <form onSubmit={submit} className="space-y-4">
-        <input type="email" required autoComplete="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
-        <input type="password" required autoComplete="off" placeholder="Memorable word or passcode" value={memorableWord} onChange={(e) => setMemorableWord(e.target.value)} className={inputClass} />
-        {message && <p className={`text-sm ${message.ok ? "text-emerald-600" : "text-red-500"}`}>{message.text}</p>}
-        <button type="submit" disabled={loading} className={buttonClass}>
-          {loading ? "Sending…" : "Send Username"}
-        </button>
+        <Field
+          id="forgot-username-email"
+          label="Email address"
+          icon={Mail}
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="name@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <Field
+          id="forgot-username-word"
+          label="Memorable word or passcode"
+          icon={Lightbulb}
+          type="password"
+          required
+          autoComplete="off"
+          placeholder="Your memorable word or passcode"
+          value={memorableWord}
+          onChange={(e) => setMemorableWord(e.target.value)}
+        />
+        {message && (
+          <StatusMessage key={message.text} ok={message.ok}>
+            {message.text}
+          </StatusMessage>
+        )}
+        <PrimaryButton loading={loading} loadingText="Sending…">
+          Send username
+        </PrimaryButton>
       </form>
     </AuthCard>
   );

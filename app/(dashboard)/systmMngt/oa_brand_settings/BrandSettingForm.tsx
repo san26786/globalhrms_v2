@@ -88,7 +88,7 @@ function Editor({ init, id }: { init: BrandSettingInit; id?: string }) {
                   />
                 )}
               </div>
-              <label className="flex items-center gap-1.5 text-sm text-slate-600" title="Tick to enter custom value">
+              <label className="flex items-center gap-1.5 text-sm text-[#323338] dark:text-[#d5dae4]" title="Tick to enter custom value">
                 <input type="checkbox" checked={v.isCustom} onChange={(e) => set("isCustom", e.target.checked)} />
                 Custom value
               </label>
@@ -117,10 +117,10 @@ function Editor({ init, id }: { init: BrandSettingInit; id?: string }) {
           rows={3}
           value={v.description}
           onChange={(e) => set("description", e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-[#e2e4ea] dark:border-[#2a3550] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e15425]/40"
         />
       </Row>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-[#1a1818] dark:text-[#e6e9f0]">
         <input type="checkbox" checked={v.isActive} onChange={(e) => set("isActive", e.target.checked)} />
         Active
       </label>
@@ -135,7 +135,7 @@ export default function BrandSettingForm({ mode, id, brandId, type }: { mode: "a
     ...(type ? { type } : {}),
   }).toString();
   const { data, error } = useInit<BrandSettingInit>(`${API}/init${qs ? `?${qs}` : ""}`);
-  if (error) return <p className="p-6 text-sm text-red-500">{error}</p>;
-  if (!data) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
+  if (error) return <p className="p-6 text-sm text-rose-700 dark:text-rose-300">{error}</p>;
+  if (!data) return <p className="p-6 text-sm text-[#535768] dark:text-[#aab3c5]">Loading…</p>;
   return <Editor init={data} id={mode === "edit" ? id : undefined} />;
 }

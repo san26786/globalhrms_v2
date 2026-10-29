@@ -47,7 +47,7 @@ function Editor({ init, id }: { init: BrandFormInit; id: string }) {
         placeholder={opts.placeholder}
         value={v[key]}
         readOnly={locked.has(key)}
-        className={locked.has(key) ? "bg-slate-50" : undefined}
+        className={locked.has(key) ? "bg-[#f6f7f9] dark:bg-[#0e1628]" : undefined}
         onChange={(e) => setV((p) => ({ ...p, [key]: e.target.value }))}
       />
     </Row>
@@ -62,7 +62,7 @@ function Editor({ init, id }: { init: BrandFormInit; id: string }) {
       </select>
     </Row>
   );
-  const section = (title: string) => <h2 className="col-span-full border-b border-slate-100 pb-1 pt-2 text-sm font-semibold text-slate-500">{title}</h2>;
+  const section = (title: string) => <h2 className="col-span-full border-b border-slate-100 dark:border-white/10 pb-1 pt-2 text-sm font-semibold text-[#535768] dark:text-[#aab3c5]">{title}</h2>;
 
   return (
     <div>
@@ -99,7 +99,7 @@ function Editor({ init, id }: { init: BrandFormInit; id: string }) {
               placeholder="Please briefly tell us about your business."
               value={v.businessDesc}
               onChange={(e) => setV((p) => ({ ...p, businessDesc: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-[#e2e4ea] dark:border-[#2a3550] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e15425]/40"
             />
           </Row>
           {text("startdate", "Date Of Formation(Start Date)", { type: "date" })}
@@ -133,21 +133,21 @@ function Editor({ init, id }: { init: BrandFormInit; id: string }) {
               <img
                 src={logo ? URL.createObjectURL(logo) : `/api/header/brand-logo/${init.oaBrandId}`}
                 alt="Brand logo"
-                className="h-12 w-auto max-w-[160px] rounded border border-slate-200 bg-white object-contain"
+                className="h-12 w-auto max-w-[160px] rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] object-contain"
               />
               <input
                 id="userfile"
                 type="file"
                 accept=".png,.jpg,.jpeg,.gif,.bmp,.jfif,.tiff"
                 onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-1.5 file:text-sm file:font-medium file:text-blue-700"
+                className="block w-full text-sm text-[#323338] dark:text-[#d5dae4] file:mr-3 file:rounded-full file:border-0 file:bg-[#fbe6dd] dark:file:bg-[#da5427]/15 file:px-4 file:py-1.5 file:text-sm file:font-medium file:text-[#7a2e12] dark:file:text-[#f8d3c3]"
               />
             </div>
           </Row>
         </div>
         <div className="flex flex-wrap gap-6">
           {(["isActive", "isPrimary"] as const).map((k) => (
-            <label key={k} className="flex items-center gap-2 text-sm text-slate-700">
+            <label key={k} className="flex items-center gap-2 text-sm text-[#1a1818] dark:text-[#e6e9f0]">
               <input type="checkbox" checked={v[k]} disabled={locked.has(k)} onChange={(e) => setV((p) => ({ ...p, [k]: e.target.checked }))} />
               {k === "isActive" ? "Is Active" : "Is Primary"}
             </label>
@@ -160,7 +160,7 @@ function Editor({ init, id }: { init: BrandFormInit; id: string }) {
 
 export default function BrandForm({ id }: { id: string }) {
   const { data, error } = useInit<BrandFormInit>(`${API}/${encodeURIComponent(id)}`);
-  if (error) return <p className="p-6 text-sm text-red-500">{error}</p>;
-  if (!data) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
+  if (error) return <p className="p-6 text-sm text-rose-700 dark:text-rose-300">{error}</p>;
+  if (!data) return <p className="p-6 text-sm text-[#535768] dark:text-[#aab3c5]">Loading…</p>;
   return <Editor init={data} id={id} />;
 }

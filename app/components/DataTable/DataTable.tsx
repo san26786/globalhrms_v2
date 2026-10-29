@@ -293,13 +293,13 @@ export function DataTable<TData, TValue>({
           withSelection={enableRowSelection}
         />
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-md border brand:overflow-hidden brand:rounded-2xl brand:border-slate-200 brand:bg-white brand:shadow-[0_1px_2px_rgba(16,24,40,0.04)] dark:border-white/10 dark:bg-[#111a2e]">
           <Table>
-            <TableHeader>
+            <TableHeader className="brand:bg-[#f6f7f9] dark:bg-white/5">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} style={{ width: header.getSize() }}>
+                    <TableHead key={header.id} style={{ width: header.getSize() }} className="brand:h-11 brand:text-[13px] brand:font-semibold brand:text-[#323338] dark:text-[#d5dae4]">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -333,7 +333,7 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={cn(onRowClick && "cursor-pointer")}
+                    className={cn("brand:transition-colors brand:hover:bg-[#fdf3ee] dark:hover:bg-white/5", onRowClick && "cursor-pointer")}
                     onClick={() => onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -418,7 +418,7 @@ function ColumnFilterInput({
       onChange={(e) => setValue(e.target.value)}
       onClick={(e) => e.stopPropagation()}
       aria-label={`Filter ${label}`}
-      className="h-8 min-w-20 bg-white text-xs font-normal"
+      className="h-8 min-w-20 bg-white dark:bg-[#111a2e] text-xs font-normal"
     />
   );
 }

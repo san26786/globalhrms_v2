@@ -1,11 +1,13 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, Users, FileText } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { LayoutDashboard, Users, UserCheck, UserMinus, Hourglass, UserPlus, UserX, PieChart, CalendarClock, type LucideIcon } from 'lucide-react';
 import DonutChart from '../DonutChart';
 import BarChart from '../BarChart';
 import LineChart from '../LineChart';
 import PendingTable from './PendingTable';
 import { EmployeeDashboardData, NamedCount } from '@/lib/dashboard/types';
+import { DashboardPage, Panel, ScrollConverge, StatCard, pageRise, pageStagger, type Tone } from './DashboardUi';
 
 // ---------------------------------------------------------------------------
 // Small local donut-arc helper. Preserves the exact SVG structure/geometry
@@ -102,249 +104,230 @@ export default function EmployeeDashboard() {
   const dominantStatusPct = statusArcs.length > 0 ? formatPct(Math.max(...statusArcs.map((a) => a.percentage))) : '0%';
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <DashboardPage>
 
       {/* Sliding View Mode Switcher */}
-      <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-5 mb-1">
+      <motion.div variants={pageRise} className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">
-            Employee Workspace
-          </h2>
-          <p className="text-xs text-slate-400 font-semibold mt-0.5">
+          <h2 className="text-[28px] font-medium leading-tight tracking-[-0.03em] text-[#1a1818] dark:text-[#f1f3f8]">Employee workspace</h2>
+          <p className="mt-1 text-[14px] text-[#535768] dark:text-[#aab3c5]">
             {viewMode === 'analytics'
               ? 'Real-time charts representing department engagement, salary slabs, and joinings.'
               : 'Detailed demographic proportions, status checks, and current leave pipelines.'}
-            {error && <span className="text-red-500 ml-2">({error})</span>}
+            {error && <span className="ml-2 text-rose-800 dark:text-rose-300">({error})</span>}
           </p>
         </div>
 
         {/* Toggle Pills */}
-        <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 select-none border border-slate-200/40">
+        <div className="flex select-none items-center gap-1 rounded-full bg-white dark:bg-[#111a2e] p-1 ring-1 ring-slate-200 dark:ring-white/10 shadow-sm">
           <button
             id="toggle-view-analytics"
             onClick={() => setViewMode('analytics')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
-              viewMode === 'analytics'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
+            aria-pressed={viewMode === 'analytics'}
+            className={`relative flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors duration-200 cursor-pointer ${
+              viewMode === 'analytics' ? 'text-white' : 'text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white'
             }`}
           >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            Analytics Overview
+            {viewMode === 'analytics' && <motion.span layoutId="employee-view-pill" className="absolute inset-0 rounded-full bg-[#e15425] shadow-[0_8px_18px_-10px_rgba(225,84,37,0.8)]" transition={{ type: 'spring', stiffness: 380, damping: 32 }} />}
+            <span className="relative flex items-center gap-2">
+              <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
+              Analytics overview
+            </span>
           </button>
           <button
             id="toggle-view-demographics"
             onClick={() => setViewMode('demographics')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
-              viewMode === 'demographics'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
+            aria-pressed={viewMode === 'demographics'}
+            className={`relative flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors duration-200 cursor-pointer ${
+              viewMode === 'demographics' ? 'text-white' : 'text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white'
             }`}
           >
-            <Users className="w-3.5 h-3.5" />
-            Demographics & KPIs
+            {viewMode === 'demographics' && <motion.span layoutId="employee-view-pill" className="absolute inset-0 rounded-full bg-[#e15425] shadow-[0_8px_18px_-10px_rgba(225,84,37,0.8)]" transition={{ type: 'spring', stiffness: 380, damping: 32 }} />}
+            <span className="relative flex items-center gap-2">
+              <Users aria-hidden="true" className="h-4 w-4" />
+              Demographics &amp; KPIs
+            </span>
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Conditionally Render Content based on viewMode */}
-      {viewMode === 'analytics' ? (
-        <div className="space-y-6">
-          {/* Charts Row 1: Donut & Bar */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-full">
-              <DonutChart data={data?.departmentEngagement} />
+      <AnimatePresence mode="wait">
+        {viewMode === 'analytics' ? (
+          <motion.div key="analytics" variants={pageStagger} initial="hidden" animate="show" exit={VIEW_EXIT} className="space-y-6">
+            {/* Charts Row 1: Donut & Bar */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <ScrollConverge index={0} count={2}>
+                <motion.div variants={pageRise} className="h-full">
+                  <DonutChart data={data?.departmentEngagement} />
+                </motion.div>
+              </ScrollConverge>
+              <ScrollConverge index={1} count={2}>
+                <motion.div variants={pageRise} className="h-full">
+                  <BarChart data={data?.salarySlabs} />
+                </motion.div>
+              </ScrollConverge>
             </div>
-            <div className="h-full">
-              <BarChart data={data?.salarySlabs} />
+
+            {/* Charts Row 2: Line & Table */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <ScrollConverge index={0} count={2}>
+                <motion.div variants={pageRise} className="h-full">
+                  <LineChart data={data?.joiningTrend} />
+                </motion.div>
+              </ScrollConverge>
+              <ScrollConverge index={1} count={2}>
+                <motion.div variants={pageRise} className="h-full">
+                  <PendingTable rows={data?.pendingLeave} />
+                </motion.div>
+              </ScrollConverge>
             </div>
-          </div>
-
-          {/* Charts Row 2: Line & Table */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-full">
-              <LineChart data={data?.joiningTrend} />
+          </motion.div>
+        ) : (
+          <motion.div key="demographics" variants={pageStagger} initial="hidden" animate="show" exit={VIEW_EXIT} className="space-y-6">
+            {/* KPI Cards: Grid of 3x2 exactly like the demographics sheet */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {kpis.map((kpi, idx) => (
+                <ScrollConverge key={idx} index={idx} count={kpis.length}>
+                  <StatCard icon={KPI_ICONS[idx]} label={kpi.label} value={kpi.value} tone={KPI_TONES[idx]} loading={loading} />
+                </ScrollConverge>
+              ))}
             </div>
-            <div className="h-full">
-              <PendingTable rows={data?.pendingLeave} />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6 sm:space-y-8 animate-fade-in">
-          {/* KPI Cards: Grid of 3x2 exactly like the demographics sheet */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {kpis.map((kpi, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-xl shadow-sm border border-slate-150 overflow-hidden flex items-stretch h-24"
-              >
-                {/* Bright sky blue box with icon on the left */}
-                <div className="bg-[#00b0ff] w-20 flex items-center justify-center shrink-0">
-                  <FileText className="w-8 h-8 text-white stroke-[1.5]" />
-                </div>
 
-                {/* Label and Count on the right */}
-                <div className="flex-1 p-4 flex flex-col justify-center items-center text-center">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-tight">
-                    {kpi.label}
-                  </span>
-                  <span className="text-3xl font-black text-slate-700 mt-1 font-sans">
-                    {loading ? '—' : kpi.value}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+            {/* Visual Analytics Sections underneath (3 Columns) */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Gender Split Card */}
+              <ScrollConverge index={0} count={3}>
+                <Panel title="Employee gender split" icon={PieChart} tone="orange" bodyClassName="flex flex-col items-center justify-center p-6">
+                  <div className="relative h-44 w-44 select-none">
+                    <svg width="100%" height="100%" viewBox="0 0 100 100" className="-rotate-90">
+                      {genderArcs.length === 0 ? (
+                        <circle cx="50" cy="50" r="25" fill="transparent" className="stroke-[#e2e8f0] dark:stroke-white/10" strokeWidth="50" />
+                      ) : (
+                        genderArcs.map((arc) => (
+                          <circle
+                            key={arc.name}
+                            cx="50"
+                            cy="50"
+                            r="25"
+                            fill="transparent"
+                            stroke={arc.color}
+                            strokeWidth="50"
+                            strokeDasharray={CIRCUMFERENCE}
+                            strokeDashoffset={arc.strokeDashoffset}
+                            transform={`rotate(${arc.rotation} 50 50)`}
+                          />
+                        ))
+                      )}
+                    </svg>
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <span className="rounded-full bg-[#1a1818]/75 px-2.5 py-1 text-[13px] font-semibold text-white">{dominantGenderPct}</span>
+                    </div>
+                  </div>
 
-          {/* Visual Analytics Sections underneath (3 Columns) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Gender Split Card */}
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-              <div className="bg-white px-5 py-3 border-b border-slate-100 text-center">
-                <h3 className="font-sans font-bold text-slate-700 text-sm">
-                  Employee Gender Split
-                </h3>
-              </div>
-              <div className="p-6 flex-1 flex flex-col items-center justify-center">
-                <div className="relative w-44 h-44 select-none">
-                  <svg width="100%" height="100%" viewBox="0 0 100 100" className="transform -rotate-90">
+                  <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[13px] text-[#323338] dark:text-[#d5dae4]">
                     {genderArcs.length === 0 ? (
-                      <circle cx="50" cy="50" r="25" fill="transparent" stroke="#e2e8f0" strokeWidth="50" />
+                      <span className="text-[#535768] dark:text-[#aab3c5]">No data available.</span>
                     ) : (
                       genderArcs.map((arc) => (
-                        <circle
-                          key={arc.name}
-                          cx="50"
-                          cy="50"
-                          r="25"
-                          fill="transparent"
-                          stroke={arc.color}
-                          strokeWidth="50"
-                          strokeDasharray={CIRCUMFERENCE}
-                          strokeDashoffset={arc.strokeDashoffset}
-                          transform={`rotate(${arc.rotation} 50 50)`}
-                        />
+                        <div key={arc.name} className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: arc.color }} />
+                          <span>{arc.name} ({formatPct(arc.percentage)})</span>
+                        </div>
                       ))
                     )}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-xs font-black text-white bg-slate-900/40 px-2 py-0.5 rounded-full">
-                      {dominantGenderPct}
-                    </span>
                   </div>
-                </div>
+                </Panel>
+              </ScrollConverge>
 
-                <div className="mt-6 flex flex-wrap justify-center gap-4 text-[11px] font-semibold text-slate-600">
-                  {genderArcs.length === 0 ? (
-                    <span className="text-slate-400">No data available.</span>
-                  ) : (
-                    genderArcs.map((arc) => (
-                      <div key={arc.name} className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: arc.color }} />
-                        <span>{arc.name} ({formatPct(arc.percentage)})</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+              {/* Employee Status Card */}
+              <ScrollConverge index={1} count={3}>
+                <Panel title="Employee status" icon={UserCheck} tone="blue" bodyClassName="flex flex-col items-center justify-center p-6">
+                  <div className="relative h-44 w-44 select-none">
+                    <svg width="100%" height="100%" viewBox="0 0 100 100" className="-rotate-90">
+                      {statusArcs.length === 0 ? (
+                        <circle cx="50" cy="50" r="25" fill="transparent" className="stroke-[#e2e8f0] dark:stroke-white/10" strokeWidth="50" />
+                      ) : (
+                        statusArcs.map((arc) => (
+                          <circle
+                            key={arc.name}
+                            cx="50"
+                            cy="50"
+                            r="25"
+                            fill="transparent"
+                            stroke={arc.color}
+                            strokeWidth="50"
+                            strokeDasharray={CIRCUMFERENCE}
+                            strokeDashoffset={arc.strokeDashoffset}
+                            transform={`rotate(${arc.rotation} 50 50)`}
+                          />
+                        ))
+                      )}
+                    </svg>
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <span className="rounded-full bg-[#1a1818]/75 px-2.5 py-1 text-[13px] font-semibold text-white">{dominantStatusPct}</span>
+                    </div>
+                  </div>
 
-            {/* Employee Status Card */}
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-              <div className="bg-white px-5 py-3 border-b border-slate-100 text-center">
-                <h3 className="font-sans font-bold text-slate-700 text-sm">
-                  Employee Status
-                </h3>
-              </div>
-              <div className="p-6 flex-1 flex flex-col items-center justify-center">
-                <div className="relative w-44 h-44 select-none">
-                  <svg width="100%" height="100%" viewBox="0 0 100 100" className="transform -rotate-90">
+                  <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[13px] text-[#323338] dark:text-[#d5dae4]">
                     {statusArcs.length === 0 ? (
-                      <circle cx="50" cy="50" r="25" fill="transparent" stroke="#e2e8f0" strokeWidth="50" />
+                      <span className="text-[#535768] dark:text-[#aab3c5]">No data available.</span>
                     ) : (
                       statusArcs.map((arc) => (
-                        <circle
-                          key={arc.name}
-                          cx="50"
-                          cy="50"
-                          r="25"
-                          fill="transparent"
-                          stroke={arc.color}
-                          strokeWidth="50"
-                          strokeDasharray={CIRCUMFERENCE}
-                          strokeDashoffset={arc.strokeDashoffset}
-                          transform={`rotate(${arc.rotation} 50 50)`}
-                        />
+                        <div key={arc.name} className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: arc.color }} />
+                          <span>{arc.name} ({formatPct(arc.percentage)})</span>
+                        </div>
                       ))
                     )}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-xs font-black text-white bg-slate-900/40 px-2 py-0.5 rounded-full">
-                      {dominantStatusPct}
-                    </span>
                   </div>
-                </div>
+                </Panel>
+              </ScrollConverge>
 
-                <div className="mt-6 flex flex-wrap justify-center gap-4 text-[11px] font-semibold text-slate-600">
-                  {statusArcs.length === 0 ? (
-                    <span className="text-slate-400">No data available.</span>
-                  ) : (
-                    statusArcs.map((arc) => (
-                      <div key={arc.name} className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: arc.color }} />
-                        <span>{arc.name} ({formatPct(arc.percentage)})</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Pending Leave Card */}
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-              <div className="bg-white px-5 py-3 border-b border-slate-100 text-center">
-                <h3 className="font-sans font-bold text-slate-700 text-sm">
-                  Pending Leave
-                </h3>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-start">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      <th className="pb-2 font-bold text-left">Employee Name</th>
-                      <th className="pb-2 font-bold text-center">Reason For Leave</th>
-                      <th className="pb-2 font-bold text-right">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {!data || data.pendingLeave.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="py-12 text-center text-xs text-slate-400 font-medium">
-                          No pending leave records found.
-                        </td>
+              {/* Pending Leave Card */}
+              <ScrollConverge index={2} count={3}>
+                <Panel title="Pending leave" icon={CalendarClock} tone="amber">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="text-[12px] font-medium text-[#535768] dark:text-[#aab3c5]">
+                        <th className="px-5 pb-2 pt-3 font-medium">Employee name</th>
+                        <th className="px-5 pb-2 pt-3 text-center font-medium">Reason for leave</th>
+                        <th className="px-5 pb-2 pt-3 text-right font-medium">Date</th>
                       </tr>
-                    ) : (
-                      data.pendingLeave.map((row) => (
-                        <tr key={row.leaveRequestId} className="border-b border-slate-50 last:border-0">
-                          <td className="py-3 text-left text-xs font-semibold text-slate-700">{row.employeeName}</td>
-                          <td className="py-3 text-center text-xs text-slate-500">{row.reason}</td>
-                          <td className="py-3 text-right text-xs text-slate-400 font-mono">
-                            {new Date(row.dateApplied).toLocaleDateString()}
+                    </thead>
+                    <tbody>
+                      {!data || data.pendingLeave.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="px-5 py-12 text-center text-[13px] text-[#535768] dark:text-[#aab3c5]">
+                            No pending leave records found.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ) : (
+                        data.pendingLeave.map((row) => (
+                          <tr key={row.leaveRequestId} className="border-t border-slate-100 dark:border-white/10 transition-colors duration-200 hover:bg-[#f6f7f9] dark:hover:bg-white/5">
+                            <td className="px-5 py-3 text-[14px] font-medium text-[#1a1818] dark:text-[#f1f3f8]">{row.employeeName}</td>
+                            <td className="px-5 py-3 text-center text-[13px] text-[#323338] dark:text-[#d5dae4]">{row.reason}</td>
+                            <td className="px-5 py-3 text-right text-[13px] tabular-nums text-[#535768] dark:text-[#aab3c5]">
+                              {new Date(row.dateApplied).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </Panel>
+              </ScrollConverge>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          </div>
-        </div>
-      )}
-
-    </div>
+    </DashboardPage>
   );
 }
+
+const VIEW_EXIT = { opacity: 0, y: -8, transition: { duration: 0.2 } };
+
+// Registered, current, former, probation, joined this month, resigned this month.
+const KPI_ICONS: LucideIcon[] = [Users, UserCheck, UserMinus, Hourglass, UserPlus, UserX];
+const KPI_TONES: Tone[] = ['blue', 'emerald', 'slate', 'amber', 'orange', 'rose'];

@@ -1,7 +1,10 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { FileText, Clock, FileCheck, Users, PlusCircle, Calendar, Send, ShieldAlert, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { FileText, Clock, FileCheck, Users, CalendarPlus, ClipboardList, Wallet, CalendarX, HeartPulse } from 'lucide-react';
 import { LeaveDashboardData } from '@/lib/dashboard/types';
+import { PrimaryButton } from '@/components/auth/AuthUi';
+import { Avatar, Badge, DashboardPage, Panel, RankTable, Section, StatCard, Toast, fieldInput, fieldLabel, type Tone } from './DashboardUi';
 
 interface LeaveRequest {
   id: string;
@@ -143,84 +146,48 @@ export default function LeaveDashboard() {
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in font-sans">
-      
+    <DashboardPage>
       {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-800 animate-slide-up">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
+      <AnimatePresence>{toastMessage && <Toast key={toastMessage}>{toastMessage}</Toast>}</AnimatePresence>
 
       {/* Top row: 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {kpiCards.map((kpi, idx) => {
-          const IconComponent = kpi.icon;
-          return (
-            <div
-              key={idx}
-              className="bg-white rounded-2xl shadow-sm border border-slate-150 overflow-hidden flex items-stretch h-24 hover:shadow-md hover:border-slate-300 transition-all group"
-            >
-              {/* Colored left container block */}
-              <div className={`bg-gradient-to-br ${kpi.color} w-20 flex items-center justify-center shrink-0`}>
-                <IconComponent className="w-8 h-8 text-white stroke-[1.5] group-hover:scale-110 transition-transform" />
-              </div>
-              
-              {/* Value and Label on the right */}
-              <div className="flex-1 p-4 flex flex-col justify-center text-left pl-5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                  {kpi.label}
-                </span>
-                <span className="text-2xl font-black text-slate-800 mt-1 font-sans leading-none">
-                  {kpi.value}
-                </span>
-                <span className="text-[9px] text-slate-400 mt-1 font-medium truncate max-w-[150px]">
-                  {kpi.desc}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <Section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        {kpiCards.map((kpi, idx) => (
+          <StatCard key={idx} icon={kpi.icon} label={kpi.label} value={kpi.value} hint={kpi.desc} tone={KPI_TONES[idx]} />
+        ))}
+      </Section>
 
       {/* Middle Interactive Grid Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      <Section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Leave application panel */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
-            <PlusCircle className="w-4 h-4 text-blue-600" />
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Request Leave Terminal
-            </h3>
-          </div>
-
-          <form onSubmit={handleApplyLeave} className="p-5 flex-1 flex flex-col justify-between gap-4">
-            <div className="space-y-3">
-              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+        <Panel title="Request leave terminal" icon={CalendarPlus} tone="orange">
+          <form onSubmit={handleApplyLeave} className="flex h-full flex-col justify-between gap-5 p-5">
+            <div className="space-y-4">
+              <p className="text-[13.5px] leading-relaxed text-[#535768] dark:text-[#aab3c5]">
                 Apply for leave on behalf of employees or your admin account. System will update the metrics instantly.
               </p>
 
               {/* Employee name input */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Employee Name</label>
+              <div>
+                <label htmlFor="leave-employee" className={fieldLabel}>Employee name</label>
                 <input
+                  id="leave-employee"
                   type="text"
                   required
                   value={formEmployee}
                   onChange={(e) => setFormEmployee(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all font-bold text-slate-700"
+                  className={fieldInput}
                 />
               </div>
 
               {/* Leave type dropdown */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Leave Type</label>
+              <div>
+                <label htmlFor="leave-type" className={fieldLabel}>Leave type</label>
                 <select
+                  id="leave-type"
                   value={formType}
                   onChange={(e) => setFormType(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all font-bold text-slate-700 cursor-pointer"
+                  className={`${fieldInput} cursor-pointer`}
                 >
                   <option value="Paid Leave">Paid Leave</option>
                   <option value="Unpaid Leave">Unpaid Leave</option>
@@ -230,202 +197,113 @@ export default function LeaveDashboard() {
               </div>
 
               {/* Date pickers */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">From</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="leave-from" className={fieldLabel}>From</label>
                   <input
+                    id="leave-from"
                     type="date"
                     required
                     value={formFrom}
                     onChange={(e) => setFormFrom(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-[11px] p-2 rounded-xl outline-none font-bold text-slate-700"
+                    className={fieldInput}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">To</label>
+                <div>
+                  <label htmlFor="leave-to" className={fieldLabel}>To</label>
                   <input
+                    id="leave-to"
                     type="date"
                     required
                     value={formTo}
                     onChange={(e) => setFormTo(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-[11px] p-2 rounded-xl outline-none font-bold text-slate-700"
+                    className={fieldInput}
                   />
                 </div>
               </div>
 
               {/* Reason input */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Reason for absence</label>
+              <div>
+                <label htmlFor="leave-reason" className={fieldLabel}>Reason for absence</label>
                 <input
+                  id="leave-reason"
                   type="text"
                   required
                   placeholder="e.g. Vacation, Medical Checkup, Rest"
                   value={formReason}
                   onChange={(e) => setFormReason(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs px-3.5 py-2 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-700 font-medium"
+                  className={fieldInput}
                 />
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-100 flex items-center justify-center gap-2"
-            >
-              <Send className="w-3.5 h-3.5" />
-              Submit Request
-            </button>
+            <PrimaryButton loading={false} loadingText="">
+              Submit request
+            </PrimaryButton>
           </form>
-        </div>
+        </Panel>
 
         {/* Live List: Tomorrow on Leave & Recent Requests */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col min-h-[250px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Leave Requests & History Registry
-            </h3>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">ACTIVE SYSTEM</span>
-          </div>
-
-          <div className="p-4 flex-1 flex flex-col justify-start overflow-y-auto max-h-[330px] divide-y divide-slate-100">
-            {leaveRequests.map((req) => (
-              <div key={req.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50/50 px-2 rounded-xl transition-all gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-[11px] font-black text-blue-600">
-                    {req.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-black text-slate-800 leading-none">{req.name}</h4>
-                      <span className="text-[10px] text-slate-400 font-bold bg-slate-50 px-1.5 py-0.5 rounded">
-                        {req.type}
-                      </span>
+        <Panel
+          title="Leave requests & history registry"
+          icon={ClipboardList}
+          tone="blue"
+          className="lg:col-span-2"
+          badge={<Badge tone="emerald" pulse>Active system</Badge>}
+        >
+          <ul className="max-h-[440px] divide-y divide-slate-100 dark:divide-white/10 overflow-y-auto px-2 py-2">
+            <AnimatePresence initial={false}>
+              {leaveRequests.map((req) => (
+                <motion.li
+                  key={req.id}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="flex flex-col justify-between gap-3 rounded-xl px-3 py-3.5 transition-colors duration-200 hover:bg-[#f6f7f9] dark:hover:bg-white/5 sm:flex-row sm:items-center"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar tone="blue">{req.name.charAt(0)}</Avatar>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[14px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{req.name}</p>
+                        <span className="rounded-md bg-slate-100 dark:bg-white/10 px-2 py-0.5 text-[12px] font-medium text-slate-700 dark:text-slate-200">{req.type}</span>
+                      </div>
+                      <p className="mt-1 text-[12.5px] italic text-[#535768] dark:text-[#aab3c5]">&ldquo;{req.reason}&rdquo;</p>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-medium block mt-1.5 italic">
-                      "{req.reason}"
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-5">
-                  <div className="flex flex-col text-left sm:text-right leading-none">
-                    <span className="text-[10px] font-bold text-slate-500 font-mono">
-                      {req.from} to {req.to}
-                    </span>
-                    <span className="text-[9px] text-slate-400 font-medium mt-1">Calendar Range</span>
                   </div>
 
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${
-                    req.status === 'Approved' 
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                      : req.status === 'Rejected' 
-                      ? 'bg-rose-50 text-rose-600 border-rose-100' 
-                      : 'bg-amber-50 text-amber-600 border-amber-100'
-                  }`}>
-                    {req.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
+                  <div className="flex shrink-0 items-center justify-between gap-5 sm:justify-end">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[13px] font-medium tabular-nums text-[#1a1818] dark:text-[#f1f3f8]">
+                        {req.from} to {req.to}
+                      </p>
+                      <p className="text-[12px] text-[#535768] dark:text-[#aab3c5]">Calendar range</p>
+                    </div>
+                    <Badge tone={req.status === 'Approved' ? 'emerald' : req.status === 'Rejected' ? 'rose' : 'amber'}>{req.status}</Badge>
+                  </div>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        </Panel>
+      </Section>
 
       {/* Leaderboard stats for Leave counts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Paid leave leaderboard */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[220px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Top Paid Leaves Taken
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-start">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Leaves Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {topPaid.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2.5 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 text-xs font-black text-slate-800 text-right font-mono">{row.count} Days</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Unpaid leaves taken */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[220px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Top Unpaid Leave registers
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-start">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Leaves Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {topUnpaid.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2.5 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 text-xs font-black text-rose-600 text-right font-mono">{row.count} Days</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Sick leaves summary */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[220px]">
-          <div className="bg-slate-50/50 px-5 py-3.5 border-b border-slate-100">
-            <h3 className="font-sans font-black text-slate-800 text-xs uppercase tracking-wider">
-              Top Sick Leaves balance
-            </h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col justify-start">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="pb-2 text-left">Employee Name</th>
-                  <th className="pb-2 text-right">Leaves Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {topSick.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-all">
-                    <td className="py-2.5 text-xs font-bold text-slate-700 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 text-xs font-black text-emerald-600 text-right font-mono">{row.count} Days</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
+      <Section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Panel title="Top paid leaves taken" icon={Wallet} tone="blue">
+          <RankTable nameHeader="Employee name" valueHeader="Leaves count" rows={topPaid} tone="blue" formatValue={(count) => `${count} Days`} />
+        </Panel>
+        <Panel title="Top unpaid leave registers" icon={CalendarX} tone="rose">
+          <RankTable nameHeader="Employee name" valueHeader="Leaves count" rows={topUnpaid} tone="rose" formatValue={(count) => `${count} Days`} />
+        </Panel>
+        <Panel title="Top sick leaves balance" icon={HeartPulse} tone="emerald">
+          <RankTable nameHeader="Employee name" valueHeader="Leaves count" rows={topSick} tone="emerald" formatValue={(count) => `${count} Days`} />
+        </Panel>
+      </Section>
+    </DashboardPage>
   );
 }
+
+// Paid, unpaid, sick, lieu days.
+const KPI_TONES: Tone[] = ['blue', 'rose', 'emerald', 'amber'];

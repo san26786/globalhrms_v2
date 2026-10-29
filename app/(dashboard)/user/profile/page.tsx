@@ -3,17 +3,7 @@
 import { useRouter } from "next/navigation";
 import ResourceFormPage from "@/components/resource/ResourceFormPage";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
-
-/** CI user/profile — the logged-in user's own details (username is read-only). */
-interface ProfileForm {
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  tPin: string;
-  memorableWord: string;
-  localTime: boolean;
-}
+import ProfileView, { type ProfileForm } from "./ProfileView";
 
 const fields: DynamicField[] = [
   { name: "username", label: "Username", type: "text", readOnly: true },
@@ -45,6 +35,7 @@ export default function ProfilePage() {
         return rest;
       }}
       onSaved={() => router.push("/dashboard")}
+      renderForm={(props) => <ProfileView {...props} />}
     />
   );
 }

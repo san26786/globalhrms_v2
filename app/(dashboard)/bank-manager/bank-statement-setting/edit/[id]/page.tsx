@@ -226,8 +226,8 @@ export default function EditStatementSettingPage({
   if (loading) {
     return (
       <div className="container mx-auto p-4 flex flex-col items-center justify-center py-40 gap-3">
-        <div className="h-10 w-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-        <p className="text-sm font-semibold text-slate-400">Loading statement settings data...</p>
+        <div className="h-10 w-10 border-4 border-[#0b5394]/20 dark:border-[#8cb8f0]/25 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-sm font-semibold text-[#535768] dark:text-[#aab3c5]">Loading statement settings data...</p>
       </div>
     );
   }
@@ -235,20 +235,20 @@ export default function EditStatementSettingPage({
   return (
     <div className="container mx-auto p-4 space-y-6 text-left max-w-5xl">
       {/* Header Panel (BreadcrumbHeader Design) */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-[#535768] dark:text-[#aab3c5]">
               <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
               <span>Bank Statement Setting</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span className="font-semibold text-blue-600">Edit</span>
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
+              <span className="font-semibold text-[#0b5394] dark:text-[#8cb8f0]">Edit</span>
             </div>
 
             <div className="mt-2 flex items-center gap-2">
-              <Database className="text-blue-600 h-6 w-6" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
+              <Database className="text-[#0b5394] dark:text-[#8cb8f0] h-6 w-6" />
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#1a1818] dark:text-[#f1f3f8]">
                 Edit Bank Statement Setting
               </h1>
             </div>
@@ -261,7 +261,7 @@ export default function EditStatementSettingPage({
               disabled={saving}
               onClick={handleSubmit}
               size="icon"
-              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full bg-[#e15425] hover:bg-[#c2431c] text-white shadow-md shadow-[#e15425]/25 dark:shadow-black/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Save"
             >
               {saving ? (
@@ -276,7 +276,7 @@ export default function EditStatementSettingPage({
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+                className="rounded-full border-slate-200 dark:border-white/10 hover:bg-[#f6f7f9] dark:hover:bg-white/5 text-[#323338] dark:text-[#d5dae4] shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
                 title="Cancel"
               >
                 <X className="h-5 w-5 stroke-[2.5]" />
@@ -287,25 +287,25 @@ export default function EditStatementSettingPage({
       </div>
 
       {/* Main Form wrapped in Card & CardFooter */}
-      <Card className="rounded-3xl border shadow-sm bg-white overflow-hidden text-left">
+      <Card className="rounded-3xl border shadow-sm bg-white dark:bg-[#111a2e] overflow-hidden text-left">
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
             
             {/* Requested By Row */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 space-y-0 text-end">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                   Requested By
                 </label>
               </div>
               <div className="w-3/4 space-y-0">
                 <Select value={requestedBy} onValueChange={setRequestedBy}>
-                  <SelectTrigger className="w-full h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-full h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg max-h-60 overflow-y-auto z-[101]">
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 rounded-xl shadow-lg max-h-60 overflow-y-auto z-[101]">
                     {requestedByOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="hover:bg-slate-50">
+                      <SelectItem key={opt.value} value={opt.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                         {opt.label}
                       </SelectItem>
                     ))}
@@ -317,7 +317,7 @@ export default function EditStatementSettingPage({
             {/* Bank Name Row */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 space-y-0 text-end">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                   Bank Name
                 </label>
               </div>
@@ -326,7 +326,7 @@ export default function EditStatementSettingPage({
                   type="text"
                   disabled
                   value={currentBankName}
-                  className="h-10 rounded-xl border-slate-200 bg-slate-50 text-slate-500 font-bold cursor-not-allowed"
+                  className="h-10 rounded-xl border-slate-200 dark:border-white/10 bg-[#f6f7f9] dark:bg-[#0e1628] text-[#535768] dark:text-[#aab3c5] font-semibold cursor-not-allowed"
                 />
               </div>
             </div>
@@ -334,7 +334,7 @@ export default function EditStatementSettingPage({
             {/* Single Entry Flag Row */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 space-y-0 text-end">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                   Single Entry Flag
                 </label>
               </div>
@@ -349,21 +349,21 @@ export default function EditStatementSettingPage({
             {/* Upload CSV File Row */}
             <div className="flex gap-2 items-start">
               <div className="w-1/4 space-y-0 text-end pt-2">
-                <label className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                <label className="inline-flex items-center gap-1 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                   Upload CSV File
                 </label>
               </div>
               <div className="w-3/4 space-y-3">
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/10 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 group"
+                  className="border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-[#e15425]/60 bg-[#f6f7f9] dark:bg-[#0e1628] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] p-5 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 group"
                 >
-                  <UploadCloud className="h-8 w-8 text-slate-400 group-hover:text-blue-500 group-hover:scale-110 transition-all duration-200" />
+                  <UploadCloud className="h-8 w-8 text-[#535768] dark:text-[#aab3c5] group-hover:text-[#b4441f] dark:group-hover:text-[#f8a27e] group-hover:scale-110 transition-all duration-200" />
                   <div className="text-center">
-                    <span className="text-xs font-bold text-slate-700 block">
+                    <span className="text-xs font-semibold text-[#1a1818] dark:text-[#e6e9f0] block">
                       {fileName ? fileName : "Upload New CSV Statement"}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">Click to select files</span>
+                    <span className="text-[10px] text-[#535768] dark:text-[#aab3c5] font-medium">Click to select files</span>
                   </div>
                   <input
                     ref={fileInputRef}
@@ -375,7 +375,7 @@ export default function EditStatementSettingPage({
                 </div>
 
                 {fileName && (
-                  <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 text-xs font-bold p-2.5 rounded-xl border border-emerald-100 w-fit">
+                  <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-400/30 w-fit">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
                     <span className="truncate">Auto-mapped headers from file</span>
                   </div>
@@ -384,17 +384,17 @@ export default function EditStatementSettingPage({
             </div>
 
             {/* Configure Mapping Section */}
-            <div className="pt-6 border-t border-slate-100 space-y-4">
+            <div className="pt-6 border-t border-slate-100 dark:border-white/10 space-y-4">
               <div className="flex justify-between items-center pb-2">
-                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <FileText className="h-4.5 w-4.5 text-blue-600" />
+                <h2 className="text-sm font-semibold text-[#1a1818] dark:text-[#f1f3f8] flex items-center gap-2">
+                  <FileText className="h-4.5 w-4.5 text-[#0b5394] dark:text-[#8cb8f0]" />
                   Configure CSV to DB Mapping
                 </h2>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={addMappingRow}
-                  className="rounded-full border-blue-200 text-blue-600 hover:bg-blue-50/50 h-9 px-3 gap-1 active:scale-95 transition-all"
+                  className="rounded-full border-[#0b5394]/25 dark:border-[#8cb8f0]/30 text-[#0b5394] dark:text-[#8cb8f0] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] h-9 px-3 gap-1 active:scale-95 transition-all"
                 >
                   <Plus className="h-4 w-4" />
                   Add Row
@@ -403,30 +403,30 @@ export default function EditStatementSettingPage({
 
               <div className="space-y-3">
                 {mappings.map((row, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center group bg-slate-50/30 p-3 rounded-2xl border border-slate-50 hover:bg-slate-50/60 hover:border-slate-100 transition-all">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center group bg-[#f6f7f9] dark:bg-[#0e1628] p-3 rounded-2xl border border-slate-100 dark:border-white/5 hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/10 transition-all">
                     <div className="md:col-span-5 space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider md:hidden">CSV Column Name</label>
+                      <label className="text-[10px] font-semibold text-[#535768] dark:text-[#aab3c5] block uppercase tracking-wider md:hidden">CSV Column Name</label>
                       <Input
                         type="text"
                         placeholder="CSV Column (e.g. Transaction Date)"
                         value={row.csvColumn}
                         onChange={(e) => updateMappingRow(index, "csvColumn", e.target.value)}
-                        className="h-10 rounded-xl border-slate-200 bg-white"
+                        className="h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                       />
                     </div>
 
                     <div className="md:col-span-4 space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider md:hidden">DB Column Name</label>
+                      <label className="text-[10px] font-semibold text-[#535768] dark:text-[#aab3c5] block uppercase tracking-wider md:hidden">DB Column Name</label>
                       <Select
                         value={row.dbColumn}
                         onValueChange={(val) => updateMappingRow(index, "dbColumn", val)}
                       >
-                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white">
+                        <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                           <SelectValue placeholder="Select DB Field" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white border border-slate-100 rounded-xl max-h-60 overflow-y-auto shadow-lg">
+                        <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 rounded-xl max-h-60 overflow-y-auto shadow-lg">
                           {dbFields.map((field) => (
-                            <SelectItem key={field} value={field} className="hover:bg-slate-50">
+                            <SelectItem key={field} value={field} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                               {field}
                             </SelectItem>
                           ))}
@@ -435,13 +435,13 @@ export default function EditStatementSettingPage({
                     </div>
 
                     <div className="md:col-span-2 flex items-center justify-between md:justify-center gap-2">
-                      <span className="text-xs font-semibold text-slate-500 md:hidden">CRDB Flag</span>
+                      <span className="text-xs font-semibold text-[#535768] dark:text-[#aab3c5] md:hidden">CRDB Flag</span>
                       <div className="flex items-center gap-1.5" title="Check if this field indicates Credit/Debit amount">
                         <Switch
                           checked={row.crdbFlag}
                           onCheckedChange={(val) => updateMappingRow(index, "crdbFlag", val)}
                         />
-                        <span className="text-[10px] font-bold text-slate-400">CRDB</span>
+                        <span className="text-[10px] font-semibold text-[#535768] dark:text-[#aab3c5]">CRDB</span>
                       </div>
                     </div>
 
@@ -451,7 +451,7 @@ export default function EditStatementSettingPage({
                         variant="ghost"
                         size="icon"
                         onClick={() => removeMappingRow(index)}
-                        className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        className="h-9 w-9 text-[#535768] dark:text-[#aab3c5] hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-400/10 rounded-xl transition-all"
                       >
                         <Trash2 className="h-4.5 w-4.5" />
                       </Button>
@@ -464,11 +464,11 @@ export default function EditStatementSettingPage({
           </CardContent>
 
           {/* Bottom CardFooter actions shading */}
-          <CardFooter className="flex items-center gap-2 pt-4 border-t border-slate-100 px-6 pb-6 bg-slate-50/50">
+          <CardFooter className="flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-white/10 px-6 pb-6 bg-[#f6f7f9] dark:bg-[#0e1628]">
             <Button
               type="submit"
               disabled={saving}
-              className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1.5 shadow-md shadow-blue-200/50 border-0 cursor-pointer"
+              className="h-10 px-5 rounded-xl bg-[#e15425] hover:bg-[#c2431c] text-white font-semibold gap-1.5 shadow-md shadow-[#e15425]/25 dark:shadow-black/30 border-0 cursor-pointer"
             >
               {saving ? (
                 <>
@@ -481,7 +481,7 @@ export default function EditStatementSettingPage({
             </Button>
 
             <Link href="/bank-manager/bank-statement-setting">
-              <Button type="button" variant="outline" className="h-10 px-5 rounded-xl border-slate-200 hover:bg-slate-100/50 font-bold text-slate-600 bg-white cursor-pointer">
+              <Button type="button" variant="outline" className="h-10 px-5 rounded-xl border-slate-200 dark:border-white/10 hover:bg-[#f1f3f8] dark:hover:bg-white/5 font-semibold text-[#323338] dark:text-[#d5dae4] bg-white dark:bg-[#111a2e] cursor-pointer">
                 Cancel
               </Button>
             </Link>

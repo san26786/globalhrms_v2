@@ -49,12 +49,12 @@ export function DataTableToolbar<TData>({
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-1 flex-wrap items-center gap-2">
         <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground brand:left-3.5 brand:top-3 brand:text-[#535768] dark:text-[#aab3c5]" />
           <Input
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-9 pl-8"
+            className="h-9 pl-8 brand:h-10 brand:rounded-full brand:bg-white brand:pl-10 dark:bg-[#0e1628]"
           />
         </div>
 

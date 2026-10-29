@@ -321,19 +321,19 @@ export default function BankTransactionPage() {
                   <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                    className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
                   >
                     {setting.displayName}
-                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
                   </Button>
                 );
               }
               // If it's a numeric right-aligned column:
               const isNumeric = ["DEBIT_AMOUNT", "CREDIT_AMOUNT", "CLOSING_BAL"].includes(setting.systemName);
               if (isNumeric) {
-                return <div className="text-right font-bold text-slate-700">{setting.displayName}</div>;
+                return <div className="text-right font-semibold text-[#1a1818] dark:text-[#e6e9f0]">{setting.displayName}</div>;
               }
-              return <span className="font-bold text-slate-700">{setting.displayName}</span>;
+              return <span className="font-semibold text-[#1a1818] dark:text-[#e6e9f0]">{setting.displayName}</span>;
             }
           };
           result.push(updatedCol);
@@ -358,24 +358,24 @@ export default function BankTransactionPage() {
       />
 
       {/* Filters Card */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm text-left">
-        <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Filter className="h-4.5 w-4.5 text-blue-600" />
+      <div className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 shadow-sm text-left">
+        <h2 className="text-sm font-semibold text-[#1a1818] dark:text-[#f1f3f8] mb-4 flex items-center gap-2">
+          <Filter className="h-4.5 w-4.5 text-[#0b5394] dark:text-[#8cb8f0]" />
           Filter Transactions
         </h2>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Bank Account Filter */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500">Bank Account</label>
+            <label className="text-xs font-semibold text-[#535768] dark:text-[#aab3c5]">Bank Account</label>
             <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200">
+              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200 dark:border-white/10">
                 <SelectValue placeholder="Select a Bank Account" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
-                <SelectItem value="all" className="hover:bg-slate-50">All Accounts</SelectItem>
+              <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
+                <SelectItem value="all" className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">All Accounts</SelectItem>
                 {bankAccounts.map((account) => (
-                  <SelectItem key={account.value} value={account.value} className="hover:bg-slate-50">
+                  <SelectItem key={account.value} value={account.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                     {account.label}
                   </SelectItem>
                 ))}
@@ -385,15 +385,15 @@ export default function BankTransactionPage() {
 
           {/* Transaction Type Filter */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500">Transaction Type</label>
+            <label className="text-xs font-semibold text-[#535768] dark:text-[#aab3c5]">Transaction Type</label>
             <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200">
+              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200 dark:border-white/10">
                 <SelectValue placeholder="Select Transaction Type" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
-                <SelectItem value="all" className="hover:bg-slate-50">All Types</SelectItem>
+              <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
+                <SelectItem value="all" className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">All Types</SelectItem>
                 {transactionTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value} className="hover:bg-slate-50">
+                  <SelectItem key={type.value} value={type.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                     {type.label}
                   </SelectItem>
                 ))}
@@ -403,15 +403,15 @@ export default function BankTransactionPage() {
 
           {/* Financial Year Filter */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500">Financial Year</label>
+            <label className="text-xs font-semibold text-[#535768] dark:text-[#aab3c5]">Financial Year</label>
             <Select value={selectedFy} onValueChange={setSelectedFy}>
-              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200">
+              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200 dark:border-white/10">
                 <SelectValue placeholder="Select Financial Year" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
-                <SelectItem value="all" className="hover:bg-slate-50">All Years</SelectItem>
+              <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
+                <SelectItem value="all" className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">All Years</SelectItem>
                 {financialYears.map((fy) => (
-                  <SelectItem key={fy.value} value={fy.value} className="hover:bg-slate-50">
+                  <SelectItem key={fy.value} value={fy.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                     {fy.label}
                   </SelectItem>
                 ))}
@@ -421,15 +421,15 @@ export default function BankTransactionPage() {
 
           {/* Month Filter */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500">Month</label>
+            <label className="text-xs font-semibold text-[#535768] dark:text-[#aab3c5]">Month</label>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200">
+              <SelectTrigger className="w-full h-10 rounded-xl border-slate-200 dark:border-white/10">
                 <SelectValue placeholder="Select Month" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
-                <SelectItem value="all" className="hover:bg-slate-50">All Months</SelectItem>
+              <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
+                <SelectItem value="all" className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">All Months</SelectItem>
                 {months.map((m) => (
-                  <SelectItem key={m.value} value={m.value} className="hover:bg-slate-50">
+                  <SelectItem key={m.value} value={m.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                     {m.label}
                   </SelectItem>
                 ))}
@@ -443,7 +443,7 @@ export default function BankTransactionPage() {
             variant="outline"
             size="sm"
             onClick={handleResetFilters}
-            className="h-9 px-4 rounded-xl border-blue-200 text-blue-600 hover:text-blue-800 hover:bg-blue-50/50 font-semibold transition-all duration-200"
+            className="h-9 px-4 rounded-xl border-[#0b5394]/25 dark:border-[#8cb8f0]/30 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] font-semibold transition-all duration-200"
           >
             Reset Filters
           </Button>
@@ -453,8 +453,8 @@ export default function BankTransactionPage() {
       {/* Table Section */}
       <div>
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-2">
-            <RefreshCw size={20} className="animate-spin text-blue-600" />
+          <div className="flex flex-col items-center justify-center py-20 text-[#535768] dark:text-[#aab3c5] space-y-2">
+            <RefreshCw size={20} className="animate-spin text-[#0b5394] dark:text-[#8cb8f0]" />
             <span className="font-semibold text-xs">Loading transactions list...</span>
           </div>
         ) : (
@@ -476,7 +476,7 @@ export default function BankTransactionPage() {
 
       {/* Warning Modal */}
       <Dialog open={isWarningModalOpen} onOpenChange={setIsWarningModalOpen}>
-        <DialogContent className="max-w-[450px] p-8 rounded-lg bg-white border border-slate-100 shadow-2xl flex flex-col items-center justify-center gap-6 focus:outline-none select-none">
+        <DialogContent className="max-w-[450px] p-8 rounded-lg bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-2xl flex flex-col items-center justify-center gap-6 focus:outline-none select-none">
           <div className="flex items-center justify-center h-20 w-20 rounded-full border-4 border-[#f8bb86] text-[#f8bb86] bg-transparent">
             <span className="text-5xl font-light font-sans leading-none -translate-y-[2px]">!</span>
           </div>
@@ -486,7 +486,7 @@ export default function BankTransactionPage() {
           <div className="mt-2 w-full flex justify-center">
             <button
               onClick={() => setIsWarningModalOpen(false)}
-              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 active:scale-95 transition-all duration-200 cursor-pointer border-0"
+              className="px-8 py-2 bg-[#e15425] hover:bg-[#c2431c] text-white font-semibold rounded-lg text-sm shadow-md shadow-[#e15425]/25 dark:shadow-black/30 hover:shadow-[#e15425]/40 active:scale-95 transition-all duration-200 cursor-pointer border-0"
             >
               OK
             </button>

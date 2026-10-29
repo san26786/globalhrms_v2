@@ -50,6 +50,23 @@ interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
   useFormEffects?: (form: UseFormReturn<TForm>) => void;
   /** Extra content between the header card and the form (CI $data['buttons']). */
   children?: ReactNode;
+  /**
+   * A page-specific layout in place of the standard DynamicForm (e.g. the profile page). Loading,
+   * saving, server-side field errors and navigation still happen here; it only draws the form.
+   */
+  renderForm?: (props: ResourceFormRenderProps<TForm>) => ReactNode;
+}
+
+/** What a `renderForm` layout receives: the same form, fields and actions DynamicForm gets. */
+export interface ResourceFormRenderProps<TForm extends FieldValues> {
+  form: UseFormReturn<TForm>;
+  title: string;
+  breadcrumb: string[];
+  mode: "add" | "edit";
+  fields: DynamicField[];
+  submitting: boolean;
+  onSubmit: (values: TForm) => void;
+  onCancel: () => void;
 }
 
 function noFormEffects(): void {}
@@ -79,6 +96,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   onSaved,
   useFormEffects = noFormEffects,
   children,
+  renderForm,
 }: ResourceFormPageProps<TForm, TDto>) {
   const router = useRouter();
   const form = useForm<TForm>({ defaultValues });
@@ -149,6 +167,19 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
 
   if (loading) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
   if (loadError) return <p className="p-6 text-sm text-red-500">{loadError}</p>;
+
+  if (renderForm) {
+    return renderForm({
+      form,
+      title,
+      breadcrumb,
+      mode,
+      fields: resolvedFields,
+      submitting,
+      onSubmit: (v) => save(v, false),
+      onCancel: () => router.push(basePath),
+    });
+  }
 
   return (
     <div className="p-4">

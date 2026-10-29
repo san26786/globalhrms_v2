@@ -3,14 +3,9 @@
 import { useRouter } from "next/navigation";
 import ResourceFormPage from "@/components/resource/ResourceFormPage";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
+import ChangePasswordView, { type ChangePasswordForm } from "./ChangePasswordView";
 
 /** CI user/changepassword — the brand password policy and reuse rules are enforced by the API. */
-interface ChangePasswordForm {
-  oldPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
 const fields: DynamicField[] = [
   { name: "oldPassword", label: "Old Password", type: "password", required: true },
   { name: "newPassword", label: "New Password", type: "password", required: true },
@@ -30,6 +25,7 @@ export default function ChangePasswordPage() {
       allowSaveAndAdd={false}
       defaultValues={{ oldPassword: "", newPassword: "", confirmPassword: "" }}
       onSaved={(data) => router.push((data as { redirectTo?: string })?.redirectTo ?? "/dashboard")}
+      renderForm={(props) => <ChangePasswordView {...props} />}
     />
   );
 }

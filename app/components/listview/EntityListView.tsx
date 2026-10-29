@@ -232,7 +232,7 @@ export default function EntityListView({
       filters={filters}
       tabs={tabs}
     >
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-red-500 brand:text-rose-700 dark:text-rose-300">{error}</p>}
 
       <DataTable
         columns={columns}

@@ -159,8 +159,8 @@ export default function BankStatementSettingPage() {
       },
       {
         id: "sr_no",
-        header: () => <span className="font-bold text-slate-700">S.No.</span>,
-        cell: ({ row }) => <span className="text-slate-500 font-medium">{row.index + 1}</span>,
+        header: () => <span className="font-semibold text-[#1a1818] dark:text-[#e6e9f0]">S.No.</span>,
+        cell: ({ row }) => <span className="text-[#535768] dark:text-[#aab3c5] font-medium">{row.index + 1}</span>,
       },
       {
         accessorKey: "Actions",
@@ -173,7 +173,7 @@ export default function BankStatementSettingPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
                 onClick={() => router.push(`/bank-manager/bank-statement-setting/edit/${item.bankId}`)}
                 title="Edit Settings for this Bank"
               >
@@ -182,7 +182,7 @@ export default function BankStatementSettingPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+                className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
                 onClick={() => handleDelete(item.id, item.bankName, item.csvColumn)}
                 title="Delete Mapping"
               >
@@ -204,19 +204,19 @@ export default function BankStatementSettingPage() {
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
               </Button>
             ),
             cell: ({ row }) => {
               const item = row.original;
               return (
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-800">{item.bankName}</span>
+                  <span className="font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{item.bankName}</span>
                   {item.singleEntryFlag && (
-                    <span className="text-[9px] bg-emerald-50 text-emerald-600 font-bold px-1.5 py-0.5 rounded-full border border-emerald-100/50">
+                    <span className="text-[9px] bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300 font-semibold px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-400/30">
                       Single Entry
                     </span>
                   )}
@@ -232,14 +232,14 @@ export default function BankStatementSettingPage() {
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
               </Button>
             ),
             cell: ({ row }) => (
-              <span className="text-slate-600 font-semibold font-sans">{row.original.csvColumn}</span>
+              <span className="text-[#323338] dark:text-[#d5dae4] font-semibold font-sans">{row.original.csvColumn}</span>
             ),
           });
         } else if (setting.systemName === "mappedColumn") {
@@ -250,14 +250,14 @@ export default function BankStatementSettingPage() {
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
               </Button>
             ),
             cell: ({ row }) => (
-              <span className="text-slate-600 font-semibold font-mono text-xs">{row.original.mappedColumn}</span>
+              <span className="text-[#323338] dark:text-[#d5dae4] font-semibold font-mono text-xs">{row.original.mappedColumn}</span>
             ),
           });
         } else if (setting.systemName === "crdbFlag") {
@@ -268,14 +268,14 @@ export default function BankStatementSettingPage() {
               <Button
                 variant="ghost"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="font-bold text-slate-700 hover:text-slate-900 flex items-center p-0 hover:bg-transparent"
+                className="font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white flex items-center p-0 hover:bg-transparent"
               >
                 {setting.displayName}
-                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                <ArrowUpDown className="ml-2 h-4 w-4 shrink-0 text-[#535768] dark:text-[#aab3c5]" />
               </Button>
             ),
             cell: ({ row }) => (
-              <span className="text-slate-600 font-bold">{row.original.crdbFlag ? "1" : "0"}</span>
+              <span className="text-[#323338] dark:text-[#d5dae4] font-semibold">{row.original.crdbFlag ? "1" : "0"}</span>
             ),
           });
         }
@@ -301,8 +301,8 @@ export default function BankStatementSettingPage() {
       
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-          <p className="text-sm font-semibold text-slate-400">Loading statement settings...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-white/10 border-t-blue-600" />
+          <p className="text-sm font-semibold text-[#535768] dark:text-[#aab3c5]">Loading statement settings...</p>
         </div>
       ) : (
         <DataTable 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
+import { useAuthTheme } from "@/components/auth/AuthUi";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import RouteGuard from "@/components/layout/RouteGuard";
@@ -44,6 +46,23 @@ function setSidebarExpanded(expanded: boolean) {
   window.dispatchEvent(new Event(SIDEBAR_EVENT));
 }
 
+/** Sections whose screens have been redesigned with dark-mode support. */
+const DARK_READY_SECTIONS = [
+  "/dashboard",
+  "/bank-manager",
+  // Profile menu: account pages, login history, organisation, company info and permissions.
+  "/user/profile",
+  "/user/changeusername",
+  "/user/changepassword",
+  "/user/security_questions",
+  "/user/permission_class",
+  "/systmInfoMgr/user_lst_login",
+  "/systmMngt/org_accounts",
+  "/systmMngt/oa_brands",
+  "/systmMngt/company_documents",
+  "/systmMngt/oa_brand_settings",
+];
+
 /** CI header_v <title><?php echo $title ?></title>: the active menu item's name. */
 function DocumentTitle() {
   const { activeTrail } = useNavigation();
@@ -59,6 +78,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const expanded = useSyncExternalStore(subscribeSidebar, readSidebarExpanded, () => true);
   const isSidebarCollapsed = !expanded;
   const toggleSidebar = useCallback(() => setSidebarExpanded(!readSidebarExpanded()), []);
+  // Dark page background only where the content supports dark mode (the dashboards);
+  // other screens keep their light design inside the themed header and sidebar.
+  const theme = useAuthTheme();
+  const pathname = usePathname();
+  const darkCanvas = theme === "dark" && DARK_READY_SECTIONS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Ctrl/⌘ + B toggles the sidebar (shown on the collapse button).
   useEffect(() => {
@@ -73,7 +97,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [toggleSidebar]);
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className={`min-h-screen flex transition-colors duration-300 ${darkCanvas ? "bg-[#0b1220]" : "bg-slate-100"}`}>
       <DocumentTitle />
       <Sidebar
         isCollapsed={isSidebarCollapsed}

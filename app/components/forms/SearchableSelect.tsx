@@ -50,10 +50,10 @@ export default function SearchableSelect({
           aria-controls={listId}
           aria-label={ariaLabel}
           disabled={disabled}
-          className={`flex h-10 items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 ${className}`}
+          className={`flex h-10 items-center justify-between gap-2 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] px-3 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 brand:focus:ring-[#e15425]/40 disabled:opacity-50 ${className}`}
         >
-          <span className={`truncate ${selected ? "font-medium text-slate-800" : "text-slate-500"}`}>{selected?.label ?? placeholder}</span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-slate-400" />
+          <span className={`truncate ${selected ? "font-medium text-slate-800 brand:text-[#1a1818] dark:text-[#f1f3f8]" : "text-slate-500 brand:text-[#535768] dark:text-[#aab3c5]"}`}>{selected?.label ?? placeholder}</span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 text-slate-400 brand:text-[#535768] dark:text-[#aab3c5]" />
         </button>
       </PopoverTrigger>
       <PopoverContent id={listId} align="start" className="w-[var(--radix-popover-trigger-width)] p-0">

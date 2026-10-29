@@ -48,7 +48,7 @@ function Editor({ init, id }: { init: OrgAccountInit; id: string }) {
           </Row>
         ))}
         <Row label="Account Address" htmlFor="address">
-          <Input id="address" value={init.address} readOnly className="bg-slate-50" />
+          <Input id="address" value={init.address} readOnly className="bg-[#f6f7f9] dark:bg-[#0e1628]" />
         </Row>
         {FIELDS.slice(2).map((f) => (
           <Row key={f.key} label={f.label} htmlFor={f.key} required error={errors[f.key]}>
@@ -56,11 +56,11 @@ function Editor({ init, id }: { init: OrgAccountInit; id: string }) {
           </Row>
         ))}
         <Row label="Status" htmlFor="status">
-          <Input id="status" value={init.status} readOnly className="bg-slate-50" />
+          <Input id="status" value={init.status} readOnly className="bg-[#f6f7f9] dark:bg-[#0e1628]" />
         </Row>
         {init.accountType && (
           <Row label="Account Type" htmlFor="accountType">
-            <Input id="accountType" value={init.accountType} readOnly className="bg-slate-50" />
+            <Input id="accountType" value={init.accountType} readOnly className="bg-[#f6f7f9] dark:bg-[#0e1628]" />
           </Row>
         )}
       </div>
@@ -70,7 +70,7 @@ function Editor({ init, id }: { init: OrgAccountInit; id: string }) {
 
 export default function OrgAccountForm({ id }: { id: string }) {
   const { data, error } = useInit<OrgAccountInit>(`${API}/${encodeURIComponent(id)}`);
-  if (error) return <p className="p-6 text-sm text-red-500">{error}</p>;
-  if (!data) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
+  if (error) return <p className="p-6 text-sm text-rose-700 dark:text-rose-300">{error}</p>;
+  if (!data) return <p className="p-6 text-sm text-[#535768] dark:text-[#aab3c5]">Loading…</p>;
   return <Editor init={data} id={id} />;
 }

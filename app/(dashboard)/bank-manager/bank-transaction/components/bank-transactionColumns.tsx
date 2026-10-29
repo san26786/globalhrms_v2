@@ -72,7 +72,7 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+            className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
             onClick={() => router.push(`/bank-manager/bank-transaction/edit/${transaction.ID}`)}
             title="Edit"
           >
@@ -81,7 +81,7 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-all"
+            className="h-7 w-7 text-[#0b5394] dark:text-[#8cb8f0] hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] rounded-md transition-all"
             onClick={handleDelete}
             title="Delete"
           >
@@ -97,13 +97,13 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="p-0 hover:bg-transparent font-bold text-slate-700 hover:text-slate-900 mx-auto"
+        className="p-0 hover:bg-transparent font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white mx-auto"
       >
         Id
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <span className="font-mono text-slate-600 text-xs">{row.original.ID}</span>,
+    cell: ({ row }) => <span className="font-mono text-[#323338] dark:text-[#d5dae4] text-xs">{row.original.ID}</span>,
   },
   {
     accessorKey: "TRANSACTION_DATE",
@@ -111,13 +111,13 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="p-0 hover:bg-transparent font-bold text-slate-700 hover:text-slate-900"
+        className="p-0 hover:bg-transparent font-semibold text-[#1a1818] dark:text-[#e6e9f0] hover:text-[#1a1818] dark:hover:text-white"
       >
         Transaction Date
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <span className="whitespace-nowrap font-medium text-slate-700 text-xs">{row.original.TRANSACTION_DATE}</span>,
+    cell: ({ row }) => <span className="whitespace-nowrap font-medium text-[#1a1818] dark:text-[#e6e9f0] text-xs">{row.original.TRANSACTION_DATE}</span>,
   },
   {
     id: "TRANSACTION_STATUS",
@@ -125,18 +125,18 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
     cell: ({ row }) => {
       const statusId = row.original.TRANSACTION_STATUS;
       let label = "Pending";
-      let colorClass = "bg-amber-50 text-amber-700 border-amber-200";
+      let colorClass = "bg-amber-50 dark:bg-amber-400/10 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-400/30";
       
       if (statusId === 2) {
         label = "Explained";
-        colorClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+        colorClass = "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-400/30";
       } else if (statusId === 3) {
         label = "Draft";
-        colorClass = "bg-slate-100 text-slate-700 border-slate-300";
+        colorClass = "bg-[#f1f3f8] dark:bg-white/10 text-[#1a1818] dark:text-[#e6e9f0] border-slate-300 dark:border-white/15";
       }
 
       return (
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${colorClass}`}>
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${colorClass}`}>
           {label}
         </span>
       );
@@ -146,18 +146,18 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
     id: "TRANSACTION_STATUS_ID",
     accessorKey: "TRANSACTION_STATUS",
     header: "Transaction Status Id",
-    cell: ({ row }) => <span className="text-slate-600 text-xs">{row.original.TRANSACTION_STATUS}</span>,
+    cell: ({ row }) => <span className="text-[#323338] dark:text-[#d5dae4] text-xs">{row.original.TRANSACTION_STATUS}</span>,
   },
   {
     accessorKey: "ACCOUNT_ID",
     header: "Account Id",
-    cell: ({ row }) => <span className="text-slate-600 text-xs">{row.original.ACCOUNT_ID}</span>,
+    cell: ({ row }) => <span className="text-[#323338] dark:text-[#d5dae4] text-xs">{row.original.ACCOUNT_ID}</span>,
   },
   {
     accessorKey: "PARTICULARS",
     header: "Particulars",
     cell: ({ row }) => (
-      <span className="text-slate-600 text-xs font-medium max-w-[200px] truncate block text-left" title={row.original.PARTICULARS}>
+      <span className="text-[#323338] dark:text-[#d5dae4] text-xs font-medium max-w-[200px] truncate block text-left" title={row.original.PARTICULARS}>
         {row.original.PARTICULARS || "-"}
       </span>
     ),
@@ -166,7 +166,7 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
     accessorKey: "DESCRIPTION",
     header: "Description",
     cell: ({ row }) => (
-      <span className="text-slate-600 text-xs max-w-[200px] truncate block text-left" title={row.original.DESCRIPTION}>
+      <span className="text-[#323338] dark:text-[#d5dae4] text-xs max-w-[200px] truncate block text-left" title={row.original.DESCRIPTION}>
         {row.original.DESCRIPTION || "-"}
       </span>
     ),
@@ -174,16 +174,16 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
   {
     accessorKey: "CHQNO_REFNO",
     header: "Cheque Ref No",
-    cell: ({ row }) => <span className="font-mono text-slate-600 text-xs">{row.original.CHQNO_REFNO || "-"}</span>,
+    cell: ({ row }) => <span className="font-mono text-[#323338] dark:text-[#d5dae4] text-xs">{row.original.CHQNO_REFNO || "-"}</span>,
   },
   {
     accessorKey: "DEBIT_AMOUNT",
     header: () => <div className="text-right">Debit Amount</div>,
     cell: ({ row }) => {
       const val = parseFloat(row.original.DEBIT_AMOUNT || "0");
-      if (isNaN(val) || val === 0) return <div className="text-right text-slate-400">-</div>;
+      if (isNaN(val) || val === 0) return <div className="text-right text-[#535768] dark:text-[#aab3c5]">-</div>;
       return (
-        <div className="text-right font-semibold text-red-600 text-xs">
+        <div className="text-right font-semibold text-rose-700 dark:text-rose-300 text-xs">
           {val.toFixed(2)}
         </div>
       );
@@ -194,9 +194,9 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
     header: () => <div className="text-right">Credit Amount</div>,
     cell: ({ row }) => {
       const val = parseFloat(row.original.CREDIT_AMOUNT || "0");
-      if (isNaN(val) || val === 0) return <div className="text-right text-slate-400">-</div>;
+      if (isNaN(val) || val === 0) return <div className="text-right text-[#535768] dark:text-[#aab3c5]">-</div>;
       return (
-        <div className="text-right font-semibold text-emerald-600 text-xs">
+        <div className="text-right font-semibold text-emerald-700 dark:text-emerald-300 text-xs">
           {val.toFixed(2)}
         </div>
       );
@@ -208,7 +208,7 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
     cell: ({ row }) => {
       const val = parseFloat(row.original.CLOSING_BAL || "0");
       return (
-        <div className="text-right font-semibold text-slate-700 text-xs">
+        <div className="text-right font-semibold text-[#1a1818] dark:text-[#e6e9f0] text-xs">
           {val.toFixed(2)}
         </div>
       );
@@ -217,7 +217,7 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
   {
     accessorKey: "SOL",
     header: "SOL",
-    cell: ({ row }) => <span className="text-slate-600 text-xs">{row.original.SOL}</span>,
+    cell: ({ row }) => <span className="text-[#323338] dark:text-[#d5dae4] text-xs">{row.original.SOL}</span>,
   },
   {
     accessorKey: "ACCOUNTING_TRANSACTION_TYPE",
@@ -226,8 +226,8 @@ export const getColumns = ({ onRefresh }: ColumnsProps): ColumnDef<ResolvedTrans
       const type = row.original.ACCOUNTING_TRANSACTION_TYPE;
       const isCredit = type === "BTTI";
       return (
-        <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
-          isCredit ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded uppercase ${
+          isCredit ? "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-50 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300"
         }`}>
           {isCredit ? "Credit" : "Debit"}
         </span>

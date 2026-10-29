@@ -211,7 +211,7 @@ export default function ResourceListPage<T>({
       selectedCount={selected.length}
       filters={toolbar?.({ refresh })}
     >
-      {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
+      {error && <p className="mb-3 text-sm text-red-500 brand:text-rose-700 dark:text-rose-300">{error}</p>}
 
       <DataTable
         columns={tableColumns}

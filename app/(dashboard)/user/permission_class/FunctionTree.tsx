@@ -50,11 +50,11 @@ export default function FunctionTree({ modules, state, onChange, disabled }: Fun
   };
 
   if (modules.length === 0) {
-    return <p className="py-4 text-sm text-slate-500">No modules are available for this brand.</p>;
+    return <p className="py-4 text-sm text-[#535768] dark:text-[#aab3c5]">No modules are available for this brand.</p>;
   }
 
   return (
-    <ul className="divide-y rounded-md border border-slate-200" aria-label="Functions">
+    <ul className="divide-y rounded-md border border-slate-200 dark:border-white/10" aria-label="Functions">
       {modules.map((mod) => {
         const isOpen = open[mod.relDetId] ?? false;
         const panelId = `fn-${mod.relDetId}`;
@@ -68,11 +68,11 @@ export default function FunctionTree({ modules, state, onChange, disabled }: Fun
                 aria-controls={panelId}
                 aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${mod.name}`}
                 disabled={mod.children.length === 0}
-                className="rounded p-0.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                className="rounded p-0.5 text-[#535768] dark:text-[#aab3c5] hover:bg-[#f1f3f8] dark:hover:bg-white/10 disabled:opacity-30"
               >
                 {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </button>
-              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                 <input
                   type="checkbox"
                   checked={state.modules[mod.relDetId] ?? false}
@@ -81,14 +81,14 @@ export default function FunctionTree({ modules, state, onChange, disabled }: Fun
                 />
                 {mod.name}
               </label>
-              <span className="text-xs text-slate-400">({mod.children.length})</span>
+              <span className="text-xs text-[#535768] dark:text-[#aab3c5]">({mod.children.length})</span>
             </div>
 
             {isOpen && mod.children.length > 0 && (
               <div id={panelId} className="mt-2 overflow-x-auto pl-8">
                 <table className="w-full max-w-3xl text-sm">
                   <thead>
-                    <tr className="text-xs text-slate-500">
+                    <tr className="text-xs text-[#535768] dark:text-[#aab3c5]">
                       <th className="py-1 text-left font-medium">Screen</th>
                       {FLAG_COLUMNS.map((c) => (
                         <th key={c.key} className="px-2 py-1 text-center font-medium">
@@ -101,8 +101,8 @@ export default function FunctionTree({ modules, state, onChange, disabled }: Fun
                     {mod.children.map((child) => {
                       const flags = state.flags[child.relDetId] ?? EMPTY_FLAGS;
                       return (
-                        <tr key={child.relDetId} className="border-t border-slate-100">
-                          <td className="py-1 pr-2 text-slate-700">{child.name}</td>
+                        <tr key={child.relDetId} className="border-t border-slate-100 dark:border-white/10">
+                          <td className="py-1 pr-2 text-[#1a1818] dark:text-[#e6e9f0]">{child.name}</td>
                           {FLAG_COLUMNS.map((c) => (
                             <td key={c.key} className="px-2 py-1 text-center">
                               <input

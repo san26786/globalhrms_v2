@@ -1,7 +1,15 @@
 "use client"
-import React, { useState } from 'react';
-import { User, Lock, Eye, EyeOff, UserPlus, Building, ArrowRight, ArrowLeft, Mail, Phone, Globe, ShieldCheck } from 'lucide-react';
+import React, { useState, useSyncExternalStore } from 'react';
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react';
+import {
+  User, Lock, Eye, EyeOff, UserPlus, Building, ArrowLeft, Mail, Phone, Globe, ShieldCheck,
+  ArrowBigUp, CircleAlert, CircleCheck, KeyRound, Lightbulb,
+} from 'lucide-react';
 import GlobalHRLogo from '@/components/auth/GlobalHRLogo';
+import {
+  BrandPanel, CHECKBOX, ChoiceButton, Field, LINK, PrimaryButton, SelectField, ThemeToggle,
+  cascade, poppins, readTheme, reveal, rise, serverTheme, subscribeTheme,
+} from '@/components/auth/AuthUi';
 
 interface LoginScreenProps {
   /** Called after a successful login; `redirectTo` is the server's choice (e.g. forced password change). */
@@ -224,520 +232,485 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // UI-only state below. Nothing here changes how login, registration or
+  // organisation creation behave; it only drives presentation.
+  // ---------------------------------------------------------------------------
+  const reduceMotion = useReducedMotion() ?? false;
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, serverTheme);
+  const [capsLock, setCapsLock] = useState(false);
+  // Bumped on every submit so a repeated error message shakes again.
+  const [attempt, setAttempt] = useState(0);
+
+  const switchMode = (next: 'login' | 'register' | 'create-org') => {
+    setError('');
+    setSuccess('');
+    setMode(next);
+  };
+
+  const trackCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => setCapsLock(e.getModifierState('CapsLock'));
+
+  const copy = {
+    login: { title: 'Sign in to your account', subtitle: 'Welcome back! Please enter your details.' },
+    register: { title: 'Create your account', subtitle: "Join your organisation's Global HR workspace." },
+    'create-org': { title: 'Register your organisation', subtitle: 'Set up Global HR for your whole team.' },
+  }[mode];
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:grid md:grid-cols-12 overflow-x-hidden font-sans select-none">
+    <MotionConfig reducedMotion="user">
+      <div className={theme === 'dark' ? 'dark' : undefined} style={{ colorScheme: theme }}>
+      <div
+        className={`${poppins.className} min-h-screen bg-[#f4f6fb] text-[#1a1818] transition-colors duration-300 dark:bg-[#0b1220] dark:text-[#f1f3f8] flex flex-col lg:grid lg:grid-cols-12 overflow-x-clip`}
+      >
+        <BrandPanel reduceMotion={reduceMotion} />
 
-      {/* LEFT PANEL - IMMERSIVE COBALT BRANDING (5 Cols) */}
-      <div className="relative md:col-span-5 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white p-8 sm:p-12 md:p-16 flex flex-col justify-between overflow-hidden shadow-2xl min-h-[400px] md:min-h-screen">
-        {/* Abstract vector wave background */}
-        <div className="absolute inset-0 opacity-15 pointer-events-none">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="grid-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#1d4ed8" />
-              </linearGradient>
-            </defs>
-            <circle cx="20%" cy="10%" r="200" fill="url(#grid-grad)" />
-            <circle cx="90%" cy="80%" r="350" fill="url(#grid-grad)" />
-            <path
-              d="M-50,300 C150,250 350,450 550,350 L550,800 L-50,800 Z"
-              fill="url(#grid-grad)"
-              opacity="0.8"
-            />
-          </svg>
-        </div>
-
-        {/* Floating grid design dots */}
-        <div className="absolute left-6 top-1/3 opacity-20 hidden md:grid grid-cols-5 gap-2 z-0">
-          {Array.from({ length: 25 }).map((_, i) => (
-            <div key={i} className="w-1.5 h-1.5 bg-white rounded-full" />
-          ))}
-        </div>
-
-        {/* Hero Copy */}
-        <div className="relative z-10 my-auto space-y-6 max-w-md text-left">
-          <div className="space-y-3">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-sky-300 bg-sky-950/40 px-3.5 py-1.5 rounded-full border border-sky-800/30">
-              Enterprise HR System
-            </span>
-            <p className="text-sm font-medium text-blue-200">Welcome to</p>
-            <h2 className="text-4xl sm:text-5xl font-display font-black tracking-tight leading-tight">
-              Global HR
-            </h2>
+        {/* RIGHT PANEL - LOGIN / REGISTRATION CARD */}
+        <main className="relative lg:col-span-7 flex flex-col items-center justify-center gap-6 px-4 pb-8 pt-16 sm:px-10 lg:sticky lg:top-0 lg:self-start lg:h-screen lg:overflow-y-auto lg:py-6">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-32 -right-24 h-96 w-96 rounded-full bg-[#d8e8ff]/70 blur-3xl dark:bg-[#1d3a6e]/40" />
+            <div className="absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-[#f9ddd1]/70 blur-3xl dark:bg-[#5a2412]/40" />
           </div>
 
-          <p className="text-slate-200 text-xs sm:text-sm leading-relaxed font-medium">
-            Empowering People. Elevating Performance. A complete HR management solution to streamline your workforce operations.
-          </p>
+          <ThemeToggle theme={theme} />
 
-          {/* Interactive laptop mockup drawing */}
-          <div className="pt-8 relative group">
-            <div className="absolute inset-x-8 bottom-0 top-12 bg-sky-500/20 rounded-full filter blur-2xl group-hover:bg-sky-500/30 transition-all duration-500" />
+          <motion.div
+            variants={reveal}
+            initial="hidden"
+            animate="show"
+            transition={{ delay: 0.1 }}
+            className={`relative w-full ${mode === 'create-org' ? 'max-w-xl' : 'max-w-md'} rounded-[28px] bg-white p-7 sm:px-10 sm:py-8 ring-1 ring-slate-200 shadow-[0_24px_60px_-24px_rgba(6,27,49,0.25)] transition-[max-width,background-color] duration-300 dark:bg-[#111a2e] dark:ring-white/10 dark:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]`}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div key={mode} variants={cascade} initial="hidden" animate="show" exit="exit">
+                {mode === 'login' && (
+                  <motion.div variants={rise} className="mb-4 flex justify-center dark:mx-auto dark:w-fit dark:rounded-2xl dark:bg-white dark:px-4 dark:py-1.5">
+                    <GlobalHRLogo size="md" />
+                  </motion.div>
+                )}
+                <motion.div variants={rise} className="text-center">
+                  <h1 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-[#1a1818] dark:text-[#f1f3f8]">{copy.title}</h1>
+                  <p className="mt-1.5 text-[15px] text-[#535768] dark:text-[#aab3c5]">{copy.subtitle}</p>
+                </motion.div>
 
-            <div className="relative border-4 border-slate-700/80 rounded-2xl bg-slate-900 shadow-2xl p-2.5 max-w-[340px] mx-auto transform hover:-translate-y-2 hover:rotate-1 transition-all duration-500">
-              <div className="bg-slate-950 rounded-lg aspect-[16/10] overflow-hidden p-1 flex flex-col gap-1 relative border border-slate-800">
-                <div className="h-2 w-full flex items-center justify-between px-1">
-                  <div className="flex gap-0.5">
-                    <span className="w-1 h-1 bg-red-500 rounded-full" />
-                    <span className="w-1 h-1 bg-yellow-500 rounded-full" />
-                    <span className="w-1 h-1 bg-green-500 rounded-full" />
-                  </div>
-                  <div className="w-1/2 h-1 bg-slate-800 rounded-full" />
+                {/* Status alerts */}
+                <div aria-live="polite">
+                  <AnimatePresence initial={false}>
+                    {error && (
+                      <motion.div
+                        key={`error-${attempt}-${error}`}
+                        role="alert"
+                        initial={{ opacity: 0 }}
+                        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: [0, -8, 8, -6, 6, -3, 0] }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.45 }}
+                        className="mt-5 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-[14px] text-red-900 dark:border-red-400/40 dark:bg-red-950/50 dark:text-red-100"
+                      >
+                        <CircleAlert aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-red-700 dark:text-red-300" />
+                        <span>{error}</span>
+                      </motion.div>
+                    )}
+                    {success && (
+                      <motion.div
+                        key={`success-${success}`}
+                        role="status"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900 dark:border-emerald-400/40 dark:bg-emerald-950/50 dark:text-emerald-100"
+                      >
+                        <CircleCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+                        <span>{success}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="flex-1 grid grid-cols-12 gap-1">
-                  <div className="col-span-3 bg-slate-900 rounded p-0.5 flex flex-col gap-0.5">
-                    <div className="h-1.5 w-full bg-blue-600 rounded" />
-                    <div className="h-1 w-2/3 bg-slate-800 rounded mt-1" />
-                    <div className="h-1 w-3/4 bg-slate-800 rounded" />
-                    <div className="h-1 w-1/2 bg-slate-800 rounded" />
-                  </div>
-                  <div className="col-span-9 bg-slate-900 rounded p-1 flex flex-col gap-1">
-                    <div className="h-1.5 w-1/3 bg-slate-800 rounded" />
-                    <div className="grid grid-cols-2 gap-1 flex-1">
-                      <div className="bg-slate-800/60 rounded p-0.5 flex flex-col justify-between">
-                        <div className="w-3 h-3 rounded-full border border-sky-500 mx-auto" />
-                        <div className="h-1 w-3/4 bg-slate-700 rounded mx-auto" />
-                      </div>
-                      <div className="bg-slate-800/60 rounded p-0.5 flex flex-col justify-between">
-                        <div className="h-1 w-full bg-slate-700 rounded" />
-                        <div className="h-1.5 w-full bg-blue-500 rounded" />
-                        <div className="h-1 w-2/3 bg-slate-700 rounded" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Float Bubbles */}
-            <div className="absolute -left-2 top-10 bg-indigo-950/80 border border-indigo-800/50 rounded-xl p-2 flex items-center gap-2 shadow-lg animate-bounce duration-1000">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-              <span className="text-[9px] font-bold tracking-wider font-mono">152 Total</span>
-            </div>
-            <div className="absolute -right-2 top-24 bg-blue-950/80 border border-blue-800/50 rounded-xl p-2 flex items-center gap-2 shadow-lg animate-pulse">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span className="text-[9px] font-bold tracking-wider font-mono">98% Match</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer brand detail */}
-        <p className="text-[10px] text-blue-300 font-semibold tracking-wider uppercase relative z-10 mt-6 select-none">
-          Global HR Suite v4.2.1
-        </p>
-      </div>
-
-      {/* RIGHT PANEL - PORTAL CARD AND LOGIN/REGISTRATION (7 Cols) */}
-      <div className="md:col-span-7 flex flex-col justify-between p-6 sm:p-12 md:p-16 min-h-[500px]">
-        <div className="hidden md:block" />
-
-        {/* Login Central Container */}
-        <div className="w-full max-w-md mx-auto bg-white rounded-3xl border border-slate-100 p-8 sm:p-10 shadow-xl shadow-slate-100/50">
-
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <GlobalHRLogo size="lg" />
-          </div>
-
-          {/* Status alerts */}
-          {error && (
-            <div className="mb-5 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-3 rounded-xl text-left">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-5 bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold px-4 py-3 rounded-xl text-left">
-              {success}
-            </div>
-          )}
-
-          {/* 1. LOGIN MODE */}
-          {mode === 'login' && (
-            <form onSubmit={handleSubmit} className="space-y-5 text-left">
-              {/* Username/Email Input */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block pl-1">
-                  Username or Email
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    <User className="w-4.5 h-4.5" />
-                  </span>
-                  <input
-                    type="text"
-                    id="login-username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200/60 focus:border-blue-400 focus:bg-white text-xs font-bold text-slate-700 pl-11 pr-4 py-3.5 rounded-xl outline-none transition-all placeholder:text-slate-300"
-                    placeholder="DEMOadmin"
-                  />
-                </div>
-              </div>
-
-              {/* Password Input */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block pl-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    <Lock className="w-4.5 h-4.5" />
-                  </span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="login-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200/60 focus:border-blue-400 focus:bg-white text-xs font-bold text-slate-700 pl-11 pr-11 py-3.5 rounded-xl outline-none transition-all placeholder:text-slate-300"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Extra Row: Remember & Forgot */}
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-slate-50 border-slate-200 rounded focus:ring-blue-500 cursor-pointer"
-                  />
-                  <span className="text-xs font-semibold text-slate-500">
-                    Remember me
-                  </span>
-                </label>
-                <a
-                  href="/login/forgot_pass"
-                  className="text-xs font-bold text-blue-500 hover:text-blue-600 transition-colors"
-                >
-                  Forgot Password?
-                </a>
-              </div>
-
-              {/* Login Action Button */}
-              <button
-                type="submit"
-                id="login-submit-button"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs py-4 px-4 rounded-xl shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-200/70 active:scale-[0.99] transition-all flex items-center justify-center gap-2 select-none"
-              >
-                {loading ? (
+                {/* 1. LOGIN MODE */}
+                {mode === 'login' && (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Authenticating Session...
-                  </>
-                ) : (
-                  <>
-                    LOGIN
-                    <ArrowRight className="w-4 h-4" />
+                    <form
+                      onSubmit={(e) => {
+                        setAttempt((n) => n + 1);
+                        handleSubmit(e);
+                      }}
+                      className="mt-5 space-y-4 text-left"
+                    >
+                      <motion.div variants={rise}>
+                        <Field
+                          id="login-username"
+                          label="Username or email"
+                          icon={User}
+                          type="text"
+                          autoComplete="username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="e.g. DEMOadmin"
+                        />
+                      </motion.div>
+
+                      <motion.div variants={rise}>
+                        <Field
+                          id="login-password"
+                          label="Password"
+                          icon={Lock}
+                          type={showPassword ? 'text' : 'password'}
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          onKeyDown={trackCapsLock}
+                          onKeyUp={trackCapsLock}
+                          onBlur={() => setCapsLock(false)}
+                          placeholder="Enter your password"
+                          trailing={
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              aria-label={showPassword ? 'Hide password' : 'Show password'}
+                              aria-pressed={showPassword}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-2 text-[#535768] transition-colors hover:bg-[#fbe6dd] hover:text-[#1a1818] dark:text-[#aab3c5] dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-[#da5427] cursor-pointer"
+                            >
+                              <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                  key={showPassword ? 'hide' : 'show'}
+                                  initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
+                                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                  exit={{ opacity: 0, rotate: 90, scale: 0.6 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="block"
+                                >
+                                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </motion.span>
+                              </AnimatePresence>
+                            </button>
+                          }
+                          hint={
+                            <AnimatePresence>
+                              {capsLock && (
+                                <motion.p
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="mt-1.5 flex items-center gap-1.5 text-[13px] font-medium text-amber-900 dark:text-amber-300"
+                                >
+                                  <ArrowBigUp aria-hidden="true" className="h-4 w-4" />
+                                  Caps Lock is on
+                                </motion.p>
+                              )}
+                            </AnimatePresence>
+                          }
+                        />
+                      </motion.div>
+
+                      <motion.div variants={rise} className="flex items-center justify-between gap-4">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            className={CHECKBOX}
+                          />
+                          <span className="text-[14px] text-[#323338] dark:text-[#d5dae4]">Remember me</span>
+                        </label>
+                        <a href="/login/forgot_pass" className={`text-[14px] ${LINK}`}>
+                          Forgot password?
+                        </a>
+                      </motion.div>
+
+                      <motion.div variants={rise}>
+                        <PrimaryButton id="login-submit-button" loading={loading} loadingText="Signing you in…">
+                          Log in
+                        </PrimaryButton>
+                      </motion.div>
+                    </form>
+
+                    <motion.div variants={rise} className="my-5 flex items-center gap-4">
+                      <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                      <span className="text-[14px] text-[#535768] dark:text-[#aab3c5]">New to Global HR?</span>
+                      <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                    </motion.div>
+
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <ChoiceButton icon={UserPlus} title="New user" onClick={() => switchMode('register')} />
+                      <ChoiceButton icon={Building} title="New organisation" onClick={() => switchMode('create-org')} />
+                    </motion.div>
                   </>
                 )}
-              </button>
-            </form>
-          )}
 
-          {/* 2. REGISTER USER ACCOUNT MODE */}
-          {mode === 'register' && (
-            <form onSubmit={handleUserRegister} className="space-y-4 text-left">
-              <div className="space-y-3">
-                {/* Username */}
-                <input
-                  type="text"
-                  value={regUsername}
-                  onChange={(e) => setRegUsername(e.target.value)}
-                  placeholder="Username"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
+                {/* 2. REGISTER USER ACCOUNT MODE */}
+                {mode === 'register' && (
+                  <form
+                    onSubmit={(e) => {
+                      setAttempt((n) => n + 1);
+                      handleUserRegister(e);
+                    }}
+                    className="mt-5 space-y-3 text-left"
+                  >
+                    <motion.div variants={rise}>
+                      <Field
+                        id="reg-username"
+                        label="Username"
+                        icon={User}
+                        type="text"
+                        autoComplete="username"
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value)}
+                        placeholder="e.g. jsmith"
+                        required
+                      />
+                    </motion.div>
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field
+                        id="reg-password"
+                        label="Password"
+                        icon={Lock}
+                        type="password"
+                        autoComplete="new-password"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="Create a password"
+                        required
+                      />
+                      <Field
+                        id="reg-confirm-password"
+                        label="Confirm password"
+                        icon={Lock}
+                        type="password"
+                        autoComplete="new-password"
+                        value={regConfirmPassword}
+                        onChange={(e) => setRegConfirmPassword(e.target.value)}
+                        placeholder="Repeat password"
+                        required
+                      />
+                    </motion.div>
+                    <motion.div variants={rise}>
+                      <Field
+                        id="reg-email"
+                        label="Email"
+                        icon={Mail}
+                        type="email"
+                        autoComplete="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        placeholder="name@company.com"
+                        required
+                      />
+                    </motion.div>
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field
+                        id="reg-org-code"
+                        label="Organisation code"
+                        icon={Building}
+                        type="text"
+                        value={regOrgCode}
+                        onChange={(e) => setRegOrgCode(e.target.value)}
+                        placeholder="e.g. GEECON"
+                        inputClassName="uppercase"
+                        required
+                      />
+                      <Field
+                        id="reg-passcode"
+                        label="6-digit passcode"
+                        icon={KeyRound}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={regPasscode}
+                        onChange={(e) => setRegPasscode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="000000"
+                        required
+                      />
+                    </motion.div>
+                    <motion.div variants={rise}>
+                      <Field
+                        id="reg-memorable-word"
+                        label="Memorable word"
+                        icon={Lightbulb}
+                        type="text"
+                        value={regMemorableWord}
+                        onChange={(e) => setRegMemorableWord(e.target.value)}
+                        placeholder="Something only you will remember"
+                        required
+                      />
+                    </motion.div>
 
-                {/* Password */}
-                <input
-                  type="password"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
+                    <motion.label variants={rise} className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={regAgree}
+                        onChange={(e) => setRegAgree(e.target.checked)}
+                        className={`${CHECKBOX} mt-0.5`}
+                        required
+                      />
+                      <span className="text-[14px] leading-snug text-[#323338] dark:text-[#d5dae4]">
+                        I agree to the Global HR Application <a href="#terms" className={LINK}>Terms and Privacy</a>
+                      </span>
+                    </motion.label>
 
-                {/* Confirm Password */}
-                <input
-                  type="password"
-                  value={regConfirmPassword}
-                  onChange={(e) => setRegConfirmPassword(e.target.value)}
-                  placeholder="Confirm Password"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
+                    <motion.div variants={rise}>
+                      <PrimaryButton loading={loading} loadingText="Creating your account…">
+                        Create account
+                      </PrimaryButton>
+                    </motion.div>
+                  </form>
+                )}
 
-                {/* Email */}
-                <input
-                  type="email"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  placeholder="Email"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
+                {/* 3. CREATE ORGANISATION MODE */}
+                {mode === 'create-org' && (
+                  <form
+                    onSubmit={(e) => {
+                      setAttempt((n) => n + 1);
+                      handleCreateOrg(e);
+                    }}
+                    className="mt-5 space-y-3 text-left"
+                  >
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field
+                        id="org-code"
+                        label="Organisation code"
+                        icon={Building}
+                        type="text"
+                        value={orgCode}
+                        onChange={(e) => setOrgCode(e.target.value)}
+                        placeholder="e.g. GEECON"
+                        inputClassName="uppercase"
+                        required
+                      />
+                      <Field
+                        id="org-name"
+                        label="Organisation name"
+                        icon={Building}
+                        type="text"
+                        autoComplete="organization"
+                        value={orgName}
+                        onChange={(e) => setOrgName(e.target.value)}
+                        placeholder="e.g. Geecon Systems"
+                        required
+                      />
+                    </motion.div>
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field
+                        id="org-email"
+                        label="Organisation email"
+                        icon={Mail}
+                        type="email"
+                        autoComplete="email"
+                        value={orgEmail}
+                        onChange={(e) => setOrgEmail(e.target.value)}
+                        placeholder="hello@company.com"
+                        required
+                      />
+                      <SelectField id="org-country" label="Country" icon={Globe} value={orgCountry} onChange={(e) => setOrgCountry(e.target.value)}>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="India">India</option>
+                        <option value="United States">United States</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="UAE">UAE</option>
+                      </SelectField>
+                    </motion.div>
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field
+                        id="org-contact"
+                        label="Contact number"
+                        icon={Phone}
+                        type="text"
+                        autoComplete="tel"
+                        value={orgContact}
+                        onChange={(e) => setOrgContact(e.target.value)}
+                        placeholder="+44 20 1234 5678"
+                        required
+                      />
+                      <Field
+                        id="org-website"
+                        label="Website"
+                        optional
+                        icon={Globe}
+                        type="text"
+                        autoComplete="url"
+                        value={orgWebsite}
+                        onChange={(e) => setOrgWebsite(e.target.value)}
+                        placeholder="www.company.com"
+                      />
+                    </motion.div>
+                    <motion.div variants={rise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <SelectField id="org-subscription" label="Subscription level" icon={ShieldCheck} value={orgSubscription} onChange={(e) => setOrgSubscription(e.target.value)}>
+                        <option value="Subscription Level">Subscription Level</option>
+                        <option value="Basic">Basic</option>
+                        <option value="Professional">Professional</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Enterprise">Enterprise</option>
+                      </SelectField>
+                      <Field
+                        id="org-passcode"
+                        label="6-digit passcode"
+                        icon={KeyRound}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={orgPasscode}
+                        onChange={(e) => setOrgPasscode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="000000"
+                        required
+                      />
+                    </motion.div>
+                    <motion.div variants={rise}>
+                      <Field
+                        id="org-memorable-word"
+                        label="Memorable word"
+                        icon={Lightbulb}
+                        type="text"
+                        value={orgMemorableWord}
+                        onChange={(e) => setOrgMemorableWord(e.target.value)}
+                        placeholder="Something only you will remember"
+                        required
+                      />
+                    </motion.div>
 
-                {/* Org Code */}
-                <input
-                  type="text"
-                  value={regOrgCode}
-                  onChange={(e) => setRegOrgCode(e.target.value)}
-                  placeholder="Org Code"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm uppercase"
-                  required
-                />
+                    <motion.label variants={rise} className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={orgAgree}
+                        onChange={(e) => setOrgAgree(e.target.checked)}
+                        className={`${CHECKBOX} mt-0.5`}
+                        required
+                      />
+                      <span className="text-[14px] leading-snug text-[#323338] dark:text-[#d5dae4]">
+                        I agree to the Global HR Application <a href="#terms" className={LINK}>Terms and Privacy</a>
+                      </span>
+                    </motion.label>
 
-                {/* 6 Digit Passcode */}
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={regPasscode}
-                  onChange={(e) => setRegPasscode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter 6 Digit Passcode"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
+                    <motion.div variants={rise}>
+                      <PrimaryButton loading={loading} loadingText="Creating your organisation…">
+                        Create organisation
+                      </PrimaryButton>
+                    </motion.div>
+                  </form>
+                )}
 
-                {/* Memorable Word */}
-                <input
-                  type="text"
-                  value={regMemorableWord}
-                  onChange={(e) => setRegMemorableWord(e.target.value)}
-                  placeholder="ENTER A MEMORABLE WORD"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
+                {/* Back / forgot links on the registration screens */}
+                {mode !== 'login' && (
+                  <motion.div
+                    variants={rise}
+                    className="mt-5 flex items-center justify-between gap-4 border-t border-slate-200 pt-4 text-[14px] dark:border-white/10"
+                  >
+                    <button type="button" onClick={() => switchMode('login')} className={`group flex items-center gap-1.5 cursor-pointer ${LINK}`}>
+                      <ArrowLeft aria-hidden="true" className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
+                      Back to login
+                    </button>
+                    <a href="/login/forgot_pass" className={LINK}>
+                      Forgot password?
+                    </a>
+                  </motion.div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
 
-                {/* Agreement Checkbox */}
-                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
-                  <input
-                    type="checkbox"
-                    checked={regAgree}
-                    onChange={(e) => setRegAgree(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-slate-50 border-slate-200 rounded focus:ring-blue-500 cursor-pointer mt-0.5"
-                    required
-                  />
-                  <span className="text-[11px] font-semibold text-slate-500 leading-normal">
-                    I agree to the Global HR Application <a href="#terms" className="text-blue-500 hover:underline">Terms and Privacy</a>
-                  </span>
-                </label>
-              </div>
-
-              {/* Action Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3.5 px-4 rounded-xl shadow-lg shadow-blue-100 active:scale-[0.99] transition-all flex items-center justify-center gap-2 select-none mt-3"
-              >
-                {loading ? 'CREATING ACCOUNT...' : 'CREATE AN ACCOUNT'}
-              </button>
-            </form>
-          )}
-
-          {/* 3. CREATE ORGANISATION MODE */}
-          {mode === 'create-org' && (
-            <form onSubmit={handleCreateOrg} className="space-y-4 text-left">
-              {/* Form Grid corresponding to second screenshot */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={orgCode}
-                  onChange={(e) => setOrgCode(e.target.value)}
-                  placeholder="Organisation Code"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm uppercase"
-                  required
-                />
-                <input
-                  type="text"
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Organisation Name"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
-
-                <input
-                  type="email"
-                  value={orgEmail}
-                  onChange={(e) => setOrgEmail(e.target.value)}
-                  placeholder="Organisation Email"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
-
-                <select
-                  value={orgCountry}
-                  onChange={(e) => setOrgCountry(e.target.value)}
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-600 px-3 py-2.5 rounded-xl outline-none transition-all shadow-sm"
-                >
-                  <option value="United Kingdom">United Kingdom</option>
-                  <option value="India">India</option>
-                  <option value="United States">United States</option>
-                  <option value="Singapore">Singapore</option>
-                  <option value="UAE">UAE</option>
-                </select>
-
-                <input
-                  type="text"
-                  value={orgContact}
-                  onChange={(e) => setOrgContact(e.target.value)}
-                  placeholder="Contact Number"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
-                <input
-                  type="text"
-                  value={orgWebsite}
-                  onChange={(e) => setOrgWebsite(e.target.value)}
-                  placeholder="Website"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                />
-
-                <select
-                  value={orgSubscription}
-                  onChange={(e) => setOrgSubscription(e.target.value)}
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-600 px-3 py-2.5 rounded-xl outline-none transition-all shadow-sm"
-                >
-                  <option value="Subscription Level">Subscription Level</option>
-                  <option value="Basic">Basic</option>
-                  <option value="Professional">Professional</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Enterprise">Enterprise</option>
-                </select>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={orgPasscode}
-                  onChange={(e) => setOrgPasscode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter 6 Digit Passcode"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
-              </div>
-
-              {/* Enter a Memorable Word */}
-              <div className="mt-3">
-                <input
-                  type="text"
-                  value={orgMemorableWord}
-                  onChange={(e) => setOrgMemorableWord(e.target.value)}
-                  placeholder="Enter a Memorable Word"
-                  className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-xs font-bold text-slate-700 px-4 py-3 rounded-xl outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                  required
-                />
-              </div>
-
-              {/* Agreement check */}
-              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
-                <input
-                  type="checkbox"
-                  checked={orgAgree}
-                  onChange={(e) => setOrgAgree(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-slate-50 border-slate-200 rounded focus:ring-blue-500 cursor-pointer mt-0.5"
-                  required
-                />
-                <span className="text-[11px] font-semibold text-slate-500 leading-normal">
-                  I agree to the Global HR Application <a href="#terms" className="text-blue-500 hover:underline">Terms and Privacy</a>
-                </span>
-              </label>
-
-              {/* Submit button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3.5 px-4 rounded-xl shadow-lg shadow-blue-100 active:scale-[0.99] transition-all flex items-center justify-center gap-2 select-none mt-3"
-              >
-                {loading ? 'CREATING ORGANISATION...' : 'CREATE AN ORGANISATION'}
-              </button>
-            </form>
-          )}
-
-          {/* Card Footer Links (matches layouts) */}
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100 text-xs font-bold text-slate-400">
-            {mode !== 'login' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setError('');
-                  setSuccess('');
-                  setMode('login');
-                }}
-                className="hover:text-blue-500 transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Go back to Login
-              </button>
-            ) : (
-              <span className="opacity-0">Placeholder</span>
-            )}
-
-            <a href="/login/forgot_pass" className="hover:text-blue-500 transition-colors cursor-pointer">
-              Forgot Password?
-            </a>
-          </div>
-
-          {/* Divider & Switch buttons only visible on Login screen */}
           {mode === 'login' && (
-            <>
-              <div className="relative flex py-5 items-center">
-                <div className="flex-grow border-t border-slate-100"></div>
-                <span className="flex-shrink mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  or
-                </span>
-                <div className="flex-grow border-t border-slate-100"></div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError('');
-                    setSuccess('');
-                    setMode('register');
-                  }}
-                  className="flex items-center justify-center gap-2 px-3.5 py-3 border border-blue-100 hover:border-blue-200 bg-blue-50/20 hover:bg-blue-50/50 rounded-xl text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-all active:scale-95 cursor-pointer"
-                >
-                  <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                  NEW USER
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError('');
-                    setSuccess('');
-                    setMode('create-org');
-                  }}
-                  className="flex items-center justify-center gap-2 px-3.5 py-3 border border-blue-100 hover:border-blue-200 bg-blue-50/20 hover:bg-blue-50/50 rounded-xl text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-all active:scale-95 cursor-pointer"
-                >
-                  <Building className="w-3.5 h-3.5 shrink-0" />
-                  NEW ORGANISATION
-                </button>
-              </div>
-            </>
+            <p className="relative text-center text-[13px] text-[#323338] dark:text-[#c9cfdb] lg:absolute lg:inset-x-0 lg:bottom-4">© 2026 Global HR Application.</p>
           )}
-
-        </div>
-
-        {/* Footer info text */}
-        <div className="text-center text-[10px] text-slate-400 font-bold tracking-wide mt-12 py-2 uppercase">
-          (C)COPYRIGHT 2026. Global HR Application.
-        </div>
+        </main>
       </div>
-    </div>
+      </div>
+    </MotionConfig>
   );
 }

@@ -23,7 +23,7 @@ export default function Breadcrumb({ mode, passedUrl, parameters, parent }: Brea
 
   return (
     <nav aria-label="Breadcrumb" className="bc-nav">
-      <ol className="bc-list flex items-center gap-2 text-sm text-gray-500">
+      <ol className="bc-list flex items-center gap-2 text-sm text-gray-500 brand:text-[#535768] dark:text-[#aab3c5]">
         {/* CI: Home crumb — always first */}
         <li className="bc-item">
           <Link href="/dashboard" aria-label="Home" className="bc-link bc-home flex items-center gap-1">
@@ -45,7 +45,7 @@ export default function Breadcrumb({ mode, passedUrl, parameters, parent }: Brea
               <ChevronRight size={15} className="bc-sep" aria-hidden="true" />
               <Link
                 href={normalizedMode === 'list' ? '#' : parent.returnedUrl}
-                className={`bc-link ${!showModeCrumb ? 'bc-current font-semibold text-blue-600' : ''}`}
+                className={`bc-link ${!showModeCrumb ? 'bc-current font-semibold text-blue-600 brand:text-[#0b5394] dark:text-[#8cb8f0]' : ''}`}
                 aria-current={!showModeCrumb ? 'page' : undefined}
               >
                 {parent.menuName}
@@ -58,7 +58,7 @@ export default function Breadcrumb({ mode, passedUrl, parameters, parent }: Brea
             <ChevronRight size={15} className="bc-sep" aria-hidden="true" />
             <Link
               href={!normalizedMode ? '#' : passedUrl ?? '#'}
-              className={`bc-link ${!showModeCrumb ? 'bc-current font-semibold text-blue-600' : ''}`}
+              className={`bc-link ${!showModeCrumb ? 'bc-current font-semibold text-blue-600 brand:text-[#0b5394] dark:text-[#8cb8f0]' : ''}`}
               aria-current={!showModeCrumb ? 'page' : undefined}
             >
               {parameters}
@@ -71,7 +71,7 @@ export default function Breadcrumb({ mode, passedUrl, parameters, parent }: Brea
           <li className="bc-item flex items-center gap-2">
             <ChevronRight size={15} className="bc-sep" aria-hidden="true" />
             <span
-              className="bc-link bc-current bc-mode flex items-center gap-1 font-semibold text-blue-600"
+              className="bc-link bc-current bc-mode flex items-center gap-1 font-semibold text-blue-600 brand:text-[#0b5394] dark:text-[#8cb8f0]"
               aria-current="page"
             >
               <ModeIcon className="h-4 w-4" aria-hidden="true" />

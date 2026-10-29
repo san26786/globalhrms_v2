@@ -303,8 +303,8 @@ export default function ImportTransactionPage() {
 
   if (loadingLookups) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 space-y-2">
-        <Loader2 className="animate-spin text-blue-500" size={24} />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-[#535768] dark:text-[#aab3c5] space-y-2">
+        <Loader2 className="animate-spin text-[#0b5394] dark:text-[#8cb8f0]" size={24} />
         <span>Loading configurations...</span>
       </div>
     );
@@ -313,20 +313,20 @@ export default function ImportTransactionPage() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       {/* Header Card (Matches screenshot layout with breadcrumbs and circular buttons) */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-[#535768] dark:text-[#aab3c5]">
               <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
               <span>Bank Transaction</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span className="font-semibold text-blue-600">Import</span>
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
+              <span className="font-semibold text-[#0b5394] dark:text-[#8cb8f0]">Import</span>
             </div>
 
             <div className="mt-2 flex items-center gap-2">
-              <Database className="text-blue-600 h-6 w-6" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800 animate-in fade-in slide-in-from-left-2 duration-200">
+              <Database className="text-[#0b5394] dark:text-[#8cb8f0] h-6 w-6" />
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#1a1818] dark:text-[#f1f3f8] animate-in fade-in slide-in-from-left-2 duration-200">
                 Import Bank Transaction
               </h1>
             </div>
@@ -339,7 +339,7 @@ export default function ImportTransactionPage() {
               onClick={() => handleImportSubmit()}
               disabled={importing}
               size="icon"
-              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full bg-[#e15425] hover:bg-[#c2431c] text-white shadow-md shadow-[#e15425]/25 dark:shadow-black/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Import"
             >
               {importing ? (
@@ -355,7 +355,7 @@ export default function ImportTransactionPage() {
               variant="outline"
               size="icon"
               onClick={() => router.push("/bank-manager/bank-transaction")}
-              className="rounded-full border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-white dark:bg-[#111a2e] hover:bg-[#f6f7f9] dark:hover:bg-white/5 text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Cancel"
             >
               <X className="h-5 w-5" />
@@ -365,23 +365,23 @@ export default function ImportTransactionPage() {
       </div>
 
       {/* Main Form Card (No header ribbon, matches bank-details/add style) */}
-      <Card className="rounded-3xl border shadow-sm bg-white overflow-hidden text-left">
+      <Card className="rounded-3xl border shadow-sm bg-white dark:bg-[#111a2e] overflow-hidden text-left">
         <form id="import-form" onSubmit={handleImportSubmit}>
           <CardContent className="p-6 space-y-4">
             
             {/* Requested By Field */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end pr-4">
-                <label className="text-sm font-semibold text-slate-700">Requested By</label>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Requested By</label>
               </div>
               <div className="w-3/4">
                 <Select value={requestedBy} onValueChange={setRequestedBy}>
-                  <SelectTrigger className="w-full sm:w-1/2 h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-full sm:w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl max-h-60 overflow-y-auto">
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl max-h-60 overflow-y-auto">
                     {employees.map((emp) => (
-                      <SelectItem key={emp.EMP_ID} value={String(emp.EMP_ID)} className="hover:bg-slate-50">
+                      <SelectItem key={emp.EMP_ID} value={String(emp.EMP_ID)} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                         {`${emp.EMP_NAME} ${emp.EMPLST_NM} (${emp.EMP_NBR})`}
                       </SelectItem>
                     ))}
@@ -393,18 +393,18 @@ export default function ImportTransactionPage() {
             {/* Bank Account * Field */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end pr-4">
-                <label className="text-sm font-semibold text-slate-700">
-                  Bank Account<span className="text-red-500"> *</span>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
+                  Bank Account<span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
                 <Select value={accountId} onValueChange={handleAccountChange}>
-                  <SelectTrigger className="w-full sm:w-1/2 h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-full sm:w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl max-h-60 overflow-y-auto">
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl max-h-60 overflow-y-auto">
                     {bankAccounts.map((account) => (
-                      <SelectItem key={account.value} value={account.value} className="hover:bg-slate-50">
+                      <SelectItem key={account.value} value={account.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                         {account.label}
                       </SelectItem>
                     ))}
@@ -416,7 +416,7 @@ export default function ImportTransactionPage() {
             {/* Bank Name Field (Readonly) */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end pr-4">
-                <label className="text-sm font-semibold text-slate-700">Bank Name</label>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Bank Name</label>
               </div>
               <div className="w-3/4">
                 <Input
@@ -424,7 +424,7 @@ export default function ImportTransactionPage() {
                   disabled
                   value={bankName}
                   placeholder="Select Bank Account first"
-                  className="w-full sm:w-1/2 h-10 rounded-xl border-slate-200 bg-slate-50 text-slate-500 font-semibold cursor-not-allowed"
+                  className="w-full sm:w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-[#f6f7f9] dark:bg-[#0e1628] text-[#535768] dark:text-[#aab3c5] font-semibold cursor-not-allowed"
                 />
               </div>
             </div>
@@ -432,12 +432,12 @@ export default function ImportTransactionPage() {
             {/* Bank Sheet * Field */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end pr-4">
-                <label className="text-sm font-semibold text-slate-700">
-                  Bank Sheet<span className="text-red-500"> *</span>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
+                  Bank Sheet<span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
-                <div className="flex items-center gap-3 w-full sm:w-1/2 h-10 border border-slate-200 bg-white rounded-xl px-2.5 hover:border-slate-300 transition-all duration-200">
+                <div className="flex items-center gap-3 w-full sm:w-1/2 h-10 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] rounded-xl px-2.5 hover:border-slate-300 dark:hover:border-white/20 transition-all duration-200">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -451,11 +451,11 @@ export default function ImportTransactionPage() {
                     variant="secondary"
                     disabled={!accountId || loadingConfig}
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-0 bg-slate-100 hover:bg-slate-200 text-slate-700 h-7 px-3 text-xs font-bold rounded-lg cursor-pointer"
+                    className="border-0 bg-[#f1f3f8] dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/10 text-[#1a1818] dark:text-[#e6e9f0] h-7 px-3 text-xs font-semibold rounded-lg cursor-pointer"
                   >
                     Choose File
                   </Button>
-                  <span className="text-xs text-slate-400 font-semibold truncate flex-1">
+                  <span className="text-xs text-[#535768] dark:text-[#aab3c5] font-semibold truncate flex-1">
                     {file ? file.name : "No file chosen"}
                   </span>
                 </div>
@@ -464,28 +464,28 @@ export default function ImportTransactionPage() {
 
             {/* Parsing Info / Feedback Logs */}
             {loadingConfig && (
-              <div className="flex gap-2 items-center justify-center p-4 text-slate-400 bg-slate-50 rounded-2xl border">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <div className="flex gap-2 items-center justify-center p-4 text-[#535768] dark:text-[#aab3c5] bg-[#f6f7f9] dark:bg-[#0e1628] rounded-2xl border">
+                <Loader2 className="h-5 w-5 animate-spin text-[#0b5394] dark:text-[#8cb8f0]" />
                 <span className="text-xs font-semibold">Resolving bank statement configuration...</span>
               </div>
             )}
 
             {parseError && (
-              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3 text-red-700 text-sm font-medium">
-                <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+              <div className="bg-rose-50 dark:bg-rose-400/10 border border-rose-200 dark:border-rose-400/30 rounded-2xl p-4 flex items-start gap-3 text-rose-800 dark:text-rose-200 text-sm font-medium">
+                <AlertCircle className="h-5 w-5 text-rose-700 dark:text-rose-300 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-red-800">File Parsing Error</h4>
-                  <p className="mt-0.5 text-xs text-red-700/90 leading-relaxed">{parseError}</p>
+                  <h4 className="font-semibold text-rose-800 dark:text-rose-200">File Parsing Error</h4>
+                  <p className="mt-0.5 text-xs text-rose-800 dark:text-rose-200 leading-relaxed">{parseError}</p>
                 </div>
               </div>
             )}
 
             {successCount !== null && (
-              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-start gap-3 text-emerald-700 text-sm font-medium">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div className="bg-emerald-50 dark:bg-emerald-400/10 border border-emerald-200 dark:border-emerald-400/30 rounded-2xl p-4 flex items-start gap-3 text-emerald-800 dark:text-emerald-200 text-sm font-medium">
+                <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-emerald-800">Import Report</h4>
-                  <p className="mt-0.5 text-xs text-emerald-700/90 leading-relaxed">
+                  <h4 className="font-semibold text-emerald-800 dark:text-emerald-200">Import Report</h4>
+                  <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed">
                     Successfully imported {successCount} bank transactions into the ledger. Redirecting...
                   </p>
                 </div>
@@ -494,18 +494,18 @@ export default function ImportTransactionPage() {
 
             {/* Layout Template Column info */}
             {accountId && expectedFields.length > 0 && !loadingConfig && (
-              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4.5 flex items-start gap-3">
-                <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <div className="bg-[#e3edf9] dark:bg-[#16233d] border border-[#0b5394]/20 dark:border-[#8cb8f0]/25 rounded-2xl p-4.5 flex items-start gap-3">
+                <Info className="h-5 w-5 text-[#0b5394] dark:text-[#8cb8f0] shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-blue-800">Template Fields Mapping</h4>
-                  <p className="text-[11px] text-blue-700/80 leading-relaxed mt-1 font-medium">
+                  <h4 className="text-xs font-semibold text-[#083f72] dark:text-[#cfe1fa]">Template Fields Mapping</h4>
+                  <p className="text-[11px] text-[#083f72] dark:text-[#cfe1fa] leading-relaxed mt-1 font-medium">
                     Please ensure the sheet contains columns matching either the database columns or the configured header labels:
                   </p>
                   <div className="flex flex-wrap gap-1.5 mt-2.5">
                     {expectedFields.map((f) => (
                       <span
                         key={f.key}
-                        className="bg-white/80 border border-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-md font-mono"
+                        className="bg-white/80 dark:bg-[#111a2e]/80 border border-[#0b5394]/20 dark:border-[#8cb8f0]/25 text-[#083f72] dark:text-[#cfe1fa] text-[10px] font-semibold px-2 py-0.5 rounded-md font-mono"
                         title={`Database Key: ${f.key}`}
                       >
                         {f.label}
@@ -517,14 +517,14 @@ export default function ImportTransactionPage() {
             )}
 
             {/* Bottom Buttons Container (Matches legacy layout and alignment with inputs) */}
-            <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-2">
+            <div className="pt-6 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row gap-2">
               <div className="sm:w-1/4"></div>
               <div className="sm:w-3/4 flex items-center gap-3">
                 <Button
                   type="button"
                   onClick={() => handleImportSubmit()}
                   disabled={importing}
-                  className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1.5 shadow-md shadow-blue-100 border-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-10 px-5 rounded-xl bg-[#e15425] hover:bg-[#c2431c] text-white font-semibold gap-1.5 shadow-md shadow-[#e15425]/20 border-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {importing ? (
                     <>
@@ -540,7 +540,7 @@ export default function ImportTransactionPage() {
                   type="button"
                   variant="outline"
                   onClick={() => router.push("/bank-manager/bank-transaction")}
-                  className="h-10 px-5 rounded-xl border-slate-200 hover:bg-slate-100/50 font-bold text-slate-600 bg-white cursor-pointer"
+                  className="h-10 px-5 rounded-xl border-slate-200 dark:border-white/10 hover:bg-[#f1f3f8] dark:hover:bg-white/5 font-semibold text-[#323338] dark:text-[#d5dae4] bg-white dark:bg-[#111a2e] cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -553,34 +553,34 @@ export default function ImportTransactionPage() {
 
       {/* Inline Parsed Table Preview (Rendered as a separate clean card underneath) */}
       {parsedData.length > 0 && (
-        <Card className="rounded-3xl border shadow-sm bg-white overflow-hidden text-left p-6 space-y-3">
+        <Card className="rounded-3xl border shadow-sm bg-white dark:bg-[#111a2e] overflow-hidden text-left p-6 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800">Parsed Spreadsheet Data Preview</h3>
-            <span className="text-[11px] font-bold bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">
+            <h3 className="text-sm font-semibold text-[#1a1818] dark:text-[#f1f3f8]">Parsed Spreadsheet Data Preview</h3>
+            <span className="text-[11px] font-semibold bg-[#f1f3f8] dark:bg-white/10 px-2 py-0.5 rounded-md text-[#323338] dark:text-[#d5dae4]">
               {parsedData.length} records ready
             </span>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-[#111a2e] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
             <div className="overflow-x-auto max-h-[35vh] scrollbar-thin scrollbar-thumb-slate-200">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 font-bold border-b uppercase tracking-wider text-[9px] sticky top-0 z-10">
-                    <th className="py-2.5 px-4 text-center font-bold w-12 bg-slate-50">S.No.</th>
+                  <tr className="bg-[#f6f7f9] dark:bg-[#0e1628] text-[#535768] dark:text-[#aab3c5] font-semibold border-b uppercase tracking-wider text-[9px] sticky top-0 z-10">
+                    <th className="py-2.5 px-4 text-center font-semibold w-12 bg-[#f6f7f9] dark:bg-[#0e1628]">S.No.</th>
                     {expectedFields.map((f) => (
-                      <th key={f.key} className="py-2.5 px-3 font-bold bg-slate-50">{f.label}</th>
+                      <th key={f.key} className="py-2.5 px-3 font-semibold bg-[#f6f7f9] dark:bg-[#0e1628]">{f.label}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/10 text-[#1a1818] dark:text-[#e6e9f0]">
                   {parsedData.slice(0, 100).map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
-                      <td className="py-2 px-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                    <tr key={idx} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5 transition-colors">
+                      <td className="py-2 px-4 text-center text-[#535768] dark:text-[#aab3c5] font-semibold">{idx + 1}</td>
                       {expectedFields.map((f) => {
                         const val = row[f.key];
                         return (
-                          <td key={f.key} className="py-2 px-3 font-medium text-slate-600">
+                          <td key={f.key} className="py-2 px-3 font-medium text-[#323338] dark:text-[#d5dae4]">
                             {val !== null && val !== undefined ? String(val) : (
-                              <span className="text-slate-300 italic font-normal">empty</span>
+                              <span className="text-slate-400 dark:text-slate-500 italic font-normal">empty</span>
                             )}
                           </td>
                         );
@@ -592,7 +592,7 @@ export default function ImportTransactionPage() {
             </div>
           </div>
           {parsedData.length > 100 && (
-            <p className="text-[10px] text-slate-400 text-right font-medium">
+            <p className="text-[10px] text-[#535768] dark:text-[#aab3c5] text-right font-medium">
               * Showing first 100 records in preview
             </p>
           )}

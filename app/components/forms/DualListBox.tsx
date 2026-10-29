@@ -62,7 +62,7 @@ function ListPane({
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={id} className="text-xs text-slate-600">
+        <label htmlFor={id} className="text-xs text-slate-600 brand:text-[#323338] dark:text-[#d5dae4]">
           <span className="sr-only">{title}: </span>
           {infoText(options.length, total)}
         </label>
@@ -85,7 +85,7 @@ function ListPane({
             onActivate(highlighted);
           }
         }}
-        className="h-56 w-full rounded-md border border-slate-200 bg-white p-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+        className="h-56 w-full rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] p-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 brand:focus:ring-[#e15425]/40 disabled:opacity-60"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value} className="rounded px-2 py-1">

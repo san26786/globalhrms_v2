@@ -229,30 +229,30 @@ export default function AddBankDetailsPage() {
 
       {/* Employee Lookup Modal */}
       <Dialog open={isEmployeeModalOpen} onOpenChange={setIsEmployeeModalOpen}>
-        <DialogContent className="max-w-md w-full rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 font-sans">
-          <DialogHeader className="pb-3 border-b border-slate-100">
-            <DialogTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+        <DialogContent className="max-w-md w-full rounded-2xl bg-white dark:bg-[#111a2e] p-6 shadow-2xl border border-slate-100 dark:border-white/10 font-sans">
+          <DialogHeader className="pb-3 border-b border-slate-100 dark:border-white/10">
+            <DialogTitle className="text-lg font-semibold text-[#1a1818] dark:text-[#f1f3f8] flex items-center gap-2">
               Select Employee
             </DialogTitle>
           </DialogHeader>
 
           {/* Search bar */}
           <div className="relative mt-4">
-            <Search className="absolute left-3 top-3 h-4.5 w-4.5 text-slate-400" />
+            <Search className="absolute left-3 top-3 h-4.5 w-4.5 text-[#535768] dark:text-[#aab3c5]" />
             <Input
               placeholder="Search by name or number..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl bg-slate-50/50 text-sm placeholder:text-slate-400 transition-all"
+              className="pl-9 h-11 border-slate-200 dark:border-white/10 focus:border-[#e15425] focus:ring-[#e15425] rounded-xl bg-[#f6f7f9] dark:bg-[#0e1628] text-sm placeholder:text-[#676879] dark:placeholder:text-[#8b95ab] transition-all"
             />
           </div>
 
           {/* List area */}
-          <div className="mt-4 max-h-[300px] overflow-y-auto divide-y divide-slate-50 pr-1 select-none scrollbar-thin scrollbar-thumb-slate-200">
+          <div className="mt-4 max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/10 pr-1 select-none scrollbar-thin scrollbar-thumb-slate-200">
             {isEmployeesLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
-                <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
-                <span className="text-xs font-semibold text-slate-500">Searching employees...</span>
+              <div className="flex flex-col items-center justify-center py-12 text-[#535768] dark:text-[#aab3c5] gap-3">
+                <Loader2 className="h-7 w-7 animate-spin text-[#0b5394] dark:text-[#8cb8f0]" />
+                <span className="text-xs font-semibold text-[#535768] dark:text-[#aab3c5]">Searching employees...</span>
               </div>
             ) : employees.length > 0 ? (
               <div className="space-y-1.5 py-1">
@@ -269,23 +269,23 @@ export default function AddBankDetailsPage() {
                     <button
                       key={emp.EMP_ID}
                       onClick={() => handleSelectEmployee(emp)}
-                      className="w-full text-left p-3 hover:bg-blue-50/50 active:bg-blue-100/70 transition-all duration-150 flex items-center justify-between rounded-xl group border border-transparent hover:border-blue-100"
+                      className="w-full text-left p-3 hover:bg-[#e3edf9] dark:hover:bg-[#16233d] active:bg-[#fbe6dd] dark:active:bg-[#da5427]/20 transition-all duration-150 flex items-center justify-between rounded-xl group border border-transparent hover:border-[#0b5394]/25 dark:hover:border-[#8cb8f0]/30"
                     >
                       <div className="flex items-center gap-3">
                         {/* Avatar */}
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-50 to-indigo-50 border border-blue-100/50 flex items-center justify-center font-bold text-xs text-blue-600 shrink-0 group-hover:from-blue-600 group-hover:to-blue-700 group-hover:text-white group-hover:border-blue-700 transition-all duration-200">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fbe6dd] dark:from-[#da5427]/15 to-[#e3edf9] dark:to-[#16233d] border border-[#0b5394]/20 dark:border-[#8cb8f0]/25 flex items-center justify-center font-semibold text-xs text-[#0b5394] dark:text-[#8cb8f0] shrink-0 group-hover:from-[#e15425] group-hover:to-[#c2431c] group-hover:text-white group-hover:border-[#c2431c] transition-all duration-200">
                           {initials}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-700 group-hover:text-blue-900 transition-colors">
+                          <span className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0] group-hover:text-[#7a2e12] dark:group-hover:text-[#f8d3c3] transition-colors">
                             {fullName}
                           </span>
-                          <span className="text-[10px] text-slate-400 mt-0.5 group-hover:text-slate-500 transition-colors font-semibold">
+                          <span className="text-[10px] text-[#535768] dark:text-[#aab3c5] mt-0.5 group-hover:text-[#535768] dark:group-hover:text-[#aab3c5] transition-colors font-semibold">
                             Emp ID: {emp.EMP_NBR}
                           </span>
                         </div>
                       </div>
-                      <div className="text-[10px] bg-slate-100 group-hover:bg-blue-100 text-slate-500 group-hover:text-blue-700 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider transition-colors shrink-0">
+                      <div className="text-[10px] bg-[#f1f3f8] dark:bg-white/10 group-hover:bg-[#fbe6dd] dark:group-hover:bg-[#da5427]/15 text-[#535768] dark:text-[#aab3c5] group-hover:text-[#b4441f] dark:group-hover:text-[#f8a27e] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider transition-colors shrink-0">
                         Select
                       </div>
                     </button>
@@ -293,9 +293,9 @@ export default function AddBankDetailsPage() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-12 text-slate-400">
-                <p className="text-sm font-medium text-slate-500">No employees found</p>
-                <p className="text-xs text-slate-400 mt-1">Try searching with a different name or ID</p>
+              <div className="text-center py-12 text-[#535768] dark:text-[#aab3c5]">
+                <p className="text-sm font-medium text-[#535768] dark:text-[#aab3c5]">No employees found</p>
+                <p className="text-xs text-[#535768] dark:text-[#aab3c5] mt-1">Try searching with a different name or ID</p>
               </div>
             )}
           </div>

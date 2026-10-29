@@ -6,7 +6,21 @@ import { typeMstSeedData } from './app/data/typeMstSeed';
 const { Pool } = pg;
 
 let pool: pg.Pool | null = null;
+// True only when no database is configured or the pool could not be built.
 let useEmulation = false;
+// After a connection failure (e.g. the SSH tunnel dropped) the real database is skipped until
+// this time, then tried again; a failing statement never pauses it.
+let realDbRetryAt = 0;
+const REAL_DB_RETRY_MS = 10_000;
+
+/** Connection-level failures (database unreachable), as opposed to an error in one statement. */
+function isConnectionError(err: unknown): boolean {
+  const e = (err ?? {}) as { code?: unknown; message?: unknown };
+  const code = String(e.code ?? '');
+  if (['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EPIPE', 'ENOTFOUND', 'EHOSTUNREACH', 'ENETUNREACH'].includes(code)) return true;
+  if (code.startsWith('08') || code.startsWith('57P')) return true; // SQLSTATE connection exception / shutdown
+  return /timeout|terminated|connection/i.test(String(e.message ?? '')) && !/^[0-9A-Z]{5}$/.test(code);
+}
 const LOCAL_DB_PATH = path.join(process.cwd(), 'db_local.json');
 
 // Initialize local database file if it doesn't exist
@@ -83,8 +97,8 @@ export function getDbPool(): pg.Pool | null {
       }
 
       pool.on('error', (err) => {
+        // The pool drops the broken connection itself and the next query opens a new one.
         console.error('Idle PostgreSQL pool error:', err);
-        useEmulation = true; // Fallback on connection errors
       });
     } catch (e) {
       console.warn("Could not construct pg Pool, falling back to emulation:", e);
@@ -100,13 +114,15 @@ export function getDbPool(): pg.Pool | null {
 export async function query<T = any>(text: string, params?: any[]): Promise<T[]> {
   const dbPool = getDbPool();
   
-  if (dbPool && !useEmulation) {
+  if (dbPool && !useEmulation && Date.now() >= realDbRetryAt) {
     try {
       const res = await dbPool.query(text, params);
       return res.rows;
     } catch (err: any) {
       console.warn("Real PostgreSQL connection failed. Falling back to local emulated file database...", err.message || err);
-      useEmulation = true;
+      // Only this query falls back; the next one uses the real database again (after a short
+      // pause when the database itself is unreachable).
+      if (isConnectionError(err)) realDbRetryAt = Date.now() + REAL_DB_RETRY_MS;
     }
   }
 

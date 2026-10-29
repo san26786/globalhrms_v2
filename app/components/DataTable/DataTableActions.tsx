@@ -94,8 +94,8 @@ export function DataTableInlineActions<TData>({
             className={cn(
               "h-7 w-7",
               action.variant === "destructive"
-                ? "text-red-600 hover:text-red-700 hover:bg-red-50"
-                : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                ? "text-red-600 brand:text-rose-700 dark:text-rose-300 hover:text-red-700 brand:hover:text-rose-800 dark:hover:text-rose-200 hover:bg-red-50 brand:hover:bg-rose-50 dark:hover:bg-rose-400/10"
+                : "text-blue-600 brand:text-[#0b5394] dark:text-[#8cb8f0] hover:text-blue-700 brand:hover:text-[#083f72] dark:hover:text-[#cfe1fa] hover:bg-blue-50 brand:hover:bg-[#e3edf9] dark:hover:bg-[#16233d]"
             )}
             onClick={(e) => {
               e.stopPropagation();

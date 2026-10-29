@@ -23,7 +23,7 @@ export function DataTableSkeleton({
   const cols = withSelection ? columnCount + 1 : columnCount;
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border brand:overflow-hidden brand:rounded-2xl brand:border-slate-200 brand:bg-white dark:border-white/10 dark:bg-[#111a2e]">
       <Table>
         <TableHeader>
           <TableRow>

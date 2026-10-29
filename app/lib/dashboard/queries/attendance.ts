@@ -10,10 +10,10 @@
  * Table assumptions (from the literal PHP queries — not yet confirmed
  * against a shared Prisma model, same caveat as job_mst_vw etc. in
  * queries/employee.ts):
- *   - attendance_register       (EMP_ID, EMP_STATUS_ID, OA_BRAND_ID, IS_DELETED,
+ *   - attendance_register       (EMP_ID, IMP_EMP_NAME, OA_BRAND_ID, IS_DELETED,
  *                                 MONTH, YEAR, "DAY1".."DAY31" holding 'P'|'A'|'EG'|'LE',
  *                                 NO_OF_PRESENT, NO_OF_ABSENT, NO_OF_HALF_DAY)
- *   - attendance_employee_vw    (ATTND_EMP_ID, IMP_EMP_NAME) — joined via
+ *   - attendance_employee_vw    (ATTND_EMP_ID, EMP_STATUS_ID — the employee's status) — joined via
  *                                 attendance_employee_vw.ATTND_EMP_ID = attendance_register.EMP_ID
  *
  * NOTE: "DAY{n}" is a per-day pivoted column, so the column name is
@@ -42,7 +42,7 @@ async function countTodayByStatus(
   year: number
 ): Promise<number> {
   const params: any[] = [month, year, currentMstrId];
-  let where = `ar."MONTH" = $1 AND ar."YEAR" = $2 AND ar."EMP_STATUS_ID" = $3 AND ar."IS_DELETED" = 0 AND ar.${dayColumn(
+  let where = `ar."MONTH" = $1 AND ar."YEAR" = $2 AND ae."EMP_STATUS_ID" = $3 AND ar."IS_DELETED" = 0 AND ar.${dayColumn(
     dayOfMonth
   )} = '${status}'`;
   if (shouldScopeToBrand(ctx)) {
@@ -92,13 +92,13 @@ async function getTopByColumn(
   const year = now.getFullYear();
 
   const params: any[] = [month, year, currentMstrId];
-  let where = `ar."MONTH" = $1 AND ar."YEAR" = $2 AND ar."EMP_STATUS_ID" = $3`;
+  let where = `ar."MONTH" = $1 AND ar."YEAR" = $2 AND ae."EMP_STATUS_ID" = $3`;
   if (shouldScopeToBrand(ctx)) {
     params.push(ctx.oaBrandId);
     where += ` AND ar."OA_BRAND_ID" = $${params.length}`;
   }
   const rows = await queryMany<{ IMP_EMP_NAME: string; value: string }>(
-    `SELECT ae."IMP_EMP_NAME" AS "IMP_EMP_NAME", ar."${column}" AS value
+    `SELECT ar."IMP_EMP_NAME" AS "IMP_EMP_NAME", ar."${column}" AS value
      FROM "attendance_register" ar
      JOIN "attendance_employee_vw" ae ON ae."ATTND_EMP_ID" = ar."EMP_ID"
      WHERE ${where}
@@ -146,13 +146,13 @@ export async function getEarlyGoingLast7Days(
     const yearIdx = params.length - 1;
     const statusIdx = params.length;
 
-    let clause = `SELECT ae."IMP_EMP_NAME" AS name
+    let clause = `SELECT ar."IMP_EMP_NAME" AS name
        FROM "attendance_register" ar
        JOIN "attendance_employee_vw" ae ON ae."ATTND_EMP_ID" = ar."EMP_ID"
        WHERE ar.${dayColumn(day)} = 'EG'
          AND ar."MONTH" = $${monthIdx}
          AND ar."YEAR" = $${yearIdx}
-         AND ar."EMP_STATUS_ID" = $${statusIdx}
+         AND ae."EMP_STATUS_ID" = $${statusIdx}
          AND ar."IS_DELETED" = 0`;
 
     if (shouldScopeToBrand(ctx)) {

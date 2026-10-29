@@ -78,7 +78,7 @@ function treeStateFrom(init: PermissionClassInit): FunctionTreeState {
 const CLASS_NAME = /^[A-Za-z ]+$/;
 
 const selectCls =
-  'h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60';
+  'h-10 w-full rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#e15425]/40 disabled:opacity-60';
 
 export default function PermissionClassForm({ mode, classId }: { mode: 'add' | 'edit'; classId?: number }) {
   const router = useRouter();
@@ -334,14 +334,14 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
   if (loadError) {
     return (
       <div className="p-4">
-        <p className="rounded-3xl border bg-white p-6 text-sm text-red-600 shadow-sm">{loadError}</p>
+        <p className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 text-sm text-rose-700 dark:text-rose-300 shadow-sm">{loadError}</p>
       </div>
     );
   }
 
   const fieldError = (key: keyof FieldErrors) =>
     errors[key] ? (
-      <p className="mt-1 text-xs text-red-600" role="alert">
+      <p className="mt-1 text-xs text-rose-700 dark:text-rose-300" role="alert">
         {errors[key]}
       </p>
     ) : null;
@@ -350,21 +350,21 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
     <div className="p-4">
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Header card — same design as DynamicForm */}
-        <div className="rounded-3xl border bg-white p-6 shadow-sm">
+        <div className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)] before:absolute before:inset-x-8 before:top-0 before:h-1 before:rounded-b-full before:bg-gradient-to-r before:from-[#e15425] before:to-[#0b5394] dark:border-white/10 dark:bg-[#111a2e]">
           <div className="flex items-start justify-between">
             <div>
-              <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-500">
+              <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-[#535768] dark:text-[#aab3c5]">
                 {crumbs.map((crumb) => (
                   <span key={crumb} className="flex items-center gap-2">
                     <span>{crumb}</span>
-                    <ChevronRight size={15} className="text-slate-400" />
+                    <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
                   </span>
                 ))}
-                <span className="font-semibold text-blue-600">{mode === 'add' ? 'Add' : 'Edit'}</span>
+                <span className="font-semibold text-[#0b5394] dark:text-[#8cb8f0]">{mode === 'add' ? 'Add' : 'Edit'}</span>
               </nav>
-              <div className="mt-2 flex items-center gap-2">
-                <Database className="text-blue-600 h-6 w-6" />
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">{title}</h1>
+              <div className="mt-3 flex items-center gap-3">
+                <Database className="h-11 w-11 shrink-0 rounded-xl bg-[#fbe6dd] p-2.5 text-[#b4441f] dark:bg-[#da5427]/15 dark:text-[#f8a27e]" />
+                <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-[#1a1818] dark:text-[#f1f3f8] md:text-[32px]">{title}</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -375,11 +375,11 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                 size="icon"
                 title="Save"
                 aria-label="Save"
-                className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50"
+                className="rounded-full bg-[#e15425] hover:bg-[#c2431c] text-white shadow-md shadow-[#e15425]/25 dark:shadow-black/30"
               >
                 <Save className="h-5 w-5 stroke-[2.5]" />
               </Button>
-              <Button type="button" onClick={cancel} variant="outline" size="icon" title="Cancel" aria-label="Cancel" className="rounded-full border-slate-200 text-slate-600 shadow-sm">
+              <Button type="button" onClick={cancel} variant="outline" size="icon" title="Cancel" aria-label="Cancel" className="rounded-full border-slate-200 dark:border-white/10 text-[#323338] dark:text-[#d5dae4] shadow-sm">
                 <X className="h-5 w-5 stroke-[2.5]" />
               </Button>
             </div>
@@ -392,11 +392,11 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
             e.preventDefault();
             void save();
           }}
-          className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6"
+          className="bg-white dark:bg-[#111a2e] p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm space-y-6"
           aria-busy={busy}
         >
           {!init ? (
-            <p className="text-sm text-slate-400">Loading…</p>
+            <p className="text-sm text-[#535768] dark:text-[#aab3c5]">Loading…</p>
           ) : (
             <>
               {/* CI OrgDetailsView: Merchant Account + Brand for the super admin, Requested By for admins */}
@@ -404,7 +404,7 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                 <div className={`grid gap-4 ${isSysAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                   {isSysAdmin && (
                     <div>
-                      <label htmlFor="pc-org" className="mb-1 block text-sm font-medium text-slate-700">
+                      <label htmlFor="pc-org" className="mb-1 block text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                         Merchant Account
                       </label>
                       <select
@@ -427,7 +427,7 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                   )}
                   {isSysAdmin && (
                     <div>
-                      <label htmlFor="pc-brand" className="mb-1 block text-sm font-medium text-slate-700">
+                      <label htmlFor="pc-brand" className="mb-1 block text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                         Brand
                       </label>
                       <select
@@ -449,7 +449,7 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                     </div>
                   )}
                   <div>
-                    <label htmlFor="pc-user" className="mb-1 block text-sm font-medium text-slate-700">
+                    <label htmlFor="pc-user" className="mb-1 block text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
                       Requested By
                     </label>
                     <select
@@ -474,8 +474,8 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
 
               {/* Permission Class (CI setAutocompleteControl) */}
               <div className="relative max-w-xl">
-                <label htmlFor="pc-name" className="mb-1 block text-sm font-medium text-slate-700">
-                  Permission Class <span className="text-red-500">*</span>
+                <label htmlFor="pc-name" className="mb-1 block text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
+                  Permission Class <span className="text-rose-700 dark:text-rose-300">*</span>
                 </label>
                 <Input
                   id="pc-name"
@@ -511,13 +511,13 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                     }
                   }}
                 />
-                {pickedClassId && <p className="mt-1 text-xs text-slate-500">Existing class #{pickedClassId} — saving replaces its permissions.</p>}
+                {pickedClassId && <p className="mt-1 text-xs text-[#535768] dark:text-[#aab3c5]">Existing class #{pickedClassId} — saving replaces its permissions.</p>}
                 {fieldError('permissionClassName')}
                 {showSuggestions && suggestions.length > 0 && className.trim() && (
                   <ul
                     id="pc-name-suggestions"
                     role="listbox"
-                    className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+                    className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] py-1 shadow-lg"
                   >
                     {suggestions.map((s, i) => (
                       <li
@@ -528,7 +528,7 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                           e.preventDefault();
                           void pickClass(s);
                         }}
-                        className={`cursor-pointer px-3 py-1.5 text-sm ${i === activeSuggestion ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                        className={`cursor-pointer px-3 py-1.5 text-sm ${i === activeSuggestion ? 'bg-[#e3edf9] dark:bg-[#16233d] text-[#083f72] dark:text-[#cfe1fa]' : 'text-[#1a1818] dark:text-[#e6e9f0] hover:bg-[#f6f7f9] dark:hover:bg-white/5'}`}
                       >
                         {s.label}
                       </li>
@@ -540,10 +540,10 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
               {/* CI setCheckboxControl "Access Write" (permissions[], SYSTEMPERMISSIONTYPE masters) */}
               {init.accessOptions.length > 0 && (
                 <fieldset>
-                  <legend className="mb-2 text-sm font-medium text-slate-700">Access Write</legend>
+                  <legend className="mb-2 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">Access Write</legend>
                   <div className="flex flex-wrap gap-x-6 gap-y-2">
                     {init.accessOptions.map((opt) => (
-                      <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                      <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-sm text-[#1a1818] dark:text-[#e6e9f0]">
                         <input
                           type="checkbox"
                           checked={accessPermissions.includes(opt.value)}
@@ -563,10 +563,10 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
 
               {/* Ref Type tabs */}
               <div>
-                <p className="mb-2 text-sm font-medium text-slate-700">
-                  Ref Type <span className="text-red-500">*</span>
+                <p className="mb-2 text-sm font-medium text-[#1a1818] dark:text-[#e6e9f0]">
+                  Ref Type <span className="text-rose-700 dark:text-rose-300">*</span>
                 </p>
-                <div role="tablist" aria-label="Ref Type" className="flex flex-wrap gap-1 border-b border-slate-200">
+                <div role="tablist" aria-label="Ref Type" className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-white/10">
                   {TABS.map((t) => {
                     const count =
                       t.key === 'user' ? users.length : t.key === 'userGroup' ? userGroups.length : t.key === 'role' ? roles.length : null;
@@ -580,12 +580,12 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
                         aria-controls={`pc-panel-${t.key}`}
                         onClick={() => setTab(t.key)}
                         className={`-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2 text-sm font-medium ${
-                          tab === t.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'
+                          tab === t.key ? 'border-[#e15425] text-[#0b5394] dark:text-[#8cb8f0]' : 'border-transparent text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white'
                         }`}
                       >
                         <User className="h-4 w-4" aria-hidden="true" />
                         {t.label}
-                        {count !== null && count > 0 && <span className="rounded-full bg-slate-100 px-1.5 text-xs text-slate-600">{count}</span>}
+                        {count !== null && count > 0 && <span className="rounded-full bg-[#f1f3f8] dark:bg-white/10 px-1.5 text-xs text-[#323338] dark:text-[#d5dae4]">{count}</span>}
                       </button>
                     );
                   })}
@@ -609,7 +609,7 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
               </div>
 
               {errors.form && (
-                <p className="text-sm text-red-600" role="alert">
+                <p className="text-sm text-rose-700 dark:text-rose-300" role="alert">
                   {errors.form}
                 </p>
               )}
@@ -617,15 +617,15 @@ export default function PermissionClassForm({ mode, classId }: { mode: 'add' | '
           )}
 
           {/* Footer — same design as DynamicForm */}
-          <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-white/10">
             <Button
               type="submit"
               disabled={busy}
-              className="rounded-full !bg-none !bg-blue-600 hover:!bg-blue-700 text-white px-6 h-10 text-sm font-semibold shadow-md shadow-blue-200/50 border-0"
+              className="rounded-full !bg-none !bg-[#e15425] hover:!bg-[#c2431c] text-white px-6 h-10 text-sm font-semibold shadow-md shadow-[#e15425]/25 dark:shadow-black/30 border-0"
             >
               {saving ? 'Saving…' : 'Save'}
             </Button>
-            <Button type="button" variant="outline" onClick={cancel} className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 px-6 h-10 text-sm font-semibold shadow-sm">
+            <Button type="button" variant="outline" onClick={cancel} className="rounded-full border-slate-200 dark:border-white/10 text-[#1a1818] dark:text-[#e6e9f0] hover:bg-[#f6f7f9] dark:hover:bg-white/5 px-6 h-10 text-sm font-semibold shadow-sm">
               Cancel
             </Button>
           </div>

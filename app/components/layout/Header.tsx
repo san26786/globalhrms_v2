@@ -32,6 +32,8 @@ import {
 import { PROFILE_MENU, SETTINGS_MENU, visibleMenuItems } from '@/lib/header/headerMenus';
 import { hrefForCi, resolveCiUrl } from '@/lib/navigation/routeRegistry';
 import { PromoBanner } from './PromoBanner';
+import { poppins } from '@/components/auth/AuthUi';
+import { ThemeScope, ThemeSwitch } from '@/components/dashboard/DashboardUi';
 
 /** CI header links are CI URIs; this renders them as app links, or muted text when not migrated yet. */
 function CiLink({
@@ -99,9 +101,9 @@ type OpenDropdown = 'profile' | 'launcher' | 'notifications' | 'brand' | null;
 const AUTO_LOGOUT_REDIRECTS: boolean = false;
 
 const ICON_BTN =
-  'p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl border border-slate-200/50 transition-all';
+  'flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] text-[#323338] dark:text-[#d5dae4] transition-all duration-200 hover:border-[#da5427]/40 hover:bg-[#fbe6dd] dark:hover:bg-[#da5427]/15 hover:text-[#7a2e12] dark:hover:text-[#f8d3c3] cursor-pointer';
 const LINK_BTN =
-  'flex items-center gap-1.5 px-2.5 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl border border-slate-200/50 transition-all';
+  'flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] px-3 text-[13px] font-medium text-[#323338] dark:text-[#d5dae4] transition-all duration-200 hover:border-[#da5427]/40 hover:bg-[#fbe6dd] dark:hover:bg-[#da5427]/15 hover:text-[#7a2e12] dark:hover:text-[#f8d3c3]';
 
 export default function Header({
   onLogout,
@@ -231,20 +233,20 @@ export default function Header({
   const initial = displayName ? displayName.charAt(0).toUpperCase() : 'D';
 
   return (
-    <>
+    <ThemeScope contents>
     <header
       id="enterprise-header"
       style={{ borderTop: '3px solid var(--main-bg-color, #e15425)' }}
-      className="h-20 bg-white border-b border-slate-150 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-40 select-none shadow-sm shadow-slate-100/40"
+      className={`${poppins.className} h-20 bg-white/90 dark:bg-[#0f1729]/90 backdrop-blur border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-40 select-none shadow-[0_8px_24px_-22px_rgba(6,27,49,0.5)]`}
     >
       {/* Left: welcome (CI marquee: "Welcome to {brandName}") */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-        <div className="flex flex-col text-left leading-none font-sans min-w-0">
-          <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest hidden sm:block truncate">
+        <div className="flex flex-col text-left leading-none min-w-0">
+          <span className="text-[#535768] dark:text-[#aab3c5] text-[11px] font-medium uppercase tracking-widest hidden sm:block truncate">
             {brandName ? `Welcome to ${brandName}` : 'Enterprise HR Console'}
           </span>
-          <span className="text-slate-800 text-xs sm:text-sm font-black flex items-center gap-1 mt-0.5 sm:mt-1 leading-none">
-            Welcome back, <span className="text-blue-600 font-extrabold truncate">{displayName}</span>
+          <span className="text-[#1a1818] dark:text-[#f1f3f8] text-[15px] sm:text-[17px] font-medium tracking-[-0.01em] flex items-center gap-1 mt-1 sm:mt-1.5 leading-none">
+            Welcome back, <span className="text-[#0b5394] dark:text-[#8cb8f0] font-semibold truncate">{displayName}</span>
           </span>
         </div>
       </div>
@@ -253,13 +255,14 @@ export default function Header({
       <div ref={dropdownAreaRef} className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* "Logged in at" — hidden for super admin or when there is no valid last-login time */}
         {lastLogin && (
-          <div className="hidden xl:flex items-center gap-2 border border-slate-200/80 rounded-xl px-3 py-1.5 bg-slate-50/50">
-            <div className="flex flex-col text-left leading-none font-sans">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+          <div className="hidden xl:flex items-center gap-2.5 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] px-4 py-1.5">
+            <span aria-hidden="true" className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" /></span>
+            <div className="flex flex-col text-left leading-none">
+              <span className="text-[10.5px] font-medium text-[#535768] dark:text-[#aab3c5] uppercase tracking-widest leading-none">
                 Active Session
               </span>
-              <span id="session-login-time" className="text-[10px] font-bold text-slate-700 mt-0.5 leading-none font-mono">
-                Logged in at <span className="text-blue-600 font-black">{lastLogin}</span>
+              <span id="session-login-time" className="text-[12px] font-medium text-[#323338] dark:text-[#d5dae4] mt-1 leading-none tabular-nums">
+                Logged in at <span className="text-[#0b5394] dark:text-[#8cb8f0] font-semibold">{lastLogin}</span>
               </span>
             </div>
           </div>
@@ -279,6 +282,9 @@ export default function Header({
           <span className="hidden 2xl:inline">Main Menu</span>
         </CiLink>
 
+        {/* Light / dark theme */}
+        <ThemeSwitch className={ICON_BTN} />
+
         {/* Notifications */}
         <div className="relative">
           <button
@@ -291,47 +297,47 @@ export default function Header({
           >
             <Bell className="w-4 h-4 stroke-[2]" />
             {alertCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#ff5252] text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#b4441f] text-white text-[10px] font-semibold min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center border-2 border-white tabular-nums">
                 {alertCount > 99 ? '99+' : alertCount}
               </span>
             )}
           </button>
 
           {openDropdown === 'notifications' && (
-            <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl py-3 z-50 text-left animate-fade-in font-sans">
-              <div className="px-4 pb-2 border-b border-slate-100">
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+            <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-[#111a2e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl py-3 z-50 text-left origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+              <div className="px-4 pb-2 border-b border-slate-100 dark:border-white/10">
+                <span className="text-[13px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">
                   Alert Center ({alertCount} Pending)
                 </span>
               </div>
               <div className="max-h-[260px] overflow-y-auto divide-y divide-slate-50">
                 {session.alerts.recent.length === 0 ? (
-                  <p className="px-4 py-6 text-center text-[11px] text-slate-400">You're all caught up.</p>
+                  <p className="px-4 py-6 text-center text-[13px] text-[#535768] dark:text-[#aab3c5]">You're all caught up.</p>
                 ) : (
                   session.alerts.recent.map((noti) => (
                     <CiLink
                       key={noti.id}
                       ci="announcement/announcement"
                       onClick={closeDropdowns}
-                      className="p-3.5 hover:bg-slate-50 transition-colors flex gap-3"
+                      className="p-3.5 hover:bg-[#f6f7f9] dark:hover:bg-white/5 transition-colors flex gap-3"
                     >
-                      <AlertCircle className={`w-4 h-4 mt-0.5 shrink-0 ${noti.read ? 'text-slate-300' : 'text-blue-500'}`} />
+                      <AlertCircle className={`w-4 h-4 mt-0.5 shrink-0 ${noti.read ? 'text-slate-400' : 'text-[#da5427]'}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs truncate ${noti.read ? 'font-medium text-slate-500' : 'font-bold text-slate-700'}`}>
+                        <p className={`text-[13px] truncate ${noti.read ? 'font-normal text-[#535768] dark:text-[#aab3c5]' : 'font-semibold text-[#1a1818] dark:text-[#f1f3f8]'}`}>
                           {noti.title}
                         </p>
-                        {noti.message && <p className="text-[11px] text-slate-500 leading-tight mt-0.5 line-clamp-2">{noti.message}</p>}
-                        <span className="text-[9px] font-bold text-slate-400 mt-1 block font-mono">{formatAlertDate(noti.createdAt)}</span>
+                        {noti.message && <p className="text-[12.5px] text-[#535768] dark:text-[#aab3c5] leading-snug mt-0.5 line-clamp-2">{noti.message}</p>}
+                        <span className="text-[11px] font-medium text-[#535768] dark:text-[#aab3c5] mt-1 block tabular-nums">{formatAlertDate(noti.createdAt)}</span>
                       </div>
                     </CiLink>
                   ))
                 )}
               </div>
-              <div className="px-2 pt-2 border-t border-slate-100">
+              <div className="px-2 pt-2 border-t border-slate-100 dark:border-white/10">
                 <CiLink
                       ci="announcement/announcement"
                   onClick={closeDropdowns}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium text-[#0b5394] dark:text-[#8cb8f0] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] transition-colors"
                 >
                   View all announcements <ArrowUpRight className="w-3.5 h-3.5" />
                 </CiLink>
@@ -355,8 +361,8 @@ export default function Header({
             </button>
 
             {openDropdown === 'launcher' && (
-              <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 text-left animate-fade-in font-sans">
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3 border-b border-slate-50 pb-2">
+              <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-[#111a2e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-4 z-50 text-left origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                <h4 className="text-[13px] font-semibold text-[#1a1818] dark:text-[#f1f3f8] mb-3 border-b border-slate-50 dark:border-white/5 pb-2">
                   Enterprise Settings Launcher
                 </h4>
                 <div className="grid grid-cols-2 gap-2 max-h-[360px] overflow-y-auto pr-0.5">
@@ -367,9 +373,9 @@ export default function Header({
                         key={item.key}
                       ci={item.href(session)}
                         onClick={closeDropdowns}
-                        className="flex items-center gap-2.5 p-2 rounded-xl border border-slate-50 hover:border-blue-100 hover:bg-blue-50/20 text-slate-600 hover:text-blue-600 transition-all text-left text-xs font-bold"
+                        className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 dark:border-white/10 hover:border-[#da5427]/30 hover:bg-[#fbe6dd] dark:hover:bg-[#da5427]/15 text-[#323338] dark:text-[#d5dae4] hover:text-[#7a2e12] dark:hover:text-[#f8d3c3] transition-all text-left text-[13px] font-medium"
                       >
-                        <Icon className="w-4 h-4 text-slate-400 stroke-[2] shrink-0" />
+                        <Icon className="w-4 h-4 text-[#535768] dark:text-[#aab3c5] stroke-[2] shrink-0" />
                         <span className="truncate">{item.label}</span>
                       </CiLink>
                     );
@@ -386,15 +392,15 @@ export default function Header({
             <button
               id="brand-dropdown-trigger"
               onClick={() => toggleDropdown('brand')}
-              className="flex items-center gap-1.5 px-2 py-1.5 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 text-slate-700 hover:text-blue-600 transition-all hover:border-slate-300 font-sans"
+              className="flex h-10 items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e] px-3 text-[#323338] dark:text-[#d5dae4] transition-all duration-200 hover:border-[#da5427]/40 hover:bg-[#fbe6dd] dark:hover:bg-[#da5427]/15 cursor-pointer"
               title="Switch Corporate Brand"
               aria-haspopup="true"
               aria-expanded={openDropdown === 'brand'}
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-400 stroke-[2] ${openDropdown === 'brand' ? 'animate-spin' : ''}`} />
               <div className="hidden lg:flex flex-col text-left leading-none">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Brand</span>
-                <span id="current-active-brand" className="text-[11px] font-bold text-slate-700 truncate max-w-[120px] mt-0.5">
+                <span className="text-[10px] font-medium text-[#535768] dark:text-[#aab3c5] uppercase tracking-widest">Active Brand</span>
+                <span id="current-active-brand" className="text-[12.5px] font-semibold text-[#1a1818] dark:text-[#f1f3f8] truncate max-w-[120px] mt-0.5">
                   {brandName || '—'}
                 </span>
               </div>
@@ -402,9 +408,9 @@ export default function Header({
             </button>
 
             {openDropdown === 'brand' && (
-              <div className="absolute right-0 mt-3 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl py-2.5 z-50 text-left animate-fade-in font-sans">
-                <div className="px-4 pb-2 border-b border-slate-100">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Select Corporate Brand</span>
+              <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-[#111a2e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl py-2.5 z-50 text-left origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                <div className="px-4 pb-2 border-b border-slate-100 dark:border-white/10">
+                  <span className="text-[13px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">Select Corporate Brand</span>
                 </div>
                 <div className="max-h-[220px] overflow-y-auto py-1">
                   {brands.map((brand) => {
@@ -415,29 +421,29 @@ export default function Header({
                         key={brand.id}
                         onClick={() => switchBrand(brand)}
                         disabled={switchingBrandId !== null}
-                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 text-xs flex items-center justify-between transition-colors disabled:opacity-60 ${
-                          isSelected ? 'bg-blue-50/30 text-blue-600 font-bold' : 'text-slate-700'
+                        className={`w-full text-left px-4 py-3 hover:bg-[#f6f7f9] dark:hover:bg-white/5 text-[13px] flex items-center justify-between transition-colors disabled:opacity-60 cursor-pointer ${
+                          isSelected ? 'bg-[#e3edf9] dark:bg-[#16233d] text-[#083f72] dark:text-[#cfe1fa] font-semibold' : 'text-[#323338] dark:text-[#d5dae4]'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-blue-600' : 'bg-slate-300'}`} />
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-[#0b5394]' : 'bg-slate-300'}`} />
                           <span className="truncate">{brand.name}</span>
                         </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 stroke-[3]" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0b5394] dark:text-[#8cb8f0] stroke-[3]" />}
                         {isSwitching && <RefreshCw className="w-3.5 h-3.5 text-slate-400 animate-spin" />}
                       </button>
                     );
                   })}
                 </div>
                 {brandError && (
-                  <p role="alert" className="px-4 pt-2 text-[11px] font-bold text-red-600">{brandError}</p>
+                  <p role="alert" className="px-4 pt-2 text-[12px] font-medium text-rose-800">{brandError}</p>
                 )}
                 {session.switchBrandUrl && hrefForCi(session.switchBrandUrl) && (
-                  <div className="px-2 pt-2 border-t border-slate-100">
+                  <div className="px-2 pt-2 border-t border-slate-100 dark:border-white/10">
                     <CiLink
                       ci={session.switchBrandUrl}
                       onClick={closeDropdowns}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium text-[#0b5394] dark:text-[#8cb8f0] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] transition-colors"
                     >
                       Open brand switcher <ArrowUpRight className="w-3.5 h-3.5" />
                     </CiLink>
@@ -448,23 +454,23 @@ export default function Header({
           </div>
         )}
 
-        <div className="w-px h-8 bg-slate-200/80 mx-0.5 hidden sm:block" />
+        <div className="w-px h-8 bg-slate-200/80 dark:bg-white/10 mx-0.5 hidden sm:block" />
 
         {/* Profile */}
         <div className="relative">
           <button
             id="profile-dropdown-trigger"
             onClick={() => toggleDropdown('profile')}
-            className="flex items-center gap-2 p-1 rounded-full sm:rounded-xl hover:bg-slate-50 transition-all text-slate-700"
+            className="flex items-center gap-2.5 rounded-full p-1 sm:pr-2.5 hover:bg-[#f6f7f9] dark:hover:bg-white/5 transition-all text-[#1a1818] dark:text-[#f1f3f8] cursor-pointer"
             aria-haspopup="true"
             aria-expanded={openDropdown === 'profile'}
           >
-            <div className="w-8 h-8 rounded-full bg-[#dcfce7] border border-[#bbf7d0] flex items-center justify-center font-black text-xs text-[#15803d] shrink-0">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0b5394] to-[#0a1f44] text-white shadow-[0_6px_14px_-8px_rgba(11,83,148,0.9)] flex items-center justify-center font-semibold text-[13px] shrink-0">
               {initial}
             </div>
             <div className="hidden md:flex flex-col text-left leading-none pr-1">
-              <span id="user-display-name" className="text-xs font-bold text-slate-800">{displayName}</span>
-              <span id="user-display-role" className="text-[9px] font-medium text-slate-400 mt-0.5">
+              <span id="user-display-name" className="text-[13.5px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{displayName}</span>
+              <span id="user-display-role" className="text-[11.5px] text-[#535768] dark:text-[#aab3c5] mt-1">
                 {USER_LEVEL_LABEL[session.userLevel]}
               </span>
             </div>
@@ -472,14 +478,14 @@ export default function Header({
           </button>
 
           {openDropdown === 'profile' && (
-            <div className="absolute right-0 mt-3 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl py-2.5 z-50 text-left animate-fade-in font-sans">
-              <div className="px-[18px] py-3 border-b border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#dcfce7] flex items-center justify-center font-black text-sm text-[#15803d]">
+            <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-[#111a2e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl py-2.5 z-50 text-left origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+              <div className="px-[18px] py-3 border-b border-slate-100 dark:border-white/10 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0b5394] to-[#0a1f44] text-white shadow-[0_6px_14px_-8px_rgba(11,83,148,0.9)] flex items-center justify-center font-semibold text-[15px]">
                   {initial}
                 </div>
                 <div className="flex flex-col leading-none">
-                  <span className="text-xs font-black text-slate-800">{displayName}</span>
-                  <span className="text-[10px] font-bold text-slate-400 mt-1">{USER_LEVEL_LABEL[session.userLevel]}</span>
+                  <span className="text-[14px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{displayName}</span>
+                  <span className="text-[12px] text-[#535768] dark:text-[#aab3c5] mt-1">{USER_LEVEL_LABEL[session.userLevel]}</span>
                 </div>
               </div>
 
@@ -491,24 +497,24 @@ export default function Header({
                       key={item.key}
                       ci={item.href(session)}
                       onClick={closeDropdowns}
-                      className="w-full text-left px-4 py-2 hover:bg-slate-50 text-xs text-slate-700 flex flex-col gap-0.5 border-b border-slate-50 last:border-0 transition-colors"
+                      className="w-full text-left px-4 py-2.5 hover:bg-[#f6f7f9] dark:hover:bg-white/5 text-[13px] text-[#323338] dark:text-[#d5dae4] flex flex-col gap-0.5 border-b border-slate-100 dark:border-white/10 last:border-0 transition-colors"
                     >
-                      <div className="flex items-center gap-2 font-bold text-slate-700">
-                        <Icon className="w-3.5 h-3.5 text-slate-400 stroke-[2.2]" />
+                      <div className="flex items-center gap-2 font-medium text-[#1a1818] dark:text-[#f1f3f8]">
+                        <Icon className="w-3.5 h-3.5 text-[#535768] dark:text-[#aab3c5] stroke-[2.2]" />
                         <span>{item.label}</span>
                       </div>
-                      {item.desc && <span className="text-[10px] text-slate-400 pl-5 leading-tight">{item.desc}</span>}
+                      {item.desc && <span className="text-[12px] text-[#535768] dark:text-[#aab3c5] pl-5 leading-snug">{item.desc}</span>}
                     </CiLink>
                   );
                 })}
               </div>
 
-              <div className="p-2 border-t border-slate-100 bg-slate-50/50 mt-1">
+              <div className="p-2 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 mt-1">
                 <button
                   id="profile-logout-button"
                   onClick={() => performLogout('user')}
                   disabled={loggingOut}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-bold text-red-600 hover:text-red-700 transition-colors border border-red-200/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 rounded-full text-[13px] font-semibold text-rose-800 transition-colors border border-rose-200 dark:bg-rose-400/10 dark:hover:bg-rose-400/20 dark:text-rose-200 dark:border-rose-400/30 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Power className="w-3.5 h-3.5 stroke-[2]" />
                   {loggingOut ? 'Logging out...' : 'Logout Session'}
@@ -522,6 +528,6 @@ export default function Header({
     {session.bannerVisible && (
       <PromoBanner logoUrl={session.brandLogoUrl ?? '/images/organisationLogo/company_logo2.jpg'} logoAlt={brandName || 'Company logo'} />
     )}
-    </>
+    </ThemeScope>
   );
 }

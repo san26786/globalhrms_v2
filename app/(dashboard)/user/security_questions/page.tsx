@@ -3,23 +3,13 @@
 import { useRouter } from "next/navigation";
 import ResourceFormPage from "@/components/resource/ResourceFormPage";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
+import SecurityQuestionsView, { type SecurityQuestionsForm } from "./SecurityQuestionsView";
 import { useOptions } from "@/lib/lookups/useOptions";
 
 /**
  * CI user/security_questions — four different questions (masters of type USQ) and four answers.
  * Existing answers are never sent to the browser; saving requires all four answers again.
  */
-interface SecurityQuestionsForm {
-  question1: string;
-  question2: string;
-  question3: string;
-  question4: string;
-  answer1: string;
-  answer2: string;
-  answer3: string;
-  answer4: string;
-}
-
 interface SecurityQuestionsDto {
   selected: Record<"question1" | "question2" | "question3" | "question4", number | null>;
 }
@@ -65,6 +55,7 @@ export default function SecurityQuestionsPage() {
         question4: dto.selected.question4 ? String(dto.selected.question4) : "",
       })}
       onSaved={() => router.push("/dashboard")}
+      renderForm={(props) => <SecurityQuestionsView {...props} />}
     />
   );
 }

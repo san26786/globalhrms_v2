@@ -193,8 +193,8 @@ export default function AddTransactionPage() {
 
   if (loadingLookups) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400 space-y-2">
-        <Loader2 className="animate-spin text-blue-500" size={24} />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-[#535768] dark:text-[#aab3c5] space-y-2">
+        <Loader2 className="animate-spin text-[#0b5394] dark:text-[#8cb8f0]" size={24} />
         <span>Loading form configurations...</span>
       </div>
     );
@@ -203,20 +203,20 @@ export default function AddTransactionPage() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       {/* Header Card (Matches BreadcrumbHeader Design) */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border bg-white dark:bg-[#111a2e] p-6 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-[#535768] dark:text-[#aab3c5]">
               <span>Bank Manager</span>
-              <ChevronRight size={15} className="text-slate-400" />
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
               <span>Bank Transaction</span>
-              <ChevronRight size={15} className="text-slate-400" />
-              <span className="font-semibold text-blue-600">Add</span>
+              <ChevronRight size={15} className="text-[#535768] dark:text-[#aab3c5]" />
+              <span className="font-semibold text-[#0b5394] dark:text-[#8cb8f0]">Add</span>
             </div>
 
             <div className="mt-2 flex items-center gap-2">
-              <Database className="text-blue-600 h-6 w-6" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800 animate-in fade-in slide-in-from-left-2 duration-200">
+              <Database className="text-[#0b5394] dark:text-[#8cb8f0] h-6 w-6" />
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#1a1818] dark:text-[#f1f3f8] animate-in fade-in slide-in-from-left-2 duration-200">
                 New Bank Transaction
               </h1>
             </div>
@@ -230,7 +230,7 @@ export default function AddTransactionPage() {
               disabled={saving}
               onClick={() => setSubmitType("save")}
               size="icon"
-              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full bg-[#e15425] hover:bg-[#c2431c] text-white shadow-md shadow-[#e15425]/25 dark:shadow-black/30 hover:shadow-[#e15425]/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Save"
             >
               {saving && submitType === "save" ? (
@@ -247,7 +247,7 @@ export default function AddTransactionPage() {
               disabled={saving}
               onClick={() => setSubmitType("saveAndAdd")}
               size="icon"
-              className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200/50 hover:shadow-emerald-300/60 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="rounded-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/20 hover:shadow-emerald-700/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Save and Add"
             >
               {saving && submitType === "saveAndAdd" ? (
@@ -262,7 +262,7 @@ export default function AddTransactionPage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full border-red-100 hover:border-red-200 bg-white hover:bg-red-50 text-red-500 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+                className="rounded-full border-rose-200 dark:border-rose-400/30 hover:border-rose-300 dark:hover:border-rose-400/50 bg-white dark:bg-[#111a2e] hover:bg-rose-50 dark:hover:bg-rose-400/10 text-rose-700 dark:text-rose-300 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
                 title="Cancel"
               >
                 <X className="h-5 w-5" />
@@ -272,25 +272,25 @@ export default function AddTransactionPage() {
         </div>
       </div>
 
-      <Card className="rounded-3xl border shadow-sm bg-white overflow-hidden text-left">
+      <Card className="rounded-3xl border shadow-sm bg-white dark:bg-[#111a2e] overflow-hidden text-left">
         <form id="transaction-form" onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-4">
             {/* Account */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
                   Account
-                  <span className="text-red-500"> *</span>
+                  <span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
                 <Select value={accountId} onValueChange={setAccountId}>
-                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
                     {bankAccounts.map((account) => (
-                      <SelectItem key={account.value} value={account.value} className="hover:bg-slate-50">
+                      <SelectItem key={account.value} value={account.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                         {account.label}
                       </SelectItem>
                     ))}
@@ -302,7 +302,7 @@ export default function AddTransactionPage() {
             {/* Bank Name */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">Bank Name</label>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Bank Name</label>
               </div>
               <div className="w-3/4">
                 <Input
@@ -310,7 +310,7 @@ export default function AddTransactionPage() {
                   disabled
                   value={bankName}
                   placeholder="Select an option"
-                  className="w-1/2 h-10 rounded-xl border-slate-200 bg-slate-50 text-slate-500 font-semibold cursor-not-allowed"
+                  className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-[#f6f7f9] dark:bg-[#0e1628] text-[#535768] dark:text-[#aab3c5] font-semibold cursor-not-allowed"
                 />
               </div>
             </div>
@@ -318,19 +318,19 @@ export default function AddTransactionPage() {
             {/* Accounting Transaction Type */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
                   Accounting Transaction Type
-                  <span className="text-red-500"> *</span>
+                  <span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
                 <Select value={transactionType} onValueChange={setTransactionType}>
-                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
-                    <SelectItem value="BTTI" className="hover:bg-slate-50">Incoming / Receipt (Credit)</SelectItem>
-                    <SelectItem value="BTTO" className="hover:bg-slate-50">Outgoing / Payment (Debit)</SelectItem>
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
+                    <SelectItem value="BTTI" className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">Incoming / Receipt (Credit)</SelectItem>
+                    <SelectItem value="BTTO" className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">Outgoing / Payment (Debit)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -339,19 +339,19 @@ export default function AddTransactionPage() {
             {/* Category Type */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
                   Category Type
-                  <span className="text-red-500"> *</span>
+                  <span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
                 <Select value={categoryType} onValueChange={handleCategoryTypeChange}>
-                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
                     {categoryTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value} className="hover:bg-slate-50">
+                      <SelectItem key={type.value} value={type.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                         {type.label}
                       </SelectItem>
                     ))}
@@ -363,16 +363,16 @@ export default function AddTransactionPage() {
             {/* Category */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">Category</label>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Category</label>
               </div>
               <div className="w-3/4">
                 <Select value={category} onValueChange={setCategory} disabled={!categoryType}>
-                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 bg-white">
+                  <SelectTrigger className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]">
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-100 shadow-md rounded-xl">
+                  <SelectContent className="bg-white dark:bg-[#111a2e] border border-slate-100 dark:border-white/10 shadow-md rounded-xl">
                     {availableCategories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value} className="hover:bg-slate-50">
+                      <SelectItem key={cat.value} value={cat.value} className="hover:bg-[#f6f7f9] dark:hover:bg-white/5">
                         {cat.label}
                       </SelectItem>
                     ))}
@@ -384,14 +384,14 @@ export default function AddTransactionPage() {
             {/* Description */}
             <div className="flex gap-2 items-start pt-1">
               <div className="w-1/4 text-end pt-1.5">
-                <label className="text-sm font-semibold text-slate-700">Description</label>
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Description</label>
               </div>
               <div className="w-3/4">
                 <Textarea
                   placeholder="Add description details..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-1/2 min-h-[80px] rounded-xl border-slate-200 bg-white"
+                  className="w-1/2 min-h-[80px] rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                 />
               </div>
             </div>
@@ -399,9 +399,9 @@ export default function AddTransactionPage() {
             {/* Transaction Date */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
                   Transaction Date
-                  <span className="text-red-500"> *</span>
+                  <span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
@@ -410,7 +410,7 @@ export default function AddTransactionPage() {
                   required
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
-                  className="w-1/2 h-10 rounded-xl border-slate-200 bg-white"
+                  className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                 />
               </div>
             </div>
@@ -418,9 +418,9 @@ export default function AddTransactionPage() {
             {/* Transaction Amount */}
             <div className="flex gap-2 items-center">
               <div className="w-1/4 text-end">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">
                   Transaction Amount
-                  <span className="text-red-500"> *</span>
+                  <span className="text-rose-700 dark:text-rose-300"> *</span>
                 </label>
               </div>
               <div className="w-3/4">
@@ -431,7 +431,7 @@ export default function AddTransactionPage() {
                   required
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-1/2 h-10 rounded-xl border-slate-200 bg-white"
+                  className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                 />
               </div>
             </div>
@@ -443,7 +443,7 @@ export default function AddTransactionPage() {
                 <Button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="h-10 px-5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50/50 font-bold gap-1.5 transition-all duration-200 bg-white cursor-pointer"
+                  className="h-10 px-5 rounded-xl border border-[#0b5394]/25 dark:border-[#8cb8f0]/30 text-[#0b5394] dark:text-[#8cb8f0] hover:bg-[#e3edf9] dark:hover:bg-[#16233d] font-semibold gap-1.5 transition-all duration-200 bg-white dark:bg-[#111a2e] cursor-pointer"
                 >
                   {showAdvanced ? (
                     <>
@@ -462,11 +462,11 @@ export default function AddTransactionPage() {
 
             {/* Advanced Options Section */}
             {showAdvanced && (
-              <div className="space-y-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/10 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Particulars */}
                 <div className="flex gap-2 items-center">
                   <div className="w-1/4 text-end">
-                    <label className="text-sm font-semibold text-slate-700">Particulars</label>
+                    <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Particulars</label>
                   </div>
                   <div className="w-3/4">
                     <Input
@@ -474,7 +474,7 @@ export default function AddTransactionPage() {
                       placeholder="e.g. Transaction Details"
                       value={particulars}
                       onChange={(e) => setParticulars(e.target.value)}
-                      className="w-1/2 h-10 rounded-xl border-slate-200 bg-white"
+                      className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                     />
                   </div>
                 </div>
@@ -482,7 +482,7 @@ export default function AddTransactionPage() {
                 {/* Cheque / Ref No */}
                 <div className="flex gap-2 items-center">
                   <div className="w-1/4 text-end">
-                    <label className="text-sm font-semibold text-slate-700">Cheque / Ref No</label>
+                    <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Cheque / Ref No</label>
                   </div>
                   <div className="w-3/4">
                     <Input
@@ -490,7 +490,7 @@ export default function AddTransactionPage() {
                       placeholder="e.g. CHQ-92834"
                       value={chqnoRefno}
                       onChange={(e) => setChqnoRefno(e.target.value)}
-                      className="w-1/2 h-10 rounded-xl border-slate-200 bg-white"
+                      className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                     />
                   </div>
                 </div>
@@ -498,7 +498,7 @@ export default function AddTransactionPage() {
                 {/* Closing Balance */}
                 <div className="flex gap-2 items-center">
                   <div className="w-1/4 text-end">
-                    <label className="text-sm font-semibold text-slate-700">Closing Balance</label>
+                    <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Closing Balance</label>
                   </div>
                   <div className="w-3/4">
                     <Input
@@ -506,7 +506,7 @@ export default function AddTransactionPage() {
                       step="0.01"
                       value={closingBal}
                       onChange={(e) => setClosingBal(e.target.value)}
-                      className="w-1/2 h-10 rounded-xl border-slate-200 bg-white"
+                      className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                     />
                   </div>
                 </div>
@@ -514,14 +514,14 @@ export default function AddTransactionPage() {
                 {/* SOL */}
                 <div className="flex gap-2 items-center">
                   <div className="w-1/4 text-end">
-                    <label className="text-sm font-semibold text-slate-700">SOL</label>
+                    <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">SOL</label>
                   </div>
                   <div className="w-3/4">
                     <Input
                       type="number"
                       value={sol}
                       onChange={(e) => setSol(e.target.value)}
-                      className="w-1/2 h-10 rounded-xl border-slate-200 bg-white"
+                      className="w-1/2 h-10 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                     />
                   </div>
                 </div>
@@ -529,14 +529,14 @@ export default function AddTransactionPage() {
                 {/* Notes */}
                 <div className="flex gap-2 items-start pt-1">
                   <div className="w-1/4 text-end pt-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Notes</label>
+                    <label className="text-sm font-semibold text-[#1a1818] dark:text-[#e6e9f0]">Notes</label>
                   </div>
                   <div className="w-3/4">
                     <Textarea
                       placeholder="Internal audit notes..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      className="w-1/2 min-h-[80px] rounded-xl border-slate-200 bg-white"
+                      className="w-1/2 min-h-[80px] rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111a2e]"
                     />
                   </div>
                 </div>
@@ -544,12 +544,12 @@ export default function AddTransactionPage() {
             )}
           </CardContent>
 
-          <CardFooter className="bg-slate-50/50 border-t border-slate-100 p-6 flex justify-start gap-3">
+          <CardFooter className="bg-[#f6f7f9] dark:bg-[#0e1628] border-t border-slate-100 dark:border-white/10 p-6 flex justify-start gap-3">
             <Button
               type="submit"
               onClick={() => setSubmitType("save")}
               disabled={saving}
-              className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1.5 shadow-md shadow-blue-200/50 border-0 cursor-pointer"
+              className="h-10 px-5 rounded-xl bg-[#e15425] hover:bg-[#c2431c] text-white font-semibold gap-1.5 shadow-md shadow-[#e15425]/25 dark:shadow-black/30 border-0 cursor-pointer"
             >
               {saving && submitType === "save" ? (
                 <>
@@ -565,7 +565,7 @@ export default function AddTransactionPage() {
               type="submit"
               onClick={() => setSubmitType("saveAndAdd")}
               disabled={saving}
-              className="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 shadow-md shadow-emerald-200/50 border-0 cursor-pointer"
+              className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold gap-1.5 shadow-md shadow-emerald-700/20 border-0 cursor-pointer"
             >
               {saving && submitType === "saveAndAdd" ? (
                 <>
@@ -578,7 +578,7 @@ export default function AddTransactionPage() {
             </Button>
 
             <Link href="/bank-transaction">
-              <Button type="button" variant="outline" className="h-10 px-5 rounded-xl border-slate-200 hover:bg-slate-100/50 font-bold text-slate-600 bg-white cursor-pointer">
+              <Button type="button" variant="outline" className="h-10 px-5 rounded-xl border-slate-200 dark:border-white/10 hover:bg-[#f1f3f8] dark:hover:bg-white/5 font-semibold text-[#323338] dark:text-[#d5dae4] bg-white dark:bg-[#111a2e] cursor-pointer">
                 Cancel
               </Button>
             </Link>

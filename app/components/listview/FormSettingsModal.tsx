@@ -99,11 +99,11 @@ export default function FormSettingsModal({
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto">
-          {error && <p className="p-5 text-sm text-red-600">{error}</p>}
-          {!error && !config && <p className="p-5 text-sm text-slate-400">Loading...</p>}
+          {error && <p className="p-5 text-sm text-red-600 brand:text-rose-700 dark:text-rose-300">{error}</p>}
+          {!error && !config && <p className="p-5 text-sm text-slate-400 brand:text-[#535768] dark:text-[#aab3c5]">Loading...</p>}
           {config && (
             <table className="w-full text-sm">
-              <thead className="text-slate-600 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-slate-50 [&_th]:shadow-[inset_0_-1px_0_#e2e8f0]">
+              <thead className="text-slate-600 brand:text-[#323338] dark:text-[#d5dae4] [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-slate-50 [&_th]:shadow-[inset_0_-1px_0_#e2e8f0]">
                 <tr>
                   <th className="px-3 py-2.5 text-left font-medium">System Column Name</th>
                   <th className="px-3 py-2.5 text-left font-medium">Display Column Name</th>
@@ -128,13 +128,13 @@ export default function FormSettingsModal({
                   const canEdit = editable(row.isVisible);
                   return (
                     <tr key={row.attributeId} className={`border-b last:border-0 ${canEdit ? '' : 'opacity-50'}`}>
-                      <td className="px-3 py-2.5 text-slate-600">{row.name}</td>
-                      <td className="px-3 py-2.5 text-slate-600">
+                      <td className="px-3 py-2.5 text-slate-600 brand:text-[#323338] dark:text-[#d5dae4]">{row.name}</td>
+                      <td className="px-3 py-2.5 text-slate-600 brand:text-[#323338] dark:text-[#d5dae4]">
                         {editing === row.attributeId && canEdit ? (
                           <input
                             autoFocus
                             aria-label={`${row.name} display name`}
-                            className="w-full rounded border border-slate-300 px-2 py-1"
+                            className="w-full rounded border border-slate-300 dark:border-white/15 px-2 py-1"
                             maxLength={50}
                             value={d.label}
                             onChange={(e) => update(row.attributeId, { label: e.target.value })}
@@ -150,7 +150,7 @@ export default function FormSettingsModal({
                             onDoubleClick={() => canEdit && setEditing(row.attributeId)}
                             onKeyDown={(e) => canEdit && e.key === 'Enter' && setEditing(row.attributeId)}
                           >
-                            {d.label || <span className="text-blue-600 underline">Add</span>}
+                            {d.label || <span className="text-blue-600 brand:text-[#0b5394] dark:text-[#8cb8f0] underline">Add</span>}
                           </span>
                         )}
                       </td>
@@ -177,7 +177,7 @@ export default function FormSettingsModal({
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
+                    <td colSpan={4} className="px-3 py-6 text-center text-slate-400 brand:text-[#535768] dark:text-[#aab3c5]">
                       This list has no configurable columns.
                     </td>
                   </tr>
