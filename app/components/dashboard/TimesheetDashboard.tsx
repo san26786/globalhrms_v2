@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Clock, Calendar, CheckCircle2, AlertCircle, PlusCircle, ArrowUpRight, Check, Briefcase } from 'lucide-react';
 import { TimesheetDashboardData } from '@/lib/dashboard/types';
+import { authFetch } from '@/lib/auth/authFetch';
 
 interface TimesheetLog {
   id: string;
@@ -20,7 +21,7 @@ export default function TimesheetDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/dashboard/timesheet');
+        const res = await authFetch('/api/dashboard/timesheet');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load timesheet data');
         if (!cancelled) setDashboardData(json.data as TimesheetDashboardData);

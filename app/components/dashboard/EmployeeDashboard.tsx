@@ -6,6 +6,7 @@ import BarChart from '../BarChart';
 import LineChart from '../LineChart';
 import PendingTable from './PendingTable';
 import { EmployeeDashboardData, NamedCount } from '@/lib/dashboard/types';
+import { authFetch } from '@/lib/auth/authFetch';
 
 // ---------------------------------------------------------------------------
 // Small local donut-arc helper. Preserves the exact SVG structure/geometry
@@ -70,7 +71,7 @@ export default function EmployeeDashboard() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch('/api/dashboard/employee');
+        const res = await authFetch('/api/dashboard/employee');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load dashboard data');
         if (!cancelled) setData(json.data as EmployeeDashboardData);

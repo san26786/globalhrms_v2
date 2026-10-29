@@ -1,13 +1,12 @@
 /**
  * lib/dashboard/services/leaveDashboardService.ts
  */
-import { getDashboardContext } from '../context';
+import { DashboardContext } from '../context';
 import { getMasterIdFromCode, EMPLOYEE_STATUS_CODES, LEAVE_TYPE_CODES } from '../lookups';
 import { getTodayLeaveCount, getTopLeaveEmployeesThisMonth } from '../queries/leave';
 import { LeaveDashboardData } from '../types';
 
-export async function getLeaveDashboardData(): Promise<LeaveDashboardData> {
-  const ctx = await getDashboardContext();
+export async function getLeaveDashboardData(ctx: DashboardContext): Promise<LeaveDashboardData> {
 
   const [paidId, unpaidId, sickId, lieuId, currentEmpStatusId] = await Promise.all([
     getMasterIdFromCode(LEAVE_TYPE_CODES.PAID),

@@ -1,7 +1,7 @@
 /**
  * lib/dashboard/services/attendanceDashboardService.ts
  */
-import { getDashboardContext } from '../context';
+import { DashboardContext } from '../context';
 import { getMasterIdFromCode, EMPLOYEE_STATUS_CODES } from '../lookups';
 import {
   getTodayAttendanceKpis,
@@ -12,8 +12,7 @@ import {
 } from '../queries/attendance';
 import { AttendanceDashboardData } from '../types';
 
-export async function getAttendanceDashboardData(): Promise<AttendanceDashboardData> {
-  const ctx = await getDashboardContext();
+export async function getAttendanceDashboardData(ctx: DashboardContext): Promise<AttendanceDashboardData> {
   const currentMstrId = await getMasterIdFromCode(EMPLOYEE_STATUS_CODES.CURRENT);
 
   if (!currentMstrId) {

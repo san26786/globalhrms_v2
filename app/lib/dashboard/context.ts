@@ -6,39 +6,26 @@
  *   $this->session->userdata('is_admin')
  *   $this->session->userdata('oaBrandID')
  *
- * ⚠️ ASSUMPTION FLAGGED: I don't have visibility into this project's real
- * auth/session mechanism (NextAuth, iron-session, a custom JWT cookie, etc.),
- * so this reads from cookies with sensible names and safe-by-default fallback
- * (treated as a non-admin, brand-scoped user with no data if nothing is
- * present). Swap the body of `getDashboardContext` for your real session
- * lookup — everything downstream (queries/services/API route) only depends
- * on the `DashboardContext` shape in lib/dashboard/types.ts, so nothing else
- * needs to change.
+ * Built only from the verified access-token subject that `withApi` hands the
+ * dashboard routes (lib/auth/getSubject), never from client-supplied cookies.
+ * `subject.oaBrandId` is the active brand, so a brand switch carries over.
+ * Everything downstream (queries/services) only depends on the
+ * `DashboardContext` shape in lib/dashboard/types.ts.
  */
-import { cookies } from 'next/headers';
+import type { RequestSubject } from '@/lib/auth/getSubject';
 import { DashboardContext } from './types';
 
 export type { DashboardContext };
 
-
 /** In the legacy PHP app, is_admin === 2 means "super admin" (sees all brands). */
 const SUPER_ADMIN_FLAG = 2;
 
-export async function getDashboardContext(): Promise<DashboardContext> {
-  const cookieStore = await cookies();
-
-  const isAdminRaw = cookieStore.get('is_admin')?.value;
-  const brandRaw = cookieStore.get('oaBrandID')?.value;
-  const userIdRaw = cookieStore.get('userId')?.value;
-
-  const isAdminValue = isAdminRaw ? Number(isAdminRaw) : 0;
-  const isSuperAdmin = isAdminValue === SUPER_ADMIN_FLAG;
-
+export function getDashboardContext(subject: RequestSubject): DashboardContext {
   return {
-    isAdmin: isAdminValue > 0,
-    isSuperAdmin,
-    oaBrandId: brandRaw ? Number(brandRaw) : null,
-    userId: userIdRaw ? Number(userIdRaw) : null,
+    isAdmin: subject.adminLevel > 0,
+    isSuperAdmin: subject.adminLevel === SUPER_ADMIN_FLAG,
+    oaBrandId: subject.oaBrandId,
+    userId: subject.userId,
   };
 }
 
