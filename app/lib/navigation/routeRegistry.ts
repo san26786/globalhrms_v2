@@ -47,6 +47,10 @@ const SAME_PATH: readonly string[] = [
   // Profile and Permissions
   'user/permission_class',
   'user/permission_dtl',
+  'user/permission_class/permissionClassUser',
+  'user/permission_class/permissionClassGroup',
+  'user/permission_class/permissionClassRole',
+  
   // System Settings
   'systmInfoMgr/systm_glssry',
   'systmInfoMgr/systm_lst_dtls',

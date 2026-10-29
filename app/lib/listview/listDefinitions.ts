@@ -105,6 +105,42 @@ export const LIST_DEFINITIONS = {
     orgScope: 'org',                        // CI $orgID = session oaID
     userColumn: 'USERID',                   // CI $userColumnName
   },
+  /** CI user/permission_class/permissionClassUser::index() — every permission_dtl row of the organisation. */
+  permission_class_user: {
+    title: 'Permission Class User',            // CI $head['title']
+    objNm: 'permission_class_usergroups_vw',             // CI $pvs_ObjNm (view: prisma/sql/views/permission_dtl_vw.sql)
+    primaryKey: 'PERMISSIONS_DTL_ID',       // CI $primaryKeyColumn
+    policy: menuPolicy('user/permission_class/permissionClassUser'),
+    deleteApi: '/api/user/permission_class/permissionClassUser',  // CI Delete Selected → common_c::softDelete
+    rowDelete: false,                       // CI deleteFunctionName = '' (no row edit / delete)
+    orgColumn: 'ORG_ACC_ID',                // CI $orgColumName
+    orgScope: 'org',                        // CI $orgID = session oaID
+    userColumn: 'USERID',                   // CI $userColumnName
+  },
+  /** CI user/permission_class/permissionClassGroup::index() — every permission_dtl row of the organisation. */
+  permission_class_group: {
+    title: 'Permission Class Group',            // CI $head['title']
+    objNm: 'permission_class_users_vw',             // CI $pvs_ObjNm (view: prisma/sql/views/permission_dtl_vw.sql)
+    primaryKey: 'PERMISSIONS_DTL_ID',       // CI $primaryKeyColumn
+    policy: menuPolicy('user/permission_class/permissionClassGroup'),
+    deleteApi: '/api/user/permission_class/permissionClassGroup',  // CI Delete Selected → common_c::softDelete
+    rowDelete: false,                       // CI deleteFunctionName = '' (no row edit / delete)
+    orgColumn: 'ORG_ACC_ID',                // CI $orgColumName
+    orgScope: 'org',                        // CI $orgID = session oaID
+    userColumn: 'USERID',                   // CI $userColumnName
+  },
+  /** CI user/permission_class/permissionClassRole::index() — every permission_dtl row of the organisation. */
+  permission_class_role: {
+    title: 'Permission Class Role',            // CI $head['title']
+    objNm: 'permission_class_users_vw',             // CI $pvs_ObjNm (view: prisma/sql/views/permission_dtl_vw.sql)
+    primaryKey: 'PERMISSIONS_DTL_ID',       // CI $primaryKeyColumn
+    policy: menuPolicy('user/permission_class/permissionClassRole'),
+    deleteApi: '/api/user/permission_class/permissionClassRole',  // CI Delete Selected → common_c::softDelete
+    rowDelete: false,                       // CI deleteFunctionName = '' (no row edit / delete)
+    orgColumn: 'ORG_ACC_ID',                // CI $orgColumName
+    orgScope: 'org',                        // CI $orgID = session oaID
+    userColumn: 'USERID',                   // CI $userColumnName
+  },
   /** CI periodMngt/period_mst::index($periodTypeId, $periodStatusId) */
   period_mst: {
     title: 'Period Master',

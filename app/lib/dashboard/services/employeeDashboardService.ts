@@ -8,7 +8,7 @@
  * That derivation now lives here so it's testable and shared between the
  * API route and (if needed later) server components.
  */
-import { getDashboardContext } from '../context';
+import { DashboardContext } from '../context';
 import { getMasterIdFromCode, EMPLOYEE_STATUS_CODES } from '../lookups';
 import {
   getAllRegisteredEmployeeCount,
@@ -44,8 +44,7 @@ function withPercentagesAndColors(
   }));
 }
 
-export async function getEmployeeDashboardData(): Promise<EmployeeDashboardData> {
-  const ctx = await getDashboardContext();
+export async function getEmployeeDashboardData(ctx: DashboardContext): Promise<EmployeeDashboardData> {
 
   const [currentMstrId, formerMstrId, probationMstrId] = await Promise.all([
     getMasterIdFromCode(EMPLOYEE_STATUS_CODES.CURRENT),

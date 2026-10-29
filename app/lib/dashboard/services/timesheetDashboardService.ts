@@ -1,7 +1,7 @@
 /**
  * lib/dashboard/services/timesheetDashboardService.ts
  */
-import { getDashboardContext } from '../context';
+import { DashboardContext } from '../context';
 import { getMasterIdFromCode, TIMESHEET_STATUS_CODES } from '../lookups';
 import { getTimesheetStatusKpis, getFillRate, TimesheetPeriod } from '../queries/timesheet';
 import { TimesheetDashboardData, TimesheetFillRate } from '../types';
@@ -10,8 +10,7 @@ function toPercentage(filled: number, total: number): number {
   return total > 0 ? Math.round((filled / total) * 1000) / 10 : 0;
 }
 
-export async function getTimesheetDashboardData(): Promise<TimesheetDashboardData> {
-  const ctx = await getDashboardContext();
+export async function getTimesheetDashboardData(ctx: DashboardContext): Promise<TimesheetDashboardData> {
 
   const [approvedId, pendingApprovalId, rejectedId, draftedId] = await Promise.all([
     getMasterIdFromCode(TIMESHEET_STATUS_CODES.APPROVED),

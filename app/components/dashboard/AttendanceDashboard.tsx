@@ -5,6 +5,7 @@ import { FileText, Clock, FileCheck, Users, UserCheck, AlertTriangle, Sparkles, 
 import { AttendanceDashboardData } from '@/lib/dashboard/types';
 import { PrimaryButton } from '@/components/auth/AuthUi';
 import { Avatar, Badge, DashboardPage, InsightCard, Panel, RankTable, Section, StatCard, Toast, fieldInput, fieldLabel, type Tone } from './DashboardUi';
+import { authFetch } from '@/lib/auth/authFetch';
 
 interface AttendanceLog {
   id: string;
@@ -23,7 +24,7 @@ export default function AttendanceDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/dashboard/attendance');
+        const res = await authFetch('/api/dashboard/attendance');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load attendance data');
         if (!cancelled) setDashboardData(json.data as AttendanceDashboardData);

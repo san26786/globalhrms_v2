@@ -5,6 +5,7 @@ import { FileText, Clock, CheckCircle2, AlertCircle, Briefcase, ListChecks, Cale
 import { TimesheetDashboardData } from '@/lib/dashboard/types';
 import { PrimaryButton } from '@/components/auth/AuthUi';
 import { Avatar, Badge, DashboardPage, InsightCard, Panel, Section, StatCard, Toast, fieldInput, fieldLabel, type Tone } from './DashboardUi';
+import { authFetch } from '@/lib/auth/authFetch';
 
 interface TimesheetLog {
   id: string;
@@ -23,7 +24,7 @@ export default function TimesheetDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/dashboard/timesheet');
+        const res = await authFetch('/api/dashboard/timesheet');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load timesheet data');
         if (!cancelled) setDashboardData(json.data as TimesheetDashboardData);

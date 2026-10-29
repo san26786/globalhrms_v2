@@ -5,6 +5,7 @@ import { FileText, Clock, FileCheck, Users, CalendarPlus, ClipboardList, Wallet,
 import { LeaveDashboardData } from '@/lib/dashboard/types';
 import { PrimaryButton } from '@/components/auth/AuthUi';
 import { Avatar, Badge, DashboardPage, Panel, RankTable, Section, StatCard, Toast, fieldInput, fieldLabel, type Tone } from './DashboardUi';
+import { authFetch } from '@/lib/auth/authFetch';
 
 interface LeaveRequest {
   id: string;
@@ -23,7 +24,7 @@ export default function LeaveDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/dashboard/leave');
+        const res = await authFetch('/api/dashboard/leave');
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Failed to load leave data');
         if (!cancelled) setDashboardData(json.data as LeaveDashboardData);
