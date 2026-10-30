@@ -83,7 +83,7 @@ async function brandInfo(brand: number) {
 }
 
 /** CI invoice_setting_m::getAllCurrencyMst(): "{name} ({code})" of the brand's currencies. */
-async function currencies(subject: RequestSubject, brand: number): Promise<IdLabel[]> {
+export async function currencies(subject: RequestSubject, brand: number): Promise<IdLabel[]> {
   const rows = await prisma.$queryRaw<Array<{ value: number; label: string }>>`
     SELECT cm."CURR_ID" AS value,
            COALESCE(cm."CURR_NAME", '') || ' (' ||

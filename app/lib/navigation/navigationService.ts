@@ -1,12 +1,13 @@
-import { getMenuTree } from '@/lib/menu/MenuService';
-import type { MenuNode } from '@/lib/menu/types';
+import { getMenuTree, queryMenuLevel } from '@/lib/menu/MenuService';
+import type { MenuNode, MenuQueryParams } from '@/lib/menu/types';
 import { permissionEngine, PermissionAction } from '@/lib/permission';
 import { permissionRepository } from '@/lib/permission/permissionRepository';
 import type { RequestSubject } from '@/lib/auth/getSubject';
+import { prisma } from '@/lib/prisma';
 import { getBrandContext } from '@/lib/session/brandContext';
 import { PROFILE_MENU, SETTINGS_MENU, visibleMenuItems } from '@/lib/header/headerMenus';
 import type { HeaderSession } from '@/lib/header/headerSession';
-import { ciUrlForLocation, normalizeCiPath } from './routeRegistry';
+import { ciUrlForLocation, normalizeCiPath, resolveCiUrl, type ResolvedLink } from './routeRegistry';
 
 /**
  * CI header_v links (Profile / Settings dropdowns) are shown by admin level alone, and their
@@ -44,24 +45,77 @@ export interface MenuRequest {
  * Each node carries its resolved Next.js link.
  */
 export async function getNavigationMenu(subject: RequestSubject, request: MenuRequest = {}): Promise<MenuNode[]> {
-  if (!subject.oaBrandId) return [];
+  const params = await menuQueryParams(subject, request);
+  return params ? getMenuTree(params) : [];
+}
+
+/** The menu query for the caller, or null when CI returned no menu at all (no brand / no permission class). */
+async function menuQueryParams(subject: RequestSubject, request: MenuRequest): Promise<MenuQueryParams | null> {
+  if (!subject.oaBrandId) return null;
 
   let permissionsClassId: number | null = null;
   if (!subject.isSysAdmin) {
     permissionsClassId = await permissionRepository.getPermissionsClassId(subject);
     // CI: if (empty($permissions_class_id)) return array();
-    if (permissionsClassId === null) return [];
+    if (permissionsClassId === null) return null;
   }
 
   const brand = await getBrandContext(subject.oaBrandId);
-  return getMenuTree({
+  return {
     isSysAdmin: subject.isSysAdmin,
     oaBrandId: subject.oaBrandId,
     permissionsClassId,
     brandApplicationId: brand.brandApplicationId,
     showTabs: request.showTabs ?? false,
     parentId: request.parentId ?? MENU_ROOT_PARENT_ID,
-  });
+  };
+}
+
+export interface ChildMenuItem {
+  /** REL_DET_ID */
+  id: number;
+  name: string;
+  link: ResolvedLink;
+}
+
+export interface ChildMenuModel {
+  menuId: number;
+  title: string;
+  items: ChildMenuItem[];
+}
+
+/**
+ * CI dashboard/dashboard::ChildMenu($id) — the tiles page behind header "Advance Setting" and
+ * "Support Center": the menu's name (getMenuName) and the caller's permitted, shown (SHOW_MENU = 1)
+ * items one level below it (getChildMenu($id, false, true)), in menu order. CI linked an item with an
+ * empty URL to that item's own ChildMenu page and an http(s) URL as an external link.
+ */
+export async function getChildMenu(subject: RequestSubject, menuId: number): Promise<ChildMenuModel> {
+  const [title, params] = await Promise.all([menuName(menuId), menuQueryParams(subject, { parentId: menuId })]);
+  const rows = params ? await queryMenuLevel(params) : [];
+  return {
+    menuId,
+    title: title ?? 'Menu',
+    items: rows.map((row) => ({
+      id: row.REL_DET_ID,
+      name: row.MENU_NAME,
+      link:
+        !row.URL?.trim() && row.CHILD_MSTR_ID != null
+          ? resolveCiUrl(`dashboard/dashboard/ChildMenu/${row.CHILD_MSTR_ID}`)
+          : resolveCiUrl(row.URL),
+    })),
+  };
+}
+
+/** CI dashboardnew_m::getMenuName($id): the mapped master's name, else the master's own name. */
+async function menuName(menuId: number): Promise<string | null> {
+  const rows = await prisma.$queryRaw<Array<{ name: string | null }>>`
+    SELECT COALESCE(
+      (SELECT im."MSTR_NM" FROM config_mapping_dtl cm JOIN independent_mst im ON im."MSTR_ID" = cm."TRGT_ENTTY_ID"
+        WHERE cm."SRC_ENTTY_ID" = ${menuId} ORDER BY im."MSTR_ID" LIMIT 1),
+      (SELECT im."MSTR_NM" FROM independent_mst im WHERE im."MSTR_ID" = ${menuId} ORDER BY im."MSTR_ID" LIMIT 1)
+    ) AS name`;
+  return rows[0]?.name ?? null;
 }
 
 export type AccessDecision =

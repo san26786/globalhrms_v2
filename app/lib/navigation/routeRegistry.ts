@@ -92,6 +92,11 @@ const SAME_PATH: readonly string[] = [
   'systmMngt/oa_brands',
   'systmMngt/org_accounts',
   'systmMngt/oa_brand_settings',
+  // Advance Settings
+  'vat_registration_settings/vat_registration_settings',
+  'exit_form/experience_letter_setting',
+  'exit_form/relieving_order_setting',
+  'exit_form/exit_form_setting',
 ];
 
 /** Screens whose Next folder differs from the CI URI. */
@@ -102,6 +107,14 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'dashboard/dashboard_attendance', next: '/dashboard/attendance' },
   { ci: 'dashboard/dashboard_leave', next: '/dashboard/leave' },
   { ci: 'dashboard/dashboard_timesheet', next: '/dashboard/timesheet' },
+  // Menu tiles page (header "Advance Setting" / "Support Center", menu groups without a URL)
+  { ci: 'dashboard/dashboard/ChildMenu/:menuId', next: '/dashboard/child-menu/:menuId' },
+  // Advance Settings — the purchase / sales order headers (other invoice_setting ids are not migrated)
+  { ci: 'organisation/invoice_setting/getSpecificSetting/5569', next: '/organisation/invoice_setting?settingId=5569' },
+  { ci: 'organisation/invoice_setting/getSpecificSetting/5570', next: '/organisation/invoice_setting?settingId=5570' },
+  // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
+  { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
+  { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },
   // Bank Manager
   { ci: 'bankmanager/bankdetails', next: '/bank-manager/bank-details' },
   { ci: 'bankmanager/sheetimport', next: '/bank-manager/bank-transaction' },
