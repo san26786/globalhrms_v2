@@ -283,7 +283,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={mode} variants={cascade} initial="hidden" animate="show" exit="exit">
                 {mode === 'login' && (
-                  <motion.div variants={rise} className="mb-4 flex justify-center dark:mx-auto dark:w-fit dark:rounded-2xl dark:bg-white dark:px-4 dark:py-1.5">
+                  <motion.div variants={rise} className="mb-4 flex justify-center">
                     <GlobalHRLogo size="md" />
                   </motion.div>
                 )}

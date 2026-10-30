@@ -17,7 +17,13 @@ export default function GlobalHRLogo({ className = '', size = 'md', activeBrand,
       <img
         src="/global-hr-logo.png"
         alt="Global HR Logo"
-        className={`${heightClass} w-auto object-contain`}
+        className={`${heightClass} w-auto object-contain dark:hidden`}
+      />
+      {/* Dark theme: same logo with the dark "GLOBAL" wordmark in light text, so it needs no white backing. */}
+      <img
+        src="/global-hr-logo-dark.png"
+        alt="Global HR Logo"
+        className={`${heightClass} w-auto object-contain hidden dark:block`}
       />
     </div>
   );

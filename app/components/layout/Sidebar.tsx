@@ -171,7 +171,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
     >
       {/* Brand Logo Container */}
       <div className={`${isCollapsed ? 'h-24 py-2' : 'h-20 px-4'} flex items-center justify-center border-b border-slate-50 dark:border-white/5 shrink-0 overflow-hidden`}>
-        <Link href="/dashboard" title={activeBrand || 'Global HR'} className="flex items-center justify-center dark:rounded-xl dark:bg-white dark:px-2.5 dark:py-1">
+        <Link href="/dashboard" title={activeBrand || 'Global HR'} className="flex items-center justify-center">
           {isCollapsed ? <GlobalHRLogo size="sm" stacked activeBrand={activeBrand} /> : <GlobalHRLogo size="md" activeBrand={activeBrand} />}
         </Link>
       </div>
