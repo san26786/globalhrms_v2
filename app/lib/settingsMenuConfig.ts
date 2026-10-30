@@ -76,7 +76,7 @@ export const settingsMenuItems: SettingsMenuItem[] = [
   },
   {
     label: 'Advance Setting',
-    href: (s) => `/dashboard/child-menu/${s.advanceSettingMenuId ?? ''}`,
+    href: (s) => `/dashboard/child-menu?menuId=${s.advanceSettingMenuId ?? ''}`,
     visible: () => true,
   },
   {
@@ -91,7 +91,7 @@ export const settingsMenuItems: SettingsMenuItem[] = [
   },
   {
     label: 'Support Center',
-    href: (s) => `/dashboard/child-menu/${s.helpMenuId ?? ''}`,
+    href: (s) => `/dashboard/child-menu?menuId=${s.helpMenuId ?? ''}`,
     visible: () => true,
   },
 ];

@@ -7,7 +7,7 @@ import { ArrowUpRight, ChevronRight, Home } from "lucide-react";
 import { DashboardPage, pageRise, Section } from "@/components/dashboard/DashboardUi";
 import { getModuleIcon } from "@/lib/menu/iconMap";
 import type { ChildMenuItem, ChildMenuModel } from "@/lib/navigation/navigationService";
-import { useInit } from "../../../systmMngt/_shared/useInit";
+import { useInit } from "../../systmMngt/_shared/useInit";
 
 /**
  * CI dashboard/dashboardnew_v: the menu's name and one tile per permitted child item, in menu order.

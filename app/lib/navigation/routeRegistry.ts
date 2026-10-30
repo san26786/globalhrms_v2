@@ -107,8 +107,9 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'dashboard/dashboard_attendance', next: '/dashboard/attendance' },
   { ci: 'dashboard/dashboard_leave', next: '/dashboard/leave' },
   { ci: 'dashboard/dashboard_timesheet', next: '/dashboard/timesheet' },
-  // Menu tiles page (header "Advance Setting" / "Support Center", menu groups without a URL)
-  { ci: 'dashboard/dashboard/ChildMenu/:menuId', next: '/dashboard/child-menu/:menuId' },
+  // Menu tiles page (header "Advance Setting" / "Support Center", menu groups without a URL). The id is
+  // a query parameter so the page guard resolves it to this CI URL, not to dashboard/dashboard.
+  { ci: 'dashboard/dashboard/ChildMenu/:menuId', next: '/dashboard/child-menu?menuId=:menuId' },
   // Advance Settings — the purchase / sales order headers (other invoice_setting ids are not migrated)
   { ci: 'organisation/invoice_setting/getSpecificSetting/5569', next: '/organisation/invoice_setting?settingId=5569' },
   { ci: 'organisation/invoice_setting/getSpecificSetting/5570', next: '/organisation/invoice_setting?settingId=5570' },
