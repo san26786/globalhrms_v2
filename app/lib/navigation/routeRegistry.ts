@@ -97,6 +97,9 @@ const SAME_PATH: readonly string[] = [
   'exit_form/experience_letter_setting',
   'exit_form/relieving_order_setting',
   'exit_form/exit_form_setting',
+  // Employee Hub
+  'employeeMngt/emp_mst',
+  'employeeMngt/emp_mst/MyTeamEmployee',
 ];
 
 /** Screens whose Next folder differs from the CI URI. */
@@ -113,6 +116,10 @@ const RENAMED: readonly RouteRule[] = [
   // Advance Settings — the purchase / sales order headers (other invoice_setting ids are not migrated)
   { ci: 'organisation/invoice_setting/getSpecificSetting/5569', next: '/organisation/invoice_setting?settingId=5569' },
   { ci: 'organisation/invoice_setting/getSpecificSetting/5570', next: '/organisation/invoice_setting?settingId=5570' },
+  // Employee Hub — Employee Manager forms (CI index/{status}/{department}/{manager} filters are page state here)
+  { ci: 'employeeMngt/emp_mst/addEmployeeMst', next: '/employeeMngt/emp_mst/add' },
+  { ci: 'employeeMngt/emp_mst/editEmployeeMst/:id', next: '/employeeMngt/emp_mst/edit/:id' },
+  { ci: 'employeeMngt/emp_mst/editEmployeeMst/:id/TEAM_EMP', next: '/employeeMngt/emp_mst/MyTeamEmployee/edit/:id' },
   // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
   { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
   { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, ChevronRight, Database, X, Upload, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { parseImportFile } from "@/lib/import-export/importUtils";
+import { authFetch } from "@/lib/auth/authFetch";
 
 interface BankAccountOption {
   label: string;
@@ -67,7 +68,7 @@ export default function ImportTransactionPage() {
         }
 
         // Fetch Employees list for 'Requested By'
-        const resEmployees = await fetch("/api/employees");
+        const resEmployees = await authFetch("/api/employees");
         const jsonEmployees = await resEmployees.json();
         if (jsonEmployees.success) {
           setEmployees(jsonEmployees.data || []);

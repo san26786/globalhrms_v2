@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { authFetch } from "@/lib/auth/authFetch";
 
 interface BankDetailsForm {
   bank_acc_type: string;
@@ -132,7 +133,7 @@ export default function EditBankDetailsPage() {
   const fetchEmployees = async () => {
     setIsEmployeesLoading(true);
     try {
-      const res = await fetch(`/api/employees?search=${encodeURIComponent(searchQuery)}`);
+      const res = await authFetch(`/api/employees?search=${encodeURIComponent(searchQuery)}`);
       const json = await res.json();
       if (json.success) {
         setEmployees(json.data || []);
