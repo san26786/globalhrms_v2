@@ -100,6 +100,21 @@ const SAME_PATH: readonly string[] = [
   // Employee Hub
   'employeeMngt/emp_mst',
   'employeeMngt/emp_mst/MyTeamEmployee',
+  // Employee Hub — an employee's records (app/(dashboard)/employeeMngt/[screen])
+  'employeeMngt/empContactAddress',
+  'employeeMngt/emp_education',
+  'employeeMngt/emergency_contact_dtl',
+  'employeeMngt/emp_email',
+  'employeeMngt/emp_phone',
+  'employeeMngt/emp_language',
+  'employeeMngt/dependent_dtl',
+  'employeeMngt/bank_dtl',
+  'employeeMngt/emp_nationality',
+  'employeeMngt/membership',
+  'employeeMngt/empLicence',
+  'employeeMngt/empWorkExp',
+  'employeeMngt/immigration_dtl',
+  'employeeMngt/emp_investments',
 ];
 
 /** Screens whose Next folder differs from the CI URI. */

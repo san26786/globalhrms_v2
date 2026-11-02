@@ -128,7 +128,7 @@ async function formOptions(subject: RequestSubject, brand: number): Promise<EmpF
   };
 }
 
-async function isIndiaBrand(brand: number): Promise<boolean> {
+export async function isIndiaBrand(brand: number): Promise<boolean> {
   const [india, b] = await Promise.all([getMasterId('IN'), prisma.oa_brands.findFirst({ where: { OA_BRAND_ID: brand }, select: { country: true } })]);
   return !!india && b?.country === india;
 }

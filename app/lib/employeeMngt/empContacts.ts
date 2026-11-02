@@ -38,10 +38,19 @@ async function first<T>(rows: Promise<T[]>): Promise<T | undefined> {
   return (await rows)[0];
 }
 
-/** contact_mst of the user; added from user_mst when missing (CI phone path). */
-async function contactOf(tx: Tx, o: ContactOwner): Promise<number> {
+/** CI's relation type of a relative's contact (emergency contacts, dependents). */
+export const RELATIVE_RELTYPE = 615;
+
+/**
+ * contact_mst of the user; added from user_mst when missing (CI phone path). CI also stamped the
+ * logged-in user's id on the contacts of relatives it added, so those are skipped.
+ */
+export async function contactOf(tx: Tx, o: ContactOwner): Promise<number> {
   const found = await first(tx.$queryRaw<Array<{ id: number }>>`
-    SELECT "CNTCT_ID" AS id FROM contact_mst WHERE "REF_EMP_ID" = ${o.userId} ORDER BY "CNTCT_ID" LIMIT 1`);
+    SELECT cm."CNTCT_ID" AS id FROM contact_mst cm
+    WHERE cm."REF_EMP_ID" = ${o.userId}
+      AND NOT EXISTS (SELECT 1 FROM oa_contacts oc WHERE oc."CNTCT_ID" = cm."CNTCT_ID" AND oc."OA_CNTCT_RELTYPE_ID" = ${RELATIVE_RELTYPE})
+    ORDER BY cm."CNTCT_ID" LIMIT 1`);
   if (found) return found.id;
   await assertInsertSafe('contact_mst', 'CNTCT_ID');
   const [row] = await tx.$queryRaw<Array<{ id: number }>>`
@@ -67,8 +76,30 @@ async function orgContactOf(tx: Tx, o: ContactOwner, contactId: number): Promise
   return row.id;
 }
 
+/** The employee's contact in the organisation (oa_contacts id), created along the chain when missing. */
+export async function employeeOrgContact(tx: Tx, o: ContactOwner): Promise<number> {
+  return orgContactOf(tx, o, await contactOf(tx, o));
+}
+
 /** Links `email` as the employee's primary e-mail; returns the oa_contact_emails id for emp_mst.OA_CNTCT_EML_ID. */
 export async function linkEmail(tx: Tx, o: ContactOwner, email: string): Promise<number> {
+  return saveEmail(tx, o, email, { emailType: await getMasterId('EAUTPE'), primary: true });
+}
+
+export interface EmailOptions {
+  emailType: number | null;
+  /** Make it the primary e-mail (the others of the contact in the brand stop being primary). */
+  primary: boolean;
+  /** The oa_contact_emails row being edited (Employee Email screen); otherwise the row of this address is reused or added. */
+  recordId?: number;
+}
+
+/**
+ * Links `email` to the employee (Employee Manager, Employee Email screen); returns the oa_contact_emails
+ * id. Editing re-links the row to the (possibly new) address — the shared email_address_mst row is never
+ * renamed, as CI did.
+ */
+export async function saveEmail(tx: Tx, o: ContactOwner, email: string, opts: EmailOptions): Promise<number> {
   const contactId = await contactOf(tx, o);
 
   let addressId = (await first(tx.$queryRaw<Array<{ id: number }>>`
@@ -94,16 +125,21 @@ export async function linkEmail(tx: Tx, o: ContactOwner, email: string): Promise
   }
 
   const orgContactId = await orgContactOf(tx, o, contactId);
-  const emailType = await getMasterId('EAUTPE');
-  await tx.$executeRaw`
-    UPDATE oa_contact_emails SET "IS_PRIMARY" = '0'
-    WHERE "OA_CNTCT_ID" = ${orgContactId} AND "OA_BRAND_ID" = ${o.oaBrandId}`;
-  const existing = await first(tx.$queryRaw<Array<{ id: number }>>`
-    SELECT "OA_CNTCT_EML_ID" AS id FROM oa_contact_emails
-    WHERE "CNTCT_EML_ID" = ${String(linkId)} AND "OA_BRAND_ID" = ${o.oaBrandId} ORDER BY "OA_CNTCT_EML_ID" LIMIT 1`);
+  const primary = opts.primary ? '1' : '0';
+  if (opts.primary) {
+    await tx.$executeRaw`
+      UPDATE oa_contact_emails SET "IS_PRIMARY" = '0'
+      WHERE "OA_CNTCT_ID" = ${orgContactId} AND "OA_BRAND_ID" = ${o.oaBrandId} AND "OA_CNTCT_EML_ID" <> ${opts.recordId ?? -1}`;
+  }
+  const existing = opts.recordId
+    ? { id: opts.recordId }
+    : await first(tx.$queryRaw<Array<{ id: number }>>`
+        SELECT "OA_CNTCT_EML_ID" AS id FROM oa_contact_emails
+        WHERE "CNTCT_EML_ID" = ${String(linkId)} AND "OA_BRAND_ID" = ${o.oaBrandId} ORDER BY "OA_CNTCT_EML_ID" LIMIT 1`);
   if (existing) {
     await tx.$executeRaw`
-      UPDATE oa_contact_emails SET "OA_CNTCT_ID" = ${orgContactId}, "IS_PRIMARY" = '1', "IS_EMP" = 1, "EMAIL_TYPE_ID" = ${emailType},
+      UPDATE oa_contact_emails SET "OA_CNTCT_ID" = ${orgContactId}, "CNTCT_EML_ID" = ${String(linkId)}, "IS_PRIMARY" = ${primary}, "IS_EMP" = 1,
+        "EMAIL_TYPE_ID" = ${opts.emailType}, "OA_ID" = ${o.oaId}, "OA_BRAND_ID" = ${o.oaBrandId}, "USER_ID" = ${o.userId},
         "IS_DELETED" = 0, "UPDATED_BY" = ${o.actorId}, "UPDATED_ON" = now()
       WHERE "OA_CNTCT_EML_ID" = ${existing.id}`;
     return existing.id;
@@ -112,15 +148,44 @@ export async function linkEmail(tx: Tx, o: ContactOwner, email: string): Promise
   const [row] = await tx.$queryRaw<Array<{ id: number }>>`
     INSERT INTO oa_contact_emails ("OA_CNTCT_ID", "CNTCT_EML_ID", "EMAIL_TYPE_ID", "OA_ID", "OA_BRAND_ID", "IS_PRIMARY", "IS_EMP",
                                    "USER_ID", "CREATED_BY", "CREATED_ON", "UPDATED_ON")
-    VALUES (${orgContactId}, ${String(linkId)}, ${emailType}, ${o.oaId}, ${o.oaBrandId}, '1', 1, ${o.userId}, ${o.actorId}, now(), now())
+    VALUES (${orgContactId}, ${String(linkId)}, ${opts.emailType}, ${o.oaId}, ${o.oaBrandId}, ${primary}, 1, ${o.userId}, ${o.actorId}, now(), now())
     RETURNING "OA_CNTCT_EML_ID" AS id`;
   return row.id;
 }
 
 /** Links `phone` (with its country code id) as the employee's primary phone; returns the oa_contact_phones id. */
 export async function linkPhone(tx: Tx, o: ContactOwner, phone: string, countryCode: string): Promise<number> {
-  const contactId = await contactOf(tx, o);
+  return savePhone(tx, o, phone, countryCode, { phoneType: await getMasterId('PNTCL'), primary: true });
+}
 
+export interface PhoneOptions {
+  phoneType: number | null;
+  /** Make it the primary phone (the employee's other phones in the brand stop being primary). */
+  primary: boolean;
+  /** The oa_contact_phones row being edited (Employee Phone screen); otherwise the row of this number is reused or added. */
+  recordId?: number;
+}
+
+/** Links `phone` to the employee (Employee Manager, Employee Phone screen); returns the oa_contact_phones id. */
+export async function savePhone(tx: Tx, o: ContactOwner, phone: string, countryCode: string, opts: PhoneOptions): Promise<number> {
+  const contactId = await contactOf(tx, o);
+  const linkId = await contactPhoneLink(tx, o, contactId, phone, countryCode);
+
+  const orgContactId = await orgContactOf(tx, o, contactId);
+  const primary = opts.primary ? '1' : '0';
+  const phoneType = opts.phoneType ? String(opts.phoneType) : null;
+  if (opts.primary) {
+    await tx.$executeRaw`
+      UPDATE oa_contact_phones SET "IS_PRIMARY" = '0'
+      WHERE "OA_CNTCT_ID" = ${orgContactId} AND "OA_BRAND_ID" = ${o.oaBrandId} AND "OA_CNTCT_PHONE_ID" <> ${opts.recordId ?? -1}`;
+  }
+  return writeOrgPhone(tx, o, { orgContactId, linkId, phone, countryCode, phoneType, primary, isEmp: 1, empId: o.empId, recordId: opts.recordId });
+}
+
+/** The phone number row (phone_nbr_mst, shared) and its link to the contact (contact_phones), reused or added; returns the link id. */
+export async function contactPhoneLink(
+  tx: Tx, o: Pick<ContactOwner, 'oaId' | 'oaBrandId' | 'actorId'> & { userId: number | null }, contactId: number, phone: string, countryCode: string,
+): Promise<number> {
   let numberId = (await first(tx.$queryRaw<Array<{ id: number }>>`
     SELECT "PHONE_NBR_ID" AS id FROM phone_nbr_mst
     WHERE "PHONE_NBR" = ${phone} AND COALESCE("IS_DELETED", false) = false ORDER BY "PHONE_NBR_ID" LIMIT 1`))?.id;
@@ -144,19 +209,37 @@ export async function linkPhone(tx: Tx, o: ContactOwner, phone: string, countryC
       VALUES (${contactId}, ${numberId}, ${o.oaId}, ${o.oaBrandId}, ${o.userId}, false, ${o.actorId}, now(), now())
       RETURNING "CNTCT_PHONE_ID" AS id`;
   }
+  return linkId;
+}
 
-  const orgContactId = await orgContactOf(tx, o, contactId);
-  await tx.$executeRaw`
-    UPDATE oa_contact_phones SET "IS_PRIMARY" = '0'
-    WHERE "OA_CNTCT_ID" = ${orgContactId} AND "OA_BRAND_ID" = ${o.oaBrandId}`;
-  const existing = await first(tx.$queryRaw<Array<{ id: number }>>`
-    SELECT "OA_CNTCT_PHONE_ID" AS id FROM oa_contact_phones
-    WHERE "CNTCT_PHONE_ID" = ${String(linkId)} AND "OA_BRAND_ID" = ${o.oaBrandId} ORDER BY "OA_CNTCT_PHONE_ID" LIMIT 1`);
+export interface OrgPhone {
+  orgContactId: number;
+  /** contact_phones id (stored as text in CNTCT_PHONE_ID). */
+  linkId: number;
+  phone: string;
+  countryCode: string;
+  phoneType: string | null;
+  primary: '0' | '1';
+  /** 1 for the employee's own phones (listed on Employee Phone), 0 for a relative's. */
+  isEmp: 0 | 1;
+  empId: number | null;
+  recordId?: number;
+}
+
+/** The oa_contact_phones row of a linked number: the edited one, the brand's row of that link, or a new one; returns its id. */
+export async function writeOrgPhone(
+  tx: Tx, o: Pick<ContactOwner, 'oaId' | 'oaBrandId' | 'actorId'> & { userId: number | null }, p: OrgPhone,
+): Promise<number> {
+  const existing = p.recordId
+    ? { id: p.recordId }
+    : await first(tx.$queryRaw<Array<{ id: number }>>`
+        SELECT "OA_CNTCT_PHONE_ID" AS id FROM oa_contact_phones
+        WHERE "CNTCT_PHONE_ID" = ${String(p.linkId)} AND "OA_BRAND_ID" = ${o.oaBrandId} ORDER BY "OA_CNTCT_PHONE_ID" LIMIT 1`);
   if (existing) {
     await tx.$executeRaw`
-      UPDATE oa_contact_phones SET "OA_CNTCT_ID" = ${orgContactId}, "COUNTRY_CODE" = ${countryCode || null}, "EMP_PHONE" = ${phone},
-        "EMP_ID" = ${o.empId}, "PHONE_TYPE" = '1', "IS_PRIMARY" = '1', "IS_EMP" = 1, "IS_DELETED" = 0,
-        "UPDATED_BY" = ${o.actorId}, "UPDATED_ON" = now()
+      UPDATE oa_contact_phones SET "OA_CNTCT_ID" = ${p.orgContactId}, "CNTCT_PHONE_ID" = ${String(p.linkId)}, "COUNTRY_CODE" = ${p.countryCode || null},
+        "EMP_PHONE" = ${p.phone}, "EMP_ID" = ${p.empId}, "PHONE_TYPE" = ${p.phoneType}, "IS_PRIMARY" = ${p.primary}, "IS_EMP" = ${p.isEmp},
+        "IS_DELETED" = 0, "OA_ID" = ${o.oaId}, "OA_BRAND_ID" = ${o.oaBrandId}, "USER_ID" = ${o.userId}, "UPDATED_BY" = ${o.actorId}, "UPDATED_ON" = now()
       WHERE "OA_CNTCT_PHONE_ID" = ${existing.id}`;
     return existing.id;
   }
@@ -164,8 +247,8 @@ export async function linkPhone(tx: Tx, o: ContactOwner, phone: string, countryC
   const [row] = await tx.$queryRaw<Array<{ id: number }>>`
     INSERT INTO oa_contact_phones ("OA_CNTCT_ID", "CNTCT_PHONE_ID", "COUNTRY_CODE", "EMP_PHONE", "PHONE_TYPE", "OA_ID", "OA_BRAND_ID",
                                    "IS_PRIMARY", "IS_EMP", "EMP_ID", "USER_ID", "CREATED_BY", "CREATED_ON", "UPDATED_ON")
-    VALUES (${orgContactId}, ${String(linkId)}, ${countryCode || null}, ${phone}, '1', ${o.oaId}, ${o.oaBrandId},
-            '1', 1, ${o.empId}, ${o.userId}, ${o.actorId}, now(), now())
+    VALUES (${p.orgContactId}, ${String(p.linkId)}, ${p.countryCode || null}, ${p.phone}, ${p.phoneType}, ${o.oaId}, ${o.oaBrandId},
+            ${p.primary}, ${p.isEmp}, ${p.empId}, ${o.userId}, ${o.actorId}, now(), now())
     RETURNING "OA_CNTCT_PHONE_ID" AS id`;
   return row.id;
 }

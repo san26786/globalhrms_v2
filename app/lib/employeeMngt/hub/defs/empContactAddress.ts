@@ -1,0 +1,40 @@
+import type { HubScreenDefs } from '../hubFields';
+
+/** CI employeeMngt/empContactAddress — an employee's addresses (columns of contact_address_vw). */
+export const empContactAddressDefs: HubScreenDefs = {
+  fields: [
+    { name: 'cntctAddTypeId', label: 'Address Type', type: 'select', required: true, options: 'addressTypes', attribute: 'CNTCT_ADD_TYPE_NM' },
+    { name: 'HouseName', label: 'House Name', type: 'text', max: 250, attribute: 'HOUSE_NAME' },
+    { name: 'HouseNo', label: 'House No', type: 'text', required: true, max: 100, attribute: 'HOUSE_NO' },
+    { name: 'street', label: 'Address Line 1', type: 'text', required: true, max: 40, attribute: 'STREET_NM' },
+    { name: 'AddressLine2', label: 'Address Line 2', type: 'text', max: 40, attribute: 'AREAR' },
+    { name: 'AddressLine3', label: 'Address Line 3', type: 'text', max: 40, attribute: 'TOWN' },
+    { name: 'AddressLine4', label: 'Address Line 4', type: 'text', max: 40, attribute: 'ADD_LINE_4' },
+    { name: 'AddressLine5', label: 'Address Line 5', type: 'text', max: 40, attribute: 'ADD_LINE_5' },
+    { name: 'City', label: 'City', type: 'text', required: true, max: 40, attribute: 'CITY_NM' },
+    { name: 'CountryStateId', label: 'County/State', type: 'text', max: 40, attribute: 'COUNTY' },
+    { name: 'Country', label: 'Country', type: 'select', required: true, options: 'countries', attribute: 'COUNTRY_NM' },
+    { name: 'Postcode', label: 'Postcode', type: 'text', max: 9, attribute: 'ADD_POSTCODE' },
+    { name: 'isprimary', label: 'Is Primary Address', type: 'checkbox', attribute: 'Is_Primary_Add' },
+    { name: 'iscurrent', label: 'Is Current Address', type: 'checkbox', attribute: 'Is_Current_Add' },
+  ],
+  columns: [
+    { key: 'EMP_NBR', header: 'Employee Code', sortable: true },
+    { key: 'EMP_FULL_NAME', header: 'Employee Full Name', attribute: 'CNTCT_FULL_NM', sortable: true },
+    { key: 'CNTCT_ADD_TYPE_NM', header: 'Address Type', sortable: true },
+    { key: 'HOUSE_NAME', header: 'House Name' },
+    { key: 'HOUSE_NO', header: 'House No' },
+    { key: 'AREAR', header: 'Area' },
+    { key: 'STREET_NM', header: 'Street', sortable: true },
+    { key: 'TOWN', header: 'Town' },
+    { key: 'CITY_NM', header: 'City', sortable: true },
+    { key: 'DISTRICT', header: 'District' },
+    { key: 'COUNTRY_NM', header: 'Country', sortable: true },
+    { key: 'ADD_POSTCODE', header: 'Postcode', sortable: true },
+    { key: 'FULL_ADDRESS', header: 'Full Address' },
+    { key: 'Is_Current_Add', header: 'Is Current Address', sortable: true },
+    { key: 'Is_Primary_Add', header: 'Is Primary Address', sortable: true },
+    { key: 'IS_POLICE_VERIFIED', header: 'Is police Verified', format: 'yesno' },
+    { key: 'OA_BRAND_CD', header: 'Brand' },
+  ],
+};
