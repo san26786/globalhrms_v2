@@ -90,12 +90,16 @@ interface Row {
   USER_GROUP_ID: number | null;
 }
 
+/**
+ * A company document of the brand. Selected by document type DTCD: CI also stamped entity type CDT on the
+ * employees' own documents (Member Documents), so the entity type alone listed and opened those too.
+ */
 async function findDocument(id: number, brand: number): Promise<Row | null> {
-  const entityType = await commonTypeId('CDT');
+  const docType = await getMasterId('DTCD');
   const rows = await prisma.$queryRaw<Row[]>`
     SELECT "ID", "FILENAME", "IMAGENAME", "DOC_CATEGORY_ID", "DOC_SUB_CATEGORY_ID", "IS_PUBLIC", "USER_GROUP_ID"
     FROM member_attachment
-    WHERE "ID" = ${id} AND "OA_BRAND_ID" = ${brand} AND "LINKED_SYSTEM_ENTITY_TYPE_ID" = ${entityType}
+    WHERE "ID" = ${id} AND "OA_BRAND_ID" = ${brand} AND "DOC_TYPE_ID" = ${docType}
       AND COALESCE("IS_DELETED", false) = false
     LIMIT 1`;
   return rows[0] ?? null;
@@ -207,7 +211,7 @@ export const companyDocumentsService = {
     if (existing) {
       await prisma.$executeRaw`
         UPDATE member_attachment SET "FILENAME" = ${v.fileName}, "IMAGENAME" = ${imageName},
-          "DOC_CATEGORY_ID" = ${v.docCategory}, "DOC_SUB_CATEGORY_ID" = ${v.master}, "IS_PUBLIC" = ${v.isPublic ? 1 : 0},
+          "DOC_CATEGORY_ID" = ${v.docCategory ?? 0}, "DOC_SUB_CATEGORY_ID" = ${v.master}, "IS_PUBLIC" = ${v.isPublic ? 1 : 0},
           "TYPE" = '1', "USER_GROUP_ID" = ${v.userGroup}, "LINKED_SYSTEM_ENTITY_TYPE_ID" = ${entityType},
           "DOC_STATUS_ID" = ${status}, "DOC_TYPE_ID" = ${docType}, "UPDATED_BY" = ${subject.userId}, "UPDATED_ON" = CURRENT_DATE
         WHERE "ID" = ${existing.ID} AND "OA_BRAND_ID" = ${brand}`;
@@ -225,7 +229,7 @@ export const companyDocumentsService = {
         INSERT INTO member_attachment ("FILENAME", "IMAGENAME", "DOC_CATEGORY_ID", "DOC_SUB_CATEGORY_ID", "IS_PUBLIC", "TYPE",
           "USER_GROUP_ID", "LINKED_SYSTEM_ENTITY_TYPE_ID", "DOC_STATUS_ID", "DOC_TYPE_ID", "OA_ID", "OA_BRAND_ID", "USER_ID",
           "CREATED_BY", "CREATED_ON")
-        VALUES (${v.fileName}, ${imageName}, ${v.docCategory}, ${v.master}, ${v.isPublic ? 1 : 0}, '1', ${v.userGroup}, ${entityType},
+        VALUES (${v.fileName}, ${imageName}, ${v.docCategory ?? 0}, ${v.master}, ${v.isPublic ? 1 : 0}, '1', ${v.userGroup}, ${entityType},
           ${status}, ${docType}, ${oaId}, ${brand}, ${subject.userId}, ${subject.userId}, CURRENT_DATE)
         RETURNING "ID" AS id`;
       const attachmentId = Number(rows[0].id);
@@ -273,9 +277,9 @@ export const companyDocumentsService = {
     return childMasters(categoryId);
   },
 
-  /** CI list filter: LINKED_SYSTEM_ENTITY_TYPE_ID = typeId('CDT'). */
+  /** Company documents only (DOC_TYPE_ID = DTCD); CI's entity-type filter (CDT) also listed employees' Member Documents. */
   async listScope() {
-    const entityType = await commonTypeId('CDT');
-    return { equals: [{ column: 'LINKED_SYSTEM_ENTITY_TYPE_ID', value: entityType ?? -1 }] };
+    const docType = await getMasterId('DTCD');
+    return { equals: [{ column: 'DOC_TYPE_ID', value: docType ?? -1 }] };
   },
 };

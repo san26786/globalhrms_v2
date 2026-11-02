@@ -61,3 +61,28 @@ export async function masterLabel(id: number): Promise<string | null> {
   const row = await prisma.independent_mst.findFirst({ where: { MSTR_ID: id }, select: { MSTR_NM: true } });
   return row?.MSTR_NM ?? null;
 }
+
+/** The brand's currencies (CI job_mst_m::getCurrName), one per name. */
+export async function currencyOptions(brand: number | null): Promise<IdLabel[]> {
+  const rows = await prisma.$queryRaw<Array<{ value: number; label: string }>>`
+    SELECT DISTINCT ON (c."CURR_NAME") c."CURR_ID" AS value, c."CURR_NAME" AS label
+    FROM currency_mst c WHERE c."IS_DELETED" = 0 AND c."OA_BRAND_ID" = ${brand ?? -1}
+    ORDER BY c."CURR_NAME", c."CURR_ID"`;
+  return rows.map((r) => ({ value: Number(r.value), label: r.label }));
+}
+
+export async function currencyLabel(id: number): Promise<string | null> {
+  const row = await prisma.currency_mst.findFirst({ where: { CURR_ID: id }, select: { CURR_NAME: true } });
+  return row?.CURR_NAME ?? null;
+}
+
+/** Masters of a type that belong to the brand itself (CI's brand-filtered lists: locations, calendars), oldest sequence first. */
+export async function brandOnlyMasters(type: { id: number } | { code: string }, brand: number | null, opts: { enabledOnly?: boolean } = {}): Promise<IdLabel[]> {
+  const typeFilter = 'id' in type ? Prisma.sql`im."TYP_ID" = ${type.id}` : Prisma.sql`im."TYP_ID" = (SELECT "TYP_ID" FROM common_type WHERE "TYP_CD" = ${type.code} ORDER BY "TYP_ID" LIMIT 1)`;
+  const rows = await prisma.$queryRaw<Array<{ value: number; label: string }>>`
+    SELECT im."MSTR_ID" AS value, im."MSTR_NM" AS label FROM independent_mst im
+    WHERE ${typeFilter} AND im."OA_BRAND_ID" = ${brand ?? -1} AND COALESCE(im."IS_DELETED", false) = false
+      AND (${!opts.enabledOnly} OR im."IS_ENABLED" = 1)
+    ORDER BY im."SEQUENCE" NULLS LAST, im."MSTR_NM", im."MSTR_ID"`;
+  return rows.map((r) => ({ value: Number(r.value), label: r.label }));
+}

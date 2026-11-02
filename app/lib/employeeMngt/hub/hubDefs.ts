@@ -11,6 +11,12 @@ import { empLanguageDefs } from './defs/emp_language';
 import { empNationalityDefs } from './defs/emp_nationality';
 import { empPhoneDefs } from './defs/emp_phone';
 import { immigrationDtlDefs } from './defs/immigration_dtl';
+import { jobMstDefs, jobProbationDefs } from './defs/job_mst';
+import { empReportingDefs } from './defs/emp_reporting';
+import { empReportingLocationsDefs } from './defs/empReportingLocations';
+import { empWorkShiftDefs } from './defs/emp_work_shift';
+import { empPictureDefs } from './defs/empPicture';
+import { memberDocumentsDefs } from './defs/member_documents';
 import { membershipDefs } from './defs/membership';
 import type { HubScreenDefs } from './hubFields';
 import type { HubScreenKey } from './hubTypes';
@@ -31,4 +37,11 @@ export const HUB_DEFS: Record<HubScreenKey, HubScreenDefs> = {
   emp_phone: empPhoneDefs,
   immigration_dtl: immigrationDtlDefs,
   membership: membershipDefs,
+  job_mst: jobMstDefs,
+  job_probation: jobProbationDefs,
+  emp_reporting: empReportingDefs,
+  emp_work_shift: empWorkShiftDefs,
+  empReportingLocations: empReportingLocationsDefs,
+  empPicture: empPictureDefs,
+  member_documents: memberDocumentsDefs,
 };

@@ -1,8 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import type { IdLabel } from '@/lib/systmMngt/shared';
 import { membershipDefs } from '../defs/membership';
 import { masterName, type HubConfig } from '../hubEngine';
-import { brandMasters, keepCurrent, masterLabel } from '../hubOptions';
+import { brandMasters, currencyLabel, currencyOptions, keepCurrent, masterLabel } from '../hubOptions';
 
 /**
  * CI employeeMngt/membership ("Membership"): an employee's professional memberships and subscriptions
@@ -18,19 +16,6 @@ import { brandMasters, keepCurrent, masterLabel } from '../hubOptions';
 const MEMBERSHIP = 289;
 const PAID_BY = 290;
 const PERIOD = 573; // hard-coded in CI
-
-async function currencyOptions(brand: number | null): Promise<IdLabel[]> {
-  const rows = await prisma.$queryRaw<Array<{ value: number; label: string }>>`
-    SELECT DISTINCT ON (c."CURR_NAME") c."CURR_ID" AS value, c."CURR_NAME" AS label
-    FROM currency_mst c WHERE c."IS_DELETED" = 0 AND c."OA_BRAND_ID" = ${brand ?? -1}
-    ORDER BY c."CURR_NAME", c."CURR_ID"`;
-  return rows.map((r) => ({ value: Number(r.value), label: r.label }));
-}
-
-async function currencyLabel(id: number): Promise<string | null> {
-  const row = await prisma.currency_mst.findFirst({ where: { CURR_ID: id }, select: { CURR_NAME: true } });
-  return row?.CURR_NAME ?? null;
-}
 
 export const membershipConfig: HubConfig = {
   key: 'membership',

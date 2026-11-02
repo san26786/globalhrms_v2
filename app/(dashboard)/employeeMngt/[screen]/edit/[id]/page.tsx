@@ -13,6 +13,6 @@ export default async function HubEditPage({
 }) {
   const { screen, id } = await params;
   if (!isHubScreen(screen)) notFound();
-  const { emp } = await searchParams;
-  return <HubForm screen={screen} mode="edit" id={id} emp={typeof emp === "string" ? emp : undefined} />;
+  const { emp, back } = await searchParams;
+  return <HubForm screen={screen} mode="edit" id={id} emp={typeof emp === "string" ? emp : undefined} back={typeof back === "string" ? back : undefined} />;
 }

@@ -35,6 +35,9 @@ export interface EmployeeRef {
   name: string;
 }
 
+/** Dropdown choices; `parent` ties an option to the value of the field it depends on. */
+export type HubOptionList = Array<IdLabel & { parent?: number }>;
+
 export interface EmployeeOptions {
   options: Record<string, IdLabel[]>;
   /** Per-option data by list name and option value (e.g. a relative's name and birth date). */
@@ -50,7 +53,7 @@ export interface HubContext {
   row: Record<string, unknown> | null;
   /** The stored values on edit. */
   existing: HubValues | null;
-  options: Record<string, IdLabel[]>;
+  options: Record<string, HubOptionList>;
   flags: Record<string, boolean>;
 }
 
@@ -71,13 +74,15 @@ export interface HubConfig {
   search: string[];
   /** Sortable row keys. */
   sorts: string[];
+  /** Default ORDER BY on the row keys (alias v), when the user has not sorted; default newest first. */
+  defaultSort?: string;
   /** Form field → table column, for the generic read / write. */
   bind: Record<string, string>;
   /** 'soft' sets IS_DELETED = 1. */
   deleteMode: 'hard' | 'soft';
   messages: { created: string; updated: string; deleted: string };
   /** Dropdown lists; `row` is the record being edited (to keep its current choice in the list), null on add. */
-  options?: (subject: RequestSubject, brand: number | null, row: Record<string, unknown> | null) => Promise<Record<string, IdLabel[]>>;
+  options?: (subject: RequestSubject, brand: number | null, row: Record<string, unknown> | null) => Promise<Record<string, HubOptionList>>;
   flags?: (brand: number | null) => Promise<Record<string, boolean>>;
   /**
    * Dropdowns that depend on the chosen employee (their relatives…) and per-option data the form uses to
@@ -96,7 +101,24 @@ export interface HubConfig {
   /** After the generic insert / update (same transaction). */
   afterWrite?: (tx: Tx, id: number, values: HubValues, ctx: HubContext) => Promise<void>;
   /** One uploaded file per record (uploaded / downloaded through /api/employeeMngt/[screen]/[id]/file). */
-  attachment?: { column: string; store: AttachmentStore };
+  attachment?: {
+    column: string;
+    store: AttachmentStore;
+    /** Start of the stored name (default "{record id}_"). */
+    prefix?: (id: number, employee: EmployeeRef) => Promise<string> | string;
+    /** Checks the upload (throw a ValidationError) and returns columns to save with it (e.g. a picture's size). */
+    inspect?: (file: File, bytes: Buffer) => Record<string, DbValue>;
+    /** The content type to show the file inline with (an image whose bytes match), else it downloads. */
+    inline?: (bytes: Buffer) => string | null;
+    /** The file is the record: it cannot be detached. */
+    required?: boolean;
+  };
+  /** CI let only admins (is_admin ≠ 0) add, edit and delete, whatever the menu grant said. */
+  adminOnlyWrites?: boolean;
+  /** A worklist: records are added elsewhere. */
+  noCreate?: boolean;
+  /** Initial values of the add form. */
+  defaults?: (subject: RequestSubject, brand: number | null) => Promise<HubValues>;
 }
 
 // ------------------------------------------------------------------ validation helper
@@ -350,7 +372,9 @@ async function readValues(cfg: HubConfig, row: Record<string, unknown>): Promise
   }
   if (cfg.attachment) {
     const key = byUpper.get(cfg.attachment.column.toUpperCase());
-    values.attachmentName = key ? str(row[key]) : '';
+    const raw = key ? row[key] : null;
+    // A bytea column (emp_picture) holds the name's bytes.
+    values.attachmentName = raw instanceof Uint8Array ? Buffer.from(raw).toString('utf8') : str(raw);
   }
   await cfg.read?.(row, values);
   return values;
@@ -377,7 +401,10 @@ function genericChecks(cfg: HubConfig, values: HubValues, check: Checks, ctx: Hu
     if (f.max && f.type === 'number' && v.split('.')[0].length > f.max) check.fail(f.name, `The ${f.label} field is too large.`);
     if (f.type === 'select' && f.options) {
       const list = ctx.options[f.options] ?? [];
-      if (!list.some((o) => String(o.value) === v)) check.fail(f.name, `Select a valid ${f.label}.`);
+      const parent = f.dependsOn ? String(values[f.dependsOn] ?? '') : null;
+      if (!list.some((o) => String(o.value) === v && (parent === null || String(o.parent ?? '') === parent))) {
+        check.fail(f.name, `Select a valid ${f.label}.`);
+      }
     }
   }
 }
@@ -402,14 +429,20 @@ function ownershipColumns(cfg: HubConfig, employee: EmployeeRef): Record<string,
 
 // ------------------------------------------------------------------ service
 
+/** The menu grant, narrowed by the screen's own rules (admin-only writes, worklists without add). */
+async function allowed(subject: RequestSubject, cfg: HubConfig, action: 'list' | 'create' | 'update' | 'delete'): Promise<boolean> {
+  if (action !== 'list' && cfg.adminOnlyWrites && subject.adminLevel === 0) return false;
+  if (action === 'create' && cfg.noCreate) return false;
+  return menuPolicy(HUB_SCREENS[cfg.key].menu).check(subject, action);
+}
+
 async function permissions(subject: RequestSubject, cfg: HubConfig): Promise<ResourcePermissions> {
-  const policy = menuPolicy(HUB_SCREENS[cfg.key].menu);
-  const [create, update, del] = await Promise.all([policy.check(subject, 'create'), policy.check(subject, 'update'), policy.check(subject, 'delete')]);
+  const [create, update, del] = await Promise.all([allowed(subject, cfg, 'create'), allowed(subject, cfg, 'update'), allowed(subject, cfg, 'delete')]);
   return { create, update, delete: del };
 }
 
 async function requireGrant(subject: RequestSubject, cfg: HubConfig, action: 'list' | 'create' | 'update' | 'delete') {
-  if (!(await menuPolicy(HUB_SCREENS[cfg.key].menu).check(subject, action))) throw new ForbiddenError();
+  if (!(await allowed(subject, cfg, action))) throw new ForbiddenError();
 }
 
 /** The record (t.* plus __EMP_ID) if it is in the caller's scope. */
@@ -452,7 +485,7 @@ export function hubService(cfg: HubConfig) {
       const sortable = ['EMP_NBR', 'EMP_FULL_NAME', 'OA_BRAND_CD', ...cfg.sorts];
       const sort = query.sort && sortable.includes(query.sort)
         ? `v."${query.sort}" ${query.dir === 'desc' ? 'DESC' : 'ASC'} NULLS LAST, v.id DESC`
-        : 'v.id DESC';
+        : (cfg.defaultSort ?? 'v.id DESC');
       const from = `(SELECT t."${cfg.pk}" AS id, ${COMMON_COLUMNS}, ${cfg.listColumns}
         FROM ${fromOf(cfg)} WHERE ${aliveOf(cfg)} AND em."IS_DELETED" = 0 AND ${scope} ${empFilter}) v ${where}`;
       const [rows, count, perms] = await Promise.all([
@@ -471,13 +504,14 @@ export function hubService(cfg: HubConfig) {
       await requireGrant(subject, cfg, 'list');
       const row = rawId ? await findRow(subject, cfg, parseId(rawId)) : null;
       const brand = row ? Number((await employeeById(Number(row.__EMP_ID)))?.brand ?? subject.oaBrandId) : (subject.oaBrandId ?? null);
-      const [employees, own, options, flags] = await Promise.all([
+      const [employees, own, options, flags, defaults] = await Promise.all([
         employeeOptions(subject),
         ownEmployeeId(subject),
         cfg.options ? cfg.options(subject, brand, row) : Promise.resolve({}),
         cfg.flags ? cfg.flags(brand) : Promise.resolve({}),
+        cfg.defaults && !row ? cfg.defaults(subject, brand) : Promise.resolve({}),
       ]);
-      return { employees, ownEmployeeId: own, options, flags, restricted: subject.adminLevel === 0 };
+      return { employees, ownEmployeeId: own, options, flags, defaults, restricted: subject.adminLevel === 0 };
     },
 
     /** The dropdowns of the chosen employee (`rawEmp`), or of the record being edited (`rawId`). */
@@ -514,7 +548,11 @@ export function hubService(cfg: HubConfig) {
       const id = await prisma.$transaction(async (tx) => {
         if (cfg.insert) return cfg.insert(tx, values, ctx);
         const extra = cfg.extraColumns ? await cfg.extraColumns(values, ctx) : {};
-        const newId = await insertRow(tx, cfg.table, cfg.pk, { ...boundColumns(cfg, values, ctx), ...extra, ...ownershipColumns(cfg, employee) }, subject.userId);
+        // The file comes in its own request once the record exists: until then '' / NULL, as the column allows.
+        const file = cfg.attachment ? { [cfg.attachment.column]: null } : {};
+        const newId = await insertRow(
+          tx, cfg.table, cfg.pk, { ...file, ...boundColumns(cfg, values, ctx), ...extra, ...ownershipColumns(cfg, employee) }, subject.userId,
+        );
         await cfg.afterWrite?.(tx, newId, values, ctx);
         return newId;
       }, { timeout: 30000 });
@@ -564,31 +602,36 @@ export function hubService(cfg: HubConfig) {
     },
 
     /** The record's attached file (CI: a public link to its uploads folder). */
-    async attachment(subject: RequestSubject, rawId: string): Promise<{ name: string; data: Buffer }> {
+    async attachment(subject: RequestSubject, rawId: string): Promise<{ name: string; data: Buffer; contentType: string | null }> {
       if (!cfg.attachment) throw new NotFoundError();
       await requireGrant(subject, cfg, 'list');
       const row = await findRow(subject, cfg, parseId(rawId));
       const name = str((await readValues(cfg, row)).attachmentName);
       if (!name) throw new NotFoundError('Document Not Found!!');
-      return { name, data: await readStored(cfg.attachment.store, name) };
+      const data = await readStored(cfg.attachment.store, name);
+      return { name, data, contentType: cfg.attachment.inline?.(data) ?? null };
     },
 
     /** Attach (or replace) the record's file — right after the add / edit form saved the record. */
     async upload(subject: RequestSubject, rawId: string, file: unknown): Promise<{ id: number; name: string }> {
       if (!cfg.attachment) throw new NotFoundError();
-      const policy = menuPolicy(HUB_SCREENS[cfg.key].menu);
-      if (!(await policy.check(subject, 'update')) && !(await policy.check(subject, 'create'))) throw new ForbiddenError();
+      if (!(await allowed(subject, cfg, 'update')) && !(await allowed(subject, cfg, 'create'))) throw new ForbiddenError();
       if (!(file instanceof File) || !file.size) throw new ValidationError('Choose a file to upload.', { userFile: ['Choose a file to upload.'] });
       const id = parseId(rawId);
-      await findRow(subject, cfg, id);
-      const name = await storeUpload(cfg.attachment.store, file, `${id}_`);
-      await updateRow(prisma, cfg.table, cfg.pk, id, { [cfg.attachment.column]: name }, subject.userId);
+      const row = await findRow(subject, cfg, id);
+      const employee = await employeeById(Number(row.__EMP_ID));
+      if (!employee) throw new NotFoundError('Employee not found.');
+      const extra = cfg.attachment.inspect?.(file, Buffer.from(await file.arrayBuffer())) ?? {};
+      const prefix = cfg.attachment.prefix ? await cfg.attachment.prefix(id, employee) : `${id}_`;
+      const name = await storeUpload(cfg.attachment.store, file, prefix);
+      await updateRow(prisma, cfg.table, cfg.pk, id, { ...extra, [cfg.attachment.column]: name }, subject.userId);
       return { id, name };
     },
 
     /** Detach the record's file (the file itself stays on disk, as CI never deleted files). */
     async removeAttachment(subject: RequestSubject, rawId: string): Promise<{ id: number }> {
       if (!cfg.attachment) throw new NotFoundError();
+      if (cfg.attachment.required) throw new BusinessRuleError('The file cannot be removed; upload another one instead.');
       await requireGrant(subject, cfg, 'update');
       const id = parseId(rawId);
       await findRow(subject, cfg, id);

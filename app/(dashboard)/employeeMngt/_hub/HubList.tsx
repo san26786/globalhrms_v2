@@ -40,6 +40,11 @@ export default function HubList({ screen, emp }: { screen: HubScreenKey; emp?: s
   }, [defs.columns, session?.userLevel]);
 
   const params = useMemo(() => (emp ? { emp } : undefined), [emp]);
+  // A worklist opens the owning screen's form and comes back here afterwards.
+  const editLink = (id: number) => {
+    const query = new URLSearchParams({ ...(emp ? { emp } : {}), ...(defs.editsWith ? { back: emp ? `${base}?emp=${emp}` : base } : {}) }).toString();
+    return `${defs.editsWith ? hubBase(defs.editsWith) : base}/edit/${id}${query ? `?${query}` : ""}`;
+  };
 
   return (
     <ResourceListPage<Row>
@@ -53,7 +58,7 @@ export default function HubList({ screen, emp }: { screen: HubScreenKey; emp?: s
       getId={(row) => row.id}
       searchPlaceholder="Search employee code, name…"
       addHref={emp ? `${base}/add?emp=${emp}` : `${base}/add`}
-      editHref={(row) => (emp ? `${base}/edit/${row.id}?emp=${emp}` : `${base}/edit/${row.id}`)}
+      editHref={(row) => editLink(row.id)}
       canDeleteRow={defs.canDeleteRow}
     />
   );

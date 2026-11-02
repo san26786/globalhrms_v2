@@ -115,6 +115,14 @@ const SAME_PATH: readonly string[] = [
   'employeeMngt/empWorkExp',
   'employeeMngt/immigration_dtl',
   'employeeMngt/emp_investments',
+  'employeeMngt/emp_reporting',
+  'employeeMngt/emp_work_shift',
+  'employeeMngt/empReportingLocations',
+  'employeeMngt/empPicture',
+  'employeeMngt/member_documents',
+  // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
+  'job/job_mst',
+  'job/job_mst/probation',
 ];
 
 /** Screens whose Next folder differs from the CI URI. */

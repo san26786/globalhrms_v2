@@ -19,6 +19,9 @@ import { useInit } from "../../systmMngt/_shared/useInit";
  * an attachment uploads the chosen file once the record is saved. Rules: lib/employeeMngt/hub.
  */
 const opts = (list: HubOption[] | undefined) => (list ?? []).map((o) => ({ value: String(o.value), label: o.label }));
+/** The options of a dependent select that belong to the chosen parent value (all of them until one is chosen). */
+const choices = (list: HubOption[] | undefined, parent: string | boolean | undefined) =>
+  parent === undefined || parent === "" ? (list ?? []) : (list ?? []).filter((o) => o.parent === undefined || String(o.parent) === String(parent));
 
 async function download(api: string, id: string) {
   try {
@@ -37,9 +40,10 @@ async function download(api: string, id: string) {
   }
 }
 
-/** The record's current attachment on the edit form: download or detach it. */
-function CurrentAttachment({ api, id }: { api: string; id: string }) {
+/** The record's current attachment on the edit form: download or detach it; a picture is shown. */
+function CurrentAttachment({ api, id, image, removable }: { api: string; id: string; image?: boolean; removable: boolean }) {
   const [name, setName] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     authFetch(`${api}/${encodeURIComponent(id)}`)
@@ -50,6 +54,21 @@ function CurrentAttachment({ api, id }: { api: string; id: string }) {
       cancelled = true;
     };
   }, [api, id]);
+  useEffect(() => {
+    if (!image || !name) return;
+    let url: string | null = null;
+    authFetch(`${api}/${encodeURIComponent(id)}/file`)
+      .then((res) => (res.ok && res.headers.get("Content-Type")?.startsWith("image/") ? res.blob() : null))
+      .then((blob) => {
+        if (!blob) return;
+        url = URL.createObjectURL(blob);
+        setPreview(url);
+      })
+      .catch(() => undefined);
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [api, id, image, name]);
 
   if (!name) return null;
   const remove = async () => {
@@ -61,15 +80,19 @@ function CurrentAttachment({ api, id }: { api: string; id: string }) {
   };
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm text-[#535768] dark:text-[#aab3c5]">
+      {/* eslint-disable-next-line @next/next/no-img-element -- an authenticated blob URL */}
+      {preview ? <img src={preview} alt="Current picture" className="h-24 w-24 rounded-lg border border-slate-200 object-cover dark:border-white/10" /> : null}
       <span>
         Current attachment: <strong className="text-[#1a1818] dark:text-[#e6e9f0]">{name}</strong>
       </span>
       <button type="button" className="text-[#0b5394] underline dark:text-[#8cb8f0]" onClick={() => download(api, id)}>
         Download
       </button>
-      <button type="button" className="text-red-600 underline" onClick={remove}>
-        Remove
-      </button>
+      {removable ? (
+        <button type="button" className="text-red-600 underline" onClick={remove}>
+          Remove
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -77,7 +100,8 @@ function CurrentAttachment({ api, id }: { api: string; id: string }) {
 type EmployeeOptions = { options: Record<string, HubOption[]>; extras: Record<string, Record<string, Record<string, unknown>>> };
 const NO_EMPLOYEE_OPTIONS: EmployeeOptions = { options: {}, extras: {} };
 
-export default function HubForm({ screen, mode, id, emp }: { screen: HubScreenKey; mode: "add" | "edit"; id?: string; emp?: string }) {
+/** `back`: the list to return to (a worklist that opened this form, e.g. Confirmation Pending). */
+export default function HubForm({ screen, mode, id, emp, back }: { screen: HubScreenKey; mode: "add" | "edit"; id?: string; emp?: string; back?: string }) {
   const info = HUB_SCREENS[screen];
   const defs = HUB_DEFS[screen];
   const api = `/api/employeeMngt/${screen}`;
@@ -122,6 +146,7 @@ export default function HubForm({ screen, mode, id, emp }: { screen: HubScreenKe
   const fileField = defs.fields.find((f) => f.type === "file");
   const defaults: HubValues = { EMP_ID: data.restricted ? String(data.ownEmployeeId ?? "") : (emp ?? "") };
   for (const f of defs.fields) if (f.type !== "file") defaults[f.name] = f.type === "checkbox" ? false : "";
+  Object.assign(defaults, data.defaults);
 
   const useFields = (v: HubValues): DynamicField[] => [
     {
@@ -137,17 +162,18 @@ export default function HubForm({ screen, mode, id, emp }: { screen: HubScreenKe
       name: f.name,
       label: f.label,
       type: f.type,
-      required: fieldIsRequired(f, v, data.flags),
-      options: f.type === "select" ? opts(f.options ? (perEmployee.options[f.options] ?? data.options[f.options]) : []) : undefined,
+      // A required file is required when adding; on edit the saved one stays unless replaced.
+      required: fieldIsRequired(f, v, data.flags) && (f.type !== "file" || mode === "add"),
+      options: f.type === "select" ? opts(choices(f.options ? (perEmployee.options[f.options] ?? data.options[f.options]) : [], f.dependsOn ? v[f.dependsOn] : undefined)) : undefined,
       placeholder: f.placeholder,
       hidden: fieldIsHidden(f, v, data.flags),
-      disabled: mode === "edit" && !!f.lockedOnEdit,
+      disabled: (mode === "edit" && !!f.lockedOnEdit) || !!f.readOnly?.(v, data.flags),
       attribute: f.attribute,
     })),
   ];
 
   const base = hubBase(screen);
-  const listPath = emp ? `${base}?emp=${emp}` : base;
+  const listPath = back && back.startsWith("/") && !back.startsWith("//") ? back : emp ? `${base}?emp=${emp}` : base;
 
   // The file goes up in its own multipart request once the record has an id.
   const toPayload = fileField
@@ -193,7 +219,7 @@ export default function HubForm({ screen, mode, id, emp }: { screen: HubScreenKe
       allowSaveAndAdd={!fileField}
       useFormEffects={defs.employeeOptions || defs.prefill ? useEmployeeEffects : undefined}
     >
-      {fileField && mode === "edit" && id ? <CurrentAttachment api={api} id={id} /> : null}
+      {fileField && mode === "edit" && id ? <CurrentAttachment api={api} id={id} image={defs.file?.image} removable={!defs.file?.required} /> : null}
     </ResourceFormPage>
   );
 }

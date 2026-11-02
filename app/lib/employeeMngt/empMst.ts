@@ -26,7 +26,9 @@ import {
  *
  * Saving also links the e-mail / phone through the contact tables (./empContacts) — or, for an employee
  * without a login user, keeps the raw value as some migrated rows do — keeps the line manager in
- * emp_reporting, and (update) renames the employee's contact.
+ * emp_reporting, and (update) renames the employee's contact. A new employee also gets the starter job
+ * row (Full Time, Probation, joining today) that CI's database trigger created; HR completes it on
+ * Job Detail, and it puts the employee on Confirmation Pending.
  *
  * Behaviour changes, all security or data fixes:
  *  - every read and write is scoped (CI loaded / updated / deleted any EMP_ID, from a posted id);
@@ -254,10 +256,20 @@ async function contactValues(tx: Tx, owner: ContactOwner | null, email: string, 
   };
 }
 
-/** emp_reporting: the employee's line-manager row follows MANAGER_ID (CI update). */
-async function syncLineManager(tx: Tx, empId: number, managerId: number | null, brand: number, oaId: number | null, actor: number) {
-  if (!managerId) return;
+/**
+ * emp_reporting: the employee's line-manager row follows MANAGER_ID (CI update). No manager → the row is
+ * removed (CI left it pointing at the old manager); the row belongs to the employee's login user.
+ */
+async function syncLineManager(
+  tx: Tx, empId: number, managerId: number | null, brand: number, oaId: number | null, userId: number | null, actor: number,
+) {
   const [lineManager, direct] = await Promise.all([getMasterId('EMLM'), getMasterId('DiRC')]);
+  if (!managerId) {
+    await tx.$executeRaw`
+      UPDATE emp_reporting SET "IS_DELETED" = 1, "UPDATED_BY" = ${actor}, "UPDATED_ON" = now()
+      WHERE "EMP_ID" = ${empId} AND "MANAGER_TYPE_ID" = ${lineManager} AND COALESCE("IS_DELETED", 0) = 0`;
+    return;
+  }
   const updated = await tx.$executeRaw`
     UPDATE emp_reporting SET "MANAGER_ID" = ${managerId}, "REPORTING_MODE_ID" = ${direct}, "UPDATED_BY" = ${actor}, "UPDATED_ON" = now()
     WHERE "EMP_ID" = ${empId} AND "MANAGER_TYPE_ID" = ${lineManager} AND COALESCE("IS_DELETED", 0) = 0`;
@@ -265,7 +277,17 @@ async function syncLineManager(tx: Tx, empId: number, managerId: number | null, 
   await assertInsertSafe('emp_reporting', 'EMP_REPORTING_ID');
   await tx.$executeRaw`
     INSERT INTO emp_reporting ("EMP_ID", "MANAGER_ID", "MANAGER_TYPE_ID", "REPORTING_MODE_ID", "OA_ID", "OA_BRAND_ID", "USER_ID", "CREATED_BY", "CREATED_ON")
-    VALUES (${empId}, ${managerId}, ${lineManager}, ${direct}, ${oaId}, ${brand}, ${actor}, ${actor}, now())`;
+    VALUES (${empId}, ${managerId}, ${lineManager}, ${direct}, ${oaId}, ${brand}, ${userId}, ${actor}, now())`;
+}
+
+/** CI's MySQL trigger on emp_mst: a skeleton job row (Full Time, Probation, joining today) for HR to complete. */
+async function addStarterJob(tx: Tx, empId: number, brand: number, oaId: number | null, actor: number) {
+  const [fullTime, probation] = await Promise.all([getMasterId('ESFTE'), getMasterId('PROB')]);
+  await assertInsertSafe('job_mst', 'JOB_ID');
+  await tx.$executeRaw`
+    INSERT INTO job_mst ("EMP_ID", "EMP_TYPE_ID", "EMP_STATUS_ID", "DATE_OF_JOINING", "WORK_LOCATION", "IS_REJOIN", "MAX_HOURS_AGREED",
+                         "COMMITED_HOURS", "IS_DELETED", "OA_ID", "OA_BRAND_ID", "USER_ID", "CREATED_BY", "CREATED_ON")
+    VALUES (${empId}, ${fullTime}, ${probation}, current_date, '', 0, 0, 0, 0, ${oaId}, ${brand}, ${actor}, ${actor}, now())`;
 }
 
 export const empMstService = {
@@ -307,7 +329,8 @@ export const empMstService = {
          RETURNING "EMP_ID" AS id`,
         ...params,
       );
-      await syncLineManager(tx, row.id, num(v.managerId), brand, oaId, subject.userId);
+      await syncLineManager(tx, row.id, num(v.managerId), brand, oaId, null, subject.userId);
+      await addStarterJob(tx, row.id, brand, oaId, subject.userId);
       return row.id;
     }, { timeout: 30000 });
     return { id, message: 'Successfully Added Employee Master' };
@@ -350,7 +373,9 @@ export const empMstService = {
             "UPDATED_BY" = ${subject.userId}, "UPDATED_ON" = now()
           WHERE "REF_EMP_ID" = ${row.REF_EMP_ID}`;
       }
-      if (v.managerId !== existing.managerId) await syncLineManager(tx, empId, num(v.managerId), brand, row.OA_ID, subject.userId);
+      if (v.managerId !== existing.managerId) {
+        await syncLineManager(tx, empId, num(v.managerId), brand, row.OA_ID, row.REF_EMP_ID ?? null, subject.userId);
+      }
     }, { timeout: 30000 });
     return { id: empId, message: 'Successfully Updated Employee Manager' };
   },

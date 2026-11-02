@@ -26,6 +26,10 @@ export interface HubFieldDef {
   hidden?: (values: HubValues, flags: HubFormModel['flags']) => boolean;
   /** Read-only on the edit form. */
   lockedOnEdit?: boolean;
+  /** Read-only (a value the server works out, shown for information). */
+  readOnly?: (values: HubValues, flags: HubFormModel['flags']) => boolean;
+  /** A select whose options belong to the value of another field (HubOption.parent). */
+  dependsOn?: string;
 }
 
 export interface HubColumnDef {
@@ -49,6 +53,10 @@ export interface HubScreenDefs {
   employeeOptions?: boolean;
   /** Picking a value in `field` fills other fields from employee-options extras[`extras`][value] (field → extras key). */
   prefill?: { field: string; extras: string; set: Record<string, string> };
+  /** A worklist over another screen's records: no add, rows open that screen's edit form. */
+  editsWith?: HubScreenKey;
+  /** The attachment: shown as a picture on the edit form; `required` — it cannot be removed, only replaced. */
+  file?: { image?: boolean; required?: boolean };
 }
 
 export type HubDefsMap = Record<HubScreenKey, HubScreenDefs>;

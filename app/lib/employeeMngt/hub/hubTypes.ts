@@ -17,7 +17,14 @@ export type HubScreenKey =
   | 'empLicence'
   | 'empWorkExp'
   | 'immigration_dtl'
-  | 'emp_investments';
+  | 'emp_investments'
+  | 'job_mst'
+  | 'emp_reporting'
+  | 'emp_work_shift'
+  | 'empReportingLocations'
+  | 'empPicture'
+  | 'member_documents'
+  | 'job_probation';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -28,6 +35,8 @@ export interface HubScreenInfo {
   objectName: string;
   /** "Employee Education" → "Add Employee Education" / "Edit Employee Education". */
   noun: string;
+  /** Page path when it is not /employeeMngt/<key> (Job Detail lives under job/). */
+  base?: string;
 }
 
 export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
@@ -51,15 +60,28 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
   emp_investments: {
     menu: 'employeeMngt/emp_investments', title: 'Investment Details', objectName: 'investment_mst_declaration_vw', noun: 'Investment Details',
   },
+  emp_reporting: { menu: 'employeeMngt/emp_reporting', title: 'Employee Reporting', objectName: 'emp_reporting_vw', noun: 'Employee Reporting' },
+  emp_work_shift: { menu: 'employeeMngt/emp_work_shift', title: 'Work Shifts', objectName: 'emp_work_shift_vw', noun: 'Work Shift' },
+  empReportingLocations: {
+    menu: 'employeeMngt/empReportingLocations', title: 'Work Locations', objectName: 'emp_reporting_locations_vw', noun: 'Work Location',
+  },
+  empPicture: { menu: 'employeeMngt/empPicture', title: 'My Picture', objectName: 'emp_picture_vw', noun: 'Employee Picture' },
+  member_documents: { menu: 'employeeMngt/member_documents', title: 'Member Documents', objectName: 'member_attachment_vw', noun: 'Member Document' },
+  job_mst: { menu: 'job/job_mst', title: 'Job Detail', objectName: 'job_mst_vw', noun: 'Job Detail', base: '/job/job_mst' },
+  job_probation: {
+    menu: 'job/job_mst/probation', title: 'Confirmation Pending', objectName: 'job_mst_vw', noun: 'Job Detail', base: '/job/job_mst/probation',
+  },
 };
 
 export const isHubScreen = (key: string): key is HubScreenKey => Object.prototype.hasOwnProperty.call(HUB_SCREENS, key);
 
-export const hubBase = (key: HubScreenKey) => `/employeeMngt/${key}`;
+export const hubBase = (key: HubScreenKey) => HUB_SCREENS[key].base ?? `/employeeMngt/${key}`;
 
 export interface HubOption {
   value: number | string;
   label: string;
+  /** For a field that depends on another: the other field's value this option belongs to. */
+  parent?: number | string;
 }
 
 export type HubValues = Record<string, string | boolean>;
@@ -76,4 +98,6 @@ export interface HubFormModel {
   restricted: boolean;
   /** Screen-specific settings (e.g. whether the brand is in India). */
   flags: Record<string, boolean>;
+  /** Initial values of the add form. */
+  defaults: HubValues;
 }

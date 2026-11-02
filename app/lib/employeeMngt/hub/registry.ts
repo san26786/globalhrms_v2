@@ -14,6 +14,12 @@ import { empLanguageConfig } from './screens/emp_language';
 import { empNationalityConfig } from './screens/emp_nationality';
 import { empPhoneConfig } from './screens/emp_phone';
 import { immigrationDtlConfig } from './screens/immigration_dtl';
+import { jobMstConfig, jobProbationConfig } from './screens/job_mst';
+import { empReportingConfig } from './screens/emp_reporting';
+import { empReportingLocationsConfig } from './screens/empReportingLocations';
+import { empWorkShiftConfig } from './screens/emp_work_shift';
+import { empPictureConfig } from './screens/empPicture';
+import { memberDocumentsConfig } from './screens/member_documents';
 import { membershipConfig } from './screens/membership';
 
 /** Server configs of the Employee Hub record screens. */
@@ -32,6 +38,13 @@ const CONFIGS: Record<HubScreenKey, HubConfig> = {
   emp_phone: empPhoneConfig,
   immigration_dtl: immigrationDtlConfig,
   membership: membershipConfig,
+  job_mst: jobMstConfig,
+  job_probation: jobProbationConfig,
+  emp_reporting: empReportingConfig,
+  emp_work_shift: empWorkShiftConfig,
+  empReportingLocations: empReportingLocationsConfig,
+  empPicture: empPictureConfig,
+  member_documents: memberDocumentsConfig,
 };
 
 const services = new Map<HubScreenKey, HubService>();
