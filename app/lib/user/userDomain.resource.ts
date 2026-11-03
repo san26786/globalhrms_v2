@@ -36,11 +36,11 @@ async function assertUnique(name: string, oaBrandId: number | null, exceptId?: n
   });
   if (clash) {
     const message = 'Combination of Domain Name And Brand already exists';
-    throw new ConflictError(message, { name: [message] });
+    throw new ConflictError(message, { DMN_NM: [message] });
   }
 }
 
-const toData = (i: UserDomainInput) => ({ DMN_NM: i.name, DSCRPTN: i.description });
+const toData = (i: UserDomainInput) => ({ DMN_NM: i.DMN_NM, DSCRPTN: i.DSCRPTN });
 
 const definition: ResourceDefinition<UserDomainInput, UserDomainInput, UserDomainDto> = {
   label: 'User domain',
@@ -65,8 +65,8 @@ const definition: ResourceDefinition<UserDomainInput, UserDomainInput, UserDomai
   toCreateData: toData,
   toUpdateData: toData,
   hooks: {
-    beforeCreate: (i, ctx) => assertUnique(i.name, createTargetBrand(ctx.subject, i.oaBrandId)),
-    beforeUpdate: (id, i, existing) => assertUnique(i.name, num(existing.OA_BRAND_ID), id),
+    beforeCreate: (i, ctx) => assertUnique(i.DMN_NM, createTargetBrand(ctx.subject, i.oaBrandId)),
+    beforeUpdate: (id, i, existing) => assertUnique(i.DMN_NM, num(existing.OA_BRAND_ID), id),
     async enrichRows(rows) {
       const names = await nameMaps(rows, { user: ['USER_ID'], brand: 'OA_BRAND_ID', org: 'OA_ID' });
       return rows.map((r) => ({

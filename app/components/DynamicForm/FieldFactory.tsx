@@ -15,7 +15,8 @@ import { CheckboxField } from "../FormBlocks/Checkbox/CheckboxField";
 import { DatePickerField } from "../FormBlocks/Date-picker/DatePickerField";
 import { ColorPickerField } from "../FormBlocks/ColorPicker/ColorPickerField";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
-import { UseFormRegister, FieldValues, Control, FieldErrors } from "react-hook-form";
+import { toRegisterRules } from "@/lib/form-builder/validationBuilder";
+import { UseFormRegister, FieldValues, Control, FieldErrors, type ControllerProps } from "react-hook-form";
 
 interface FieldFactoryProps {
   field: DynamicField;
@@ -43,6 +44,9 @@ export default function FieldFactory({
   if (field.hidden) return null;
 
   const type = field.type.toLowerCase();
+  const rules = toRegisterRules(field);
+  // Disabled fields render like read-only ones: the value is shown (and still submitted).
+  const locked = !!(field.readOnly || field.disabled);
 
   switch (type) {
     case "input":
@@ -54,7 +58,7 @@ export default function FieldFactory({
     case "url":
     case "file":
       return (
-        <InputField field={field} register={register} errors={errors} />
+        <InputField field={{ ...field, readOnly: locked }} register={register} rules={rules} errors={errors} />
       );
 
     case "textarea":
@@ -64,6 +68,9 @@ export default function FieldFactory({
           name={field.name}
           register={register}
           required={field.required}
+          rules={rules}
+          readOnly={locked}
+          className={locked ? "bg-muted cursor-not-allowed" : undefined}
           errors={errors}
         />
       );
@@ -76,7 +83,8 @@ export default function FieldFactory({
           name={field.name}
           control={control}
           options={field.options ?? []}
-          rules={field.required ? { required: `${field.label} is required` } : {}}
+          rules={rules as ControllerProps<FieldValues>["rules"]}
+          disabled={locked}
           error={errors?.[field.name]?.message as string | undefined}
         />
       );

@@ -1,6 +1,6 @@
 // app/lib/form-builder/utils/visibility.ts
 
-import { DynamicField } from "../formTypes";
+import { DynamicField, FieldCondition } from "../formTypes";
 
 /**
  * Context passed while evaluating field visibility.
@@ -11,6 +11,15 @@ export interface VisibilityContext {
   permissions?: string[];
 }
 
+const isBlank = (v: unknown) => v === undefined || v === null || v === "" || v === false;
+
+/** Whether a show/hide condition holds for the current values (compared as strings: selects yield strings). */
+export function conditionHolds(condition: FieldCondition, values: Record<string, any> = {}): boolean {
+  const current = values[condition.field];
+  if (!condition.in) return !isBlank(current);
+  return condition.in.some((v) => String(v) === String(current ?? ""));
+}
+
 /**
  * Returns whether a field should be visible.
  */
@@ -18,17 +27,16 @@ export function isFieldVisible(
   field: DynamicField,
   context: VisibilityContext = {}
 ): boolean {
-  // Hidden fields are never rendered
-  if (field.type === "hidden") {
+  // Hidden fields are never rendered (their values are still submitted)
+  if (field.type === "hidden" || field.hidden) {
     return false;
   }
 
-  // Disabled fields are still visible
-  if (field.disabled === true) {
-    return true;
+  // CI form-script show/hide on another field's value
+  if (field.showWhen) {
+    return conditionHolds(field.showWhen, context.values);
   }
 
-  // Default behaviour
   return true;
 }
 
@@ -52,4 +60,18 @@ export function sortVisibleFields(
   return getVisibleFields(fields, context).sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
   );
+}
+
+/**
+ * Fills `{name}` placeholders of a dependent-dropdown URL with current values (URL-encoded).
+ * Returns null while any referenced value is empty — the dropdown waits for its parent.
+ */
+export function fillUrlTemplate(template: string, values: Record<string, any> = {}): string | null {
+  let missing = false;
+  const url = template.replace(/\{(\w+)\}/g, (_, name: string) => {
+    const v = values[name];
+    if (isBlank(v)) missing = true;
+    return encodeURIComponent(String(v ?? ""));
+  });
+  return missing ? null : url;
 }

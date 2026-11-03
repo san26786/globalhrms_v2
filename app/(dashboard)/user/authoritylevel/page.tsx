@@ -1,30 +1,11 @@
 "use client";
 
-import ResourceListPage from "@/components/resource/ResourceListPage";
+import EntityListView from "@/components/listview/EntityListView";
 
-interface AuthorityRow {
-  id: number;
-  authorityLevelName: string | null;
-  value: string | null;
-  brandName: string | null;
-}
-
-/** CI authoritylevel/authoritylevel::index() — list of authority_level_vw (scoped by brand). */
+/**
+ * CI authoritylevel/authoritylevel::index() ("Authority Level"): list, Add New and row edit /
+ * delete. List: listDefinitions 'authority_level'; rules: lib/user/authorityLevel.resource.
+ */
 export default function AuthorityLevelPage() {
-  return (
-    <ResourceListPage<AuthorityRow>
-      title="Authority Level"
-      entity="authority-level"
-      objectName="authority_level_vw"
-      apiPath="/api/user/authoritylevel"
-      basePath="/user/authoritylevel"
-      getId={(r) => r.id}
-      searchPlaceholder="Search value..."
-      columns={[
-        { key: "authorityLevelName", header: "Authority Level", sortKey: "AUTHORITY_LEVEL_ID" },
-        { key: "value", header: "Authority Value", sortKey: "VALUE" },
-        { key: "brandName", header: "Brand", sortKey: "OA_BRAND_ID" },
-      ]}
-    />
-  );
+    return <EntityListView list="authority_level" />;
 }

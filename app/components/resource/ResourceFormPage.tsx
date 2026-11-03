@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type DefaultValues, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 
 import DynamicForm from "@/components/DynamicForm/DynamicForm";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
+import { fillUrlTemplate, isFieldVisible } from "@/lib/form-builder/utils/visibility";
+import type { FormInitPayload } from "@/lib/form-init/initForm";
 import { authFetch } from "@/lib/auth/authFetch";
 import { useListColumns } from "@/lib/entity/display/useListColumns";
+import { useOptionsMap } from "@/lib/lookups/useOptions";
 
 interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
-  title: string;
+  /** Page heading. Optional with `initUrl` (the payload's title is used). */
+  title?: string;
   breadcrumb: string[];
   mode: "add" | "edit";
   /** API collection endpoint, e.g. "/api/systmInfoMgr/systm_glssry". */
@@ -20,6 +24,12 @@ interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
   id?: string;
   /** Where to go after save/cancel (the list page). */
   basePath: string;
+  /**
+   * CI initForm endpoint (see lib/form-init): returns the fields, values, permissions and save
+   * action, so the module passes no fields / defaultValues / toForm. Called as `initUrl?id=` in
+   * edit mode.
+   */
+  initUrl?: string;
   /** Static field metadata for DynamicForm. */
   fields?: DynamicField[];
   /**
@@ -30,7 +40,8 @@ interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
   useFields?: (values: TForm) => DynamicField[];
   /** CI $pvs_ObjNm: fields with an `attribute` follow its Form Settings "Visible in Form". */
   objectName?: string;
-  defaultValues: DefaultValues<TForm>;
+  /** Required unless `initUrl` is given. */
+  defaultValues?: DefaultValues<TForm>;
   /** API record → form values (edit mode). */
   toForm?: (dto: TDto) => TForm;
   /** Form values → request body. Defaults to the values as-is. */
@@ -71,10 +82,18 @@ export interface ResourceFormRenderProps<TForm extends FieldValues> {
 
 function noFormEffects(): void {}
 
+function withId(url: string, id?: string): string {
+  return id ? `${url}${url.includes("?") ? "&" : "?"}id=${encodeURIComponent(id)}` : url;
+}
+
 /**
  * Standard CI formview_v on the shared DynamicForm: loads the record in edit mode, posts/puts the
  * values, maps server-side field errors (the API is the source of truth for validation) back onto
  * the form, and supports "Save and Add" like CI's `next` button.
+ *
+ * With `initUrl` the whole form is driven by the module's server-side initForm config: fields
+ * (show/hide, read-only, options, dependent dropdowns, validation rules), values, permissions and
+ * the save endpoint all come from that payload.
  */
 export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm>({
   title,
@@ -83,6 +102,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   apiPath,
   id,
   basePath,
+  initUrl,
   fields,
   useFields,
   objectName,
@@ -101,7 +121,8 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   const router = useRouter();
   const form = useForm<TForm>({ defaultValues });
   useFormEffects(form);
-  const shouldLoad = !!loadUrl || (mode === "edit" && !!id);
+  const [init, setInit] = useState<FormInitPayload | null>(null);
+  const shouldLoad = !!initUrl || !!loadUrl || (mode === "edit" && !!id);
   const [loading, setLoading] = useState(shouldLoad);
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -109,12 +130,19 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   useEffect(() => {
     if (!shouldLoad) return;
     let cancelled = false;
-    authFetch(loadUrl ?? `${apiPath}/${id}`)
+    const url = initUrl ? withId(initUrl, mode === "edit" ? id : undefined) : (loadUrl ?? `${apiPath}/${id}`);
+    authFetch(url, initUrl ? { cache: "no-store" } : undefined)
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
         if (!json.success) throw new Error(json.message ?? "Failed to load record.");
-        form.reset(toForm ? toForm(json.data as TDto) : (json.data as TForm));
+        if (initUrl) {
+          const payload = json.data as FormInitPayload;
+          setInit(payload);
+          form.reset(payload.values as TForm);
+        } else {
+          form.reset(toForm ? toForm(json.data as TDto) : (json.data as TForm));
+        }
       })
       .catch((e) => !cancelled && setLoadError(e instanceof Error ? e.message : "Failed to load record."))
       .finally(() => !cancelled && setLoading(false));
@@ -123,13 +151,17 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
     };
     // `form`/`toForm` are stable for the lifetime of the page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldLoad, loadUrl, id, apiPath]);
+  }, [shouldLoad, initUrl, loadUrl, id, apiPath, mode]);
 
   const save = async (values: TForm, andAdd: boolean) => {
     setSubmitting(true);
     try {
-      const res = await authFetch(submitUrl ?? (mode === "edit" ? `${apiPath}/${id}` : apiPath), {
+      const target = init?.submit ?? {
+        url: submitUrl ?? (mode === "edit" ? `${apiPath}/${id}` : apiPath),
         method: submitMethod ?? (mode === "edit" ? "PUT" : "POST"),
+      };
+      const res = await authFetch(target.url, {
+        method: target.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(toPayload ? toPayload(values) : values),
       });
@@ -143,7 +175,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
         throw new Error(json.message ?? "Save failed.");
       }
       toast.success(json.data?.message ?? (mode === "edit" ? "Successfully updated record." : "Successfully added."));
-      if (andAdd) form.reset(defaultValues);
+      if (andAdd) form.reset((init?.defaults as DefaultValues<TForm> | undefined) ?? defaultValues);
       else if (onSaved) onSaved(json.data);
       else router.push(basePath);
     } catch (e) {
@@ -155,23 +187,48 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
 
   // Resolved before any early return so hook order stays stable across renders.
   const values = form.watch();
-  const resolveFields = useFields ?? (() => fields ?? []);
+  const resolveFields = useFields ?? (() => init?.fields ?? fields ?? []);
   const configuredFields = resolveFields(values);
+
+  // CI changeDropdown: options of `optionsUrl` fields are loaded for the current parent values.
+  const optionUrls = configuredFields.map((f) => (f.optionsUrl ? fillUrlTemplate(f.optionsUrl, values) : null));
+  const loadedOptions = useOptionsMap(optionUrls);
+  // A changed parent clears the child's value, as CI's cascade did. Tracking starts once the
+  // record is loaded, so loading it does not clear anything.
+  const previousUrls = useRef<Record<string, string | null>>({});
+  useEffect(() => {
+    if (loading) return;
+    configuredFields.forEach((f, i) => {
+      if (!f.optionsUrl) return;
+      const before = previousUrls.current[f.name];
+      if (before !== undefined && before !== optionUrls[i]) form.setValue(f.name as Path<TForm>, "" as never);
+      previousUrls.current[f.name] = optionUrls[i];
+    });
+  });
+
   const { columns: formConfig } = useListColumns(objectName);
   // CI getVisibleColForFV: a field whose attribute is not visible in the form is not shown. Required
   // fields stay visible — hiding one would make every save fail validation.
-  const resolvedFields = configuredFields.map((f) => {
+  const resolvedFields = configuredFields.map((f, i) => {
     const cfg = f.attribute && formConfig?.size ? formConfig.get(f.attribute.toUpperCase()) : undefined;
-    return cfg && !cfg.visibleInForm && !f.required ? { ...f, hidden: true } : f;
+    const hiddenBySettings = !!cfg && !cfg.visibleInForm && !f.required;
+    const optionUrl = optionUrls[i];
+    return {
+      ...f,
+      ...(f.optionsUrl ? { options: optionUrl ? (loadedOptions[optionUrl] ?? []) : [] } : {}),
+      hidden: hiddenBySettings || !isFieldVisible(f, { values }),
+    };
   });
 
   if (loading) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
   if (loadError) return <p className="p-6 text-sm text-red-500">{loadError}</p>;
 
+  const canSubmit = init?.canSubmit ?? true;
+
   if (renderForm) {
     return renderForm({
       form,
-      title,
+      title: title ?? init?.title ?? "",
       breadcrumb,
       mode,
       fields: resolvedFields,
@@ -185,11 +242,12 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
     <div className="p-4">
       <DynamicForm
         form={form}
-        title={title}
+        title={title ?? init?.title ?? ""}
         mode={mode}
         breadcrumb={breadcrumb}
         fields={resolvedFields}
         submitting={submitting}
+        canSubmit={canSubmit}
         onSubmit={(v) => save(v, false)}
         onSaveAndAdd={mode === "add" && allowSaveAndAdd ? (v) => save(v, true) : undefined}
         onCancel={() => router.push(basePath)}
