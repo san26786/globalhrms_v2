@@ -77,6 +77,35 @@ export const LIST_DEFINITIONS = {
     editHref: '/utilities/dashboard-menu/edit',
     deleteAll: false, // CI: $data['deleteAll'] = false; no delete action
   },
+  /** CI user/user_domain::index() (view: prisma/sql/views/user_domain_vw.sql) */
+  user_domain: {
+    title: 'User Domain',
+    objNm: 'user_domain_vw',
+    primaryKey: 'DMN_ID',
+    policy: menuPolicy('user/user_domain'),
+    addHref: '/user/user_domain/add',
+    editHref: '/user/user_domain/edit',
+    deleteApi: '/api/user/user_domain',  // soft delete (lib/user/userDomain.resource)
+    deleteAll: false,
+    orgColumn: 'ORG_ACC_ID',             // CI $orgColumName: domains are scoped by organisation
+    orgScope: 'org',                     // CI $orgID = session oaID (ORG_ACC_ID is the org, not the brand)
+    userColumn: 'USERID',                // CI $userColumnName: normal users see their own domains
+  },
+  /** CI authoritylevel/authoritylevel::index() */
+  authority_level: {
+    title: 'Authority Level',
+    objNm: 'authority_level_vw',
+    primaryKey: 'ID',
+    policy: menuPolicy('authoritylevel/authoritylevel'),
+    addHref: '/user/authoritylevel/add',
+    editHref: '/user/authoritylevel/edit',
+    deleteApi: '/api/user/authoritylevel',  // soft delete (lib/user/authorityLevel.resource)
+    deleteAll: false,
+    // CI listed every brand's rows (no $orgColumName); scoped by brand like the resource.
+    orgColumn: 'OABRANDID',
+    userColumn: 'OABRANDID',
+    userScope: 'brand',
+  },
   /** CI user/permission_class::index() */
   permission_class: {
     title: 'Permission Class',

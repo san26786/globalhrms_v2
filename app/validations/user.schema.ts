@@ -93,9 +93,10 @@ export type UserStatusActionInput = z.infer<typeof userStatusActionSchema>;
 // ------------------------------------------------------------------ user_domain
 
 /** CI user_domain: UserDmnName required (+ unique per brand), Dscrptn trim. */
+// Keys are the user_domain columns: the form's inputs are named by the entity metadata.
 export const userDomainSchema = z.object({
-  name: requiredText(40, 'Domain Name'),
-  description: optionalText(100),
+  DMN_NM: requiredText(40, 'Domain Name'),
+  DSCRPTN: optionalText(100),
   oaBrandId,
 });
 export type UserDomainInput = z.infer<typeof userDomainSchema>;
@@ -152,10 +153,13 @@ export type UserGroupRoleInput = z.infer<typeof userGroupRoleSchema>;
 
 // ------------------------------------------------------------------ authoritylevel
 
-/** CI authoritylevel: Authority_id required (master of type 40), Authority_value required. */
+/**
+ * CI authoritylevel: Authority_id required (master of type 40), Authority_value required.
+ * Keys are the authority_level columns: the form's inputs are named by the entity metadata.
+ */
 export const authorityLevelSchema = z.object({
-  authorityLevelId: requiredId('Authority Level'),
-  value: requiredText(250, 'Authority Value'),
+  AUTHORITY_LEVEL_ID: requiredId('Authority Level'),
+  VALUE: requiredText(250, 'Authority Value'),
   oaBrandId,
 });
 export type AuthorityLevelInput = z.infer<typeof authorityLevelSchema>;

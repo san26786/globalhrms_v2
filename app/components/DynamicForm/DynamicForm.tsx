@@ -22,6 +22,8 @@ interface DynamicFormProps<T extends FieldValues> {
   breadcrumb?: string[];
   /** Disables the save buttons while a request is in flight. */
   submitting?: boolean;
+  /** False for a view-only form (no modify permission): the save buttons are not shown. */
+  canSubmit?: boolean;
 }
 
 export default function DynamicForm<T extends FieldValues>({
@@ -37,6 +39,7 @@ export default function DynamicForm<T extends FieldValues>({
   children,
   breadcrumb = ["Bank Manager", "Bank Account Details"],
   submitting = false,
+  canSubmit = true,
 }: DynamicFormProps<T>) {
   const {
     register,
@@ -83,20 +86,22 @@ export default function DynamicForm<T extends FieldValues>({
 
           <div className="flex items-center gap-2">
             {/* Header Save Button */}
-            <Button
-              type="submit"
-              form="dynamic-form"
-              disabled={submitting}
-              onClick={() => setSubmitType("save")}
-              size="icon"
-              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 hover:scale-105 active:scale-95 transition-all duration-200"
-              title="Save"
-            >
-              <Save className="h-5 w-5 stroke-[2.5]" />
-            </Button>
+            {canSubmit && (
+              <Button
+                type="submit"
+                form="dynamic-form"
+                disabled={submitting}
+                onClick={() => setSubmitType("save")}
+                size="icon"
+                className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 hover:scale-105 active:scale-95 transition-all duration-200"
+                title="Save"
+              >
+                <Save className="h-5 w-5 stroke-[2.5]" />
+              </Button>
+            )}
 
             {/* Header Save & Add Button */}
-            {mode === "add" && onSaveAndAdd && (
+            {canSubmit && mode === "add" && onSaveAndAdd && (
               <Button
                 type="submit"
                 form="dynamic-form"
@@ -131,7 +136,7 @@ export default function DynamicForm<T extends FieldValues>({
       {/* Main Form Body */}
       <form
         id="dynamic-form"
-        onSubmit={handleSubmit(handleFormSubmit)}
+        onSubmit={canSubmit ? handleSubmit(handleFormSubmit) : (e) => e.preventDefault()}
         className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6"
       >
         <FormRenderer
@@ -143,17 +148,19 @@ export default function DynamicForm<T extends FieldValues>({
 
         {/* Footer Actions (Matching modern blue and success themes) */}
         <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
-          <Button
-            type="submit"
-            form="dynamic-form"
-            disabled={submitting}
-            onClick={() => setSubmitType("save")}
-            className="rounded-full !bg-none !bg-blue-600 hover:!bg-blue-700 text-white px-6 h-10 text-sm font-semibold shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 transition-all duration-200 active:scale-95 border-0"
-          >
-            {submitText ?? (mode === "add" ? "Save" : "Update")}
-          </Button>
+          {canSubmit && (
+            <Button
+              type="submit"
+              form="dynamic-form"
+              disabled={submitting}
+              onClick={() => setSubmitType("save")}
+              className="rounded-full !bg-none !bg-blue-600 hover:!bg-blue-700 text-white px-6 h-10 text-sm font-semibold shadow-md shadow-blue-200/50 hover:shadow-blue-300/60 transition-all duration-200 active:scale-95 border-0"
+            >
+              {submitText ?? (mode === "add" ? "Save" : "Update")}
+            </Button>
+          )}
 
-          {mode === "add" && onSaveAndAdd && (
+          {canSubmit && mode === "add" && onSaveAndAdd && (
             <Button
               type="submit"
               form="dynamic-form"

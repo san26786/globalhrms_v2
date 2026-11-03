@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Controller } from "react-hook-form";
+import { Controller, type Control, type ControllerProps, type FieldValues } from "react-hook-form";
 import {
   Select,
   SelectTrigger,
@@ -15,15 +15,15 @@ import DynamicFieldWrapper from "@/components/DynamicForm/DynamicFieldWrapper";
 interface SelectBlockProps {
   label: string;
   name: string;
-  control: any;
+  control: Control<FieldValues>;
   /** Values may be ids (numbers); Radix Select works on strings, so they are stringified here. */
   options: { label: string; value: string | number }[];
   placeholder?: string;
-  rules?: {
-    required?: string | boolean;
-    [key: string]: any; // Allow other possible validation rules
-  };
+  /** react-hook-form rules (toRegisterRules), as Controller accepts them. */
+  rules?: ControllerProps<FieldValues>["rules"];
   error?: string;
+  /** Read-only field: the value is shown but cannot be changed. */
+  disabled?: boolean;
 }
 
 export function SelectField({
@@ -34,6 +34,7 @@ export function SelectField({
   placeholder = "Select an option",
   rules = {},
   error,
+  disabled = false,
 }: SelectBlockProps) {
   return (
     <DynamicFieldWrapper
@@ -49,6 +50,7 @@ export function SelectField({
         render={({ field }) => (
           <Select
             onValueChange={field.onChange}
+            disabled={disabled}
             value={field.value === undefined || field.value === null ? "" : String(field.value)}
           >
             <SelectTrigger

@@ -23,6 +23,11 @@ type Where = Record<string, unknown>;
 export class ResourceService<TCreate, TUpdate, TRow = Record<string, unknown>> {
   constructor(private readonly def: ResourceDefinition<TCreate, TUpdate, TRow>) {}
 
+  /** The input schemas (CI form_validation rules) — e.g. a form's required flags (form-init). */
+  get schemas() {
+    return { create: this.def.createSchema, update: this.def.updateSchema };
+  }
+
   // ---------------------------------------------------------------- queries
 
   async list(subject: RequestSubject, rawQuery: Record<string, string>): Promise<ListResult<TRow>> {

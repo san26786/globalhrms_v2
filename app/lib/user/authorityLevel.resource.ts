@@ -26,11 +26,11 @@ export interface AuthorityLevelDto {
 
 async function toData(i: AuthorityLevelInput) {
   const master = await prisma.independent_mst.findFirst({
-    where: { MSTR_ID: i.authorityLevelId, TYP_ID: AUTHORITY_LEVEL_TYPE_ID },
+    where: { MSTR_ID: i.AUTHORITY_LEVEL_ID, TYP_ID: AUTHORITY_LEVEL_TYPE_ID },
     select: { MSTR_ID: true },
   });
-  if (!master) fail('authorityLevelId', 'Select a valid authority level.');
-  return { AUTHORITY_LEVEL_ID: i.authorityLevelId, VALUE: i.value };
+  if (!master) fail('AUTHORITY_LEVEL_ID', 'Select a valid authority level.');
+  return { AUTHORITY_LEVEL_ID: i.AUTHORITY_LEVEL_ID, VALUE: i.VALUE };
 }
 
 const definition: ResourceDefinition<AuthorityLevelInput, AuthorityLevelInput, AuthorityLevelDto> = {
