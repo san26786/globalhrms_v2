@@ -145,7 +145,7 @@ export default function FieldFactory({
     default:
       return (
         <DynamicFieldWrapper label={field.label} required={field.required}>
-          <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-600">
+          <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-600 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
             Unsupported field type: <strong>{field.type}</strong>
           </div>
         </DynamicFieldWrapper>

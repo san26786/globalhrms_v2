@@ -81,7 +81,7 @@ export function InputBlock<
       <div className="w-3/4 space-y-0">
         <div className="flex">
           {leadingAddon && (
-            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 bg-gray-100 text-gray-600 text-sm">
+            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 bg-gray-100 text-gray-600 text-sm dark:bg-white/5 dark:text-[#aab3c5]">
               {leadingAddon}
             </span>
           )}
@@ -174,7 +174,7 @@ export function InputBlock<
         )}
 
         {/* Error */}
-        {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+        {errorMessage && <p className="text-red-500 text-sm dark:text-red-400">{errorMessage}</p>}
       </div>
     </div>
   );

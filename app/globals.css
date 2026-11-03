@@ -128,6 +128,26 @@
   --ring: #e15425;
 }
 
+/* …and in dark mode, the dashboards' navy palette instead of the neutral greys of .dark, so inputs,
+   dropdowns, date pickers and dialogs match the redesigned cards (#111a2e on #0b1220). */
+.dark .brand-scope,
+.brand-scope.dark {
+  --background: #0b1220;
+  --foreground: #f1f3f8;
+  --card: #111a2e;
+  --card-foreground: #f1f3f8;
+  --popover: #111a2e;
+  --popover-foreground: #f1f3f8;
+  --secondary: #16233d;
+  --secondary-foreground: #f1f3f8;
+  --muted: #16233d;
+  --muted-foreground: #aab3c5;
+  --accent: #16233d;
+  --accent-foreground: #f1f3f8;
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 15%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

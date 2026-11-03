@@ -28,8 +28,8 @@ export function DataTableBulkActions<TData>({
   const selectedData = selectedRows.map((r) => r.original);
 
   return (
-    <div className="flex items-center gap-3 rounded-md border bg-muted/50 px-3 py-2">
-      <span className="text-sm font-medium">
+    <div className="flex items-center gap-3 rounded-md border bg-muted/50 px-3 py-2 brand:rounded-2xl brand:border-[#f3c9b6] brand:bg-[#fdf3ee] dark:border-[#da5427]/30 dark:bg-[#da5427]/10">
+      <span className="text-sm font-medium brand:text-[#7a2e12] dark:text-[#f8d3c3]">
         {count} row{count > 1 ? "s" : ""} selected
       </span>
       <Separator orientation="vertical" className="h-5" />
@@ -39,7 +39,7 @@ export function DataTableBulkActions<TData>({
             key={action.label}
             size="sm"
             variant={action.variant ?? "outline"}
-            className="h-8"
+            className={`h-8 brand:rounded-full ${action.variant === "destructive" ? "" : "dark:border-white/10 dark:bg-[#111a2e] dark:text-[#d5dae4] dark:hover:bg-white/5"}`}
             onClick={() => action.onClick(selectedData)}
           >
             {action.icon && <action.icon className="mr-2 h-4 w-4" />}
@@ -50,7 +50,7 @@ export function DataTableBulkActions<TData>({
       <Button
         size="sm"
         variant="ghost"
-        className="h-8"
+        className="h-8 brand:rounded-full dark:text-[#d5dae4] dark:hover:bg-white/5"
         onClick={() => table.resetRowSelection()}
       >
         <X className="mr-1 h-4 w-4" />

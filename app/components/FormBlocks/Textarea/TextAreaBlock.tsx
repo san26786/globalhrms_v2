@@ -61,7 +61,7 @@ export function TextareaBlock<T extends FieldValues>({
 
         {/* Error */}
         {errorMessage && (
-          <p className="text-red-500 text-sm">{errorMessage}</p>
+          <p className="text-red-500 text-sm dark:text-red-400">{errorMessage}</p>
         )}
       </div>
     </div>

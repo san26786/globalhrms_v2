@@ -54,14 +54,14 @@ export default function DynamicFieldWrapper({
         <div className="w-1/4 space-y-0 text-end">
           <label
             htmlFor={htmlFor}
-            className="inline-flex items-center gap-1 text-sm font-medium text-gray-700"
+            className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 brand:text-[#323338] dark:text-[#d5dae4]"
           >
             <span>{label}</span>
 
             {required && <span className="text-red-500">*</span>}
 
             {tooltip && (
-              <span title={tooltip} className="cursor-help text-xs text-gray-400">
+              <span title={tooltip} className="cursor-help text-xs text-gray-400 dark:text-[#8b95ab]">
                 ⓘ
               </span>
             )}
@@ -73,11 +73,11 @@ export default function DynamicFieldWrapper({
         {children}
 
         {description && !errorMessage && (
-          <p className="text-xs text-gray-500 mt-1">{description}</p>
+          <p className="text-xs text-gray-500 mt-1 dark:text-[#aab3c5]">{description}</p>
         )}
 
         {errorMessage && (
-          <p className="text-sm text-red-500 mt-1">{errorMessage}</p>
+          <p className="text-sm text-red-500 mt-1 dark:text-red-400">{errorMessage}</p>
         )}
       </div>
     </div>

@@ -56,11 +56,11 @@ export function PlainSelect({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm font-medium text-slate-700">
+      <Label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-[#d5dae4]">
         {label}
       </Label>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger id={id} className="h-9 px-3 rounded-lg border border-gray-300">
+        <SelectTrigger id={id} className="h-9 px-3 rounded-lg border border-gray-300 dark:border-white/15">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className="max-h-60">

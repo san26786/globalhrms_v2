@@ -55,7 +55,7 @@ export function SelectField({
           >
             <SelectTrigger
               id={name}
-              className="h-9 px-3 rounded-lg border border-gray-300"
+              className="h-9 px-3 rounded-lg border border-gray-300 dark:border-white/15"
             >
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>

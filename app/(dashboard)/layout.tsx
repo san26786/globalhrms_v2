@@ -61,6 +61,10 @@ const DARK_READY_SECTIONS = [
   "/systmMngt/oa_brands",
   "/systmMngt/company_documents",
   "/systmMngt/oa_brand_settings",
+  // Employee Hub: the employee screens, Job Detail and Exit and Clearance.
+  "/employeeMngt",
+  "/job",
+  "/department_activity",
 ];
 
 /** CI header_v <title><?php echo $title ?></title>: the active menu item's name. */

@@ -81,7 +81,7 @@ export default function EmployeeList({ screen }: { screen: EmpScreen }) {
       editHref={(row) => `${config.base}/edit/${row.id}`}
       toolbar={() =>
         filters.showFilters ? (
-          <div className="grid grid-cols-1 gap-4 rounded-3xl border bg-white p-4 shadow-sm md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 rounded-3xl border bg-white p-4 shadow-sm brand:border-slate-200 md:grid-cols-3 dark:border-white/10 dark:bg-[#111a2e]">
             <PlainSelect id="empStatus" label="Employee Status" value={statusValue} onChange={setStatus} options={opts(filters.statuses)} />
             <PlainSelect
               id="empDepartment"
