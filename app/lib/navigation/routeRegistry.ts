@@ -120,9 +120,12 @@ const SAME_PATH: readonly string[] = [
   'employeeMngt/empReportingLocations',
   'employeeMngt/empPicture',
   'employeeMngt/member_documents',
+  'employeeMngt/termination',
   // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
   'job/job_mst',
   'job/job_mst/probation',
+  // Exit and Clearance Formality (app/(dashboard)/department_activity/department_head_supervisor)
+  'department_activity/department_head_supervisor',
 ];
 
 /** Screens whose Next folder differs from the CI URI. */

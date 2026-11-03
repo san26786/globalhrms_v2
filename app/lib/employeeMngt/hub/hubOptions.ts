@@ -33,7 +33,11 @@ export async function brandMasters(type: { id: number } | { code: string }, bran
 }
 
 /** Adds the record's current choice when it has left the list (closed period, deleted master…). */
-export async function keepCurrent(list: IdLabel[], current: unknown, label: (id: number) => Promise<string | null>): Promise<IdLabel[]> {
+export async function keepCurrent<T extends { value: number | string; label: string }>(
+  list: T[],
+  current: unknown,
+  label: (id: number) => Promise<string | null>,
+): Promise<Array<T | IdLabel>> {
   const id = Number(current);
   if (!Number.isInteger(id) || id <= 0 || list.some((o) => o.value === id)) return list;
   return [...list, { value: id, label: (await label(id)) ?? `#${id}` }];

@@ -36,10 +36,10 @@ export interface EmployeeRef {
 }
 
 /** Dropdown choices; `parent` ties an option to the value of the field it depends on. */
-export type HubOptionList = Array<IdLabel & { parent?: number }>;
+export type HubOptionList = Array<{ value: number | string; label: string; parent?: number }>;
 
 export interface EmployeeOptions {
-  options: Record<string, IdLabel[]>;
+  options: Record<string, HubOptionList>;
   /** Per-option data by list name and option value (e.g. a relative's name and birth date). */
   extras: Record<string, Record<string, Record<string, unknown>>>;
 }
@@ -258,7 +258,7 @@ const fromOf = (cfg: HubConfig) => cfg.from ?? `${cfg.table} t JOIN emp_mst em O
 const aliveOf = (cfg: HubConfig) => cfg.alive ?? 'TRUE';
 
 /** CI getTableDtl scoping, on the record's employee. */
-async function scopeSql(subject: RequestSubject, sql: SqlBuilder): Promise<string> {
+export async function scopeSql(subject: RequestSubject, sql: SqlBuilder): Promise<string> {
   if (subject.adminLevel === 2) return 'TRUE';
   if (subject.adminLevel === 1) return `em."OA_BRAND_ID" = ${sql.p(subject.oaBrandId ?? -1)}`;
   const own = await ownEmployeeId(subject);

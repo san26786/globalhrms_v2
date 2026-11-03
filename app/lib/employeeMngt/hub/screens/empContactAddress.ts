@@ -43,6 +43,14 @@ const FULL_ADDRESS = `CASE WHEN am."ADDRESS_ID" IS NULL THEN NULL ELSE concat_ws
   'HOUSE_NAME', 'HOUSE_NO', 'STREET_NM', 'AREAR', 'TOWN', 'ADD_LINE_4', 'ADD_LINE_5', 'CITY_NM', 'DISTRICT', 'COUNTY', 'COUNTRY_NM', 'ADD_POSTCODE',
 ].map((k) => `NULLIF(btrim(${PARTS[k as keyof typeof PARTS]}), '')`).join(', ')}) END`;
 
+/** The employee `alias`'s address (primary, else current, else latest) as one line — for printed forms. */
+export const employeeAddressSql = (alias: string) => `(SELECT ${FULL_ADDRESS} FROM contact_address t
+  LEFT JOIN address_mst am ON am."ADDRESS_ID" = t."ADD_ID"
+  WHERE t."IS_DELETED" = 0 AND am."ADDRESS_ID" IS NOT NULL
+    AND COALESCE((SELECT cm."REF_EMP_ID" FROM contact_mst cm WHERE cm."CNTCT_ID" = t."CNTCT_ID"), t."USER_ID") = ${alias}."REF_EMP_ID"
+  ORDER BY (t."IS_PRIMARY_ADD" ~ '^\\s*0*1(\\.0*)?\\s*$') DESC, (t."IS_CURRENT_ADD" ~ '^\\s*0*1(\\.0*)?\\s*$') DESC, t."CNTCT_ADD_ID" DESC
+  LIMIT 1)`;
+
 /** Text value or null. */
 const text = (v: string | boolean) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 

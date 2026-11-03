@@ -21,6 +21,8 @@ import { empWorkShiftConfig } from './screens/emp_work_shift';
 import { empPictureConfig } from './screens/empPicture';
 import { memberDocumentsConfig } from './screens/member_documents';
 import { membershipConfig } from './screens/membership';
+import { terminationConfig } from './screens/termination';
+import { exitClearanceConfig, exitStepConfigs } from './screens/exit_clearance';
 
 /** Server configs of the Employee Hub record screens. */
 const CONFIGS: Record<HubScreenKey, HubConfig> = {
@@ -45,6 +47,9 @@ const CONFIGS: Record<HubScreenKey, HubConfig> = {
   empReportingLocations: empReportingLocationsConfig,
   empPicture: empPictureConfig,
   member_documents: memberDocumentsConfig,
+  termination: terminationConfig,
+  exit_clearance: exitClearanceConfig,
+  ...exitStepConfigs,
 };
 
 const services = new Map<HubScreenKey, HubService>();

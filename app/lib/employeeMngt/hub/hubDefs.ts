@@ -18,6 +18,8 @@ import { empWorkShiftDefs } from './defs/emp_work_shift';
 import { empPictureDefs } from './defs/empPicture';
 import { memberDocumentsDefs } from './defs/member_documents';
 import { membershipDefs } from './defs/membership';
+import { terminationDefs } from './defs/termination';
+import { exitClearanceDefs, exitStepDefs } from './defs/exit_clearance';
 import type { HubScreenDefs } from './hubFields';
 import type { HubScreenKey } from './hubTypes';
 
@@ -44,4 +46,7 @@ export const HUB_DEFS: Record<HubScreenKey, HubScreenDefs> = {
   empReportingLocations: empReportingLocationsDefs,
   empPicture: empPictureDefs,
   member_documents: memberDocumentsDefs,
+  termination: terminationDefs,
+  exit_clearance: exitClearanceDefs,
+  ...exitStepDefs,
 };

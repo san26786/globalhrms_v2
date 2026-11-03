@@ -52,8 +52,10 @@ interface ResourceListPageProps<T> {
   /** Hide the add/edit/delete actions even when permitted (read-only screens). */
   readOnly?: boolean;
   extraRowActions?: RowAction<T>[];
-  /** Module-specific header buttons (CI $listActions after the Add action). */
-  listActions?: ListAction[];
+  /** Module-specific header buttons (CI $listActions after the Add action); a function gets the list's refresh and permissions. */
+  listActions?: ListAction[] | ((ctx: ListContext) => ListAction[]);
+  /** Actions on the selected rows besides "Delete Selected" (CI list submit buttons such as Accept / Reject). */
+  extraBulkActions?: (ctx: ListContext) => BulkAction<T>[];
   params?: Record<string, string>;
   /** Overrides the add link (default `${basePath}/add`), e.g. to carry a query string. */
   addHref?: string;
@@ -66,6 +68,11 @@ interface ResourceListPageProps<T> {
   deleteAll?: boolean;
   /** Extra controls rendered above the table (CI listview $customFields). */
   toolbar?: (ctx: { refresh: () => void }) => React.ReactNode;
+}
+
+interface ListContext {
+  refresh: () => void;
+  permissions: { create: boolean; update: boolean; delete: boolean };
 }
 
 /**
@@ -85,6 +92,7 @@ export default function ResourceListPage<T>({
   readOnly = false,
   extraRowActions = [],
   listActions = [],
+  extraBulkActions,
   params,
   addHref,
   editHref,
@@ -158,10 +166,14 @@ export default function ResourceListPage<T>({
       : []),
   ];
 
-  const bulkActions: BulkAction<T>[] | undefined =
-    canDelete && deleteAll
-      ? [{ label: "Delete Selected", icon: Trash2, variant: "destructive", onClick: (rows) => setPendingDelete(deletable(rows)) }]
-      : undefined;
+  const listContext: ListContext = { refresh, permissions };
+  const allBulkActions: BulkAction<T>[] = [
+    ...(extraBulkActions?.(listContext) ?? []),
+    ...(canDelete && deleteAll
+      ? [{ label: "Delete Selected", icon: Trash2, variant: "destructive" as const, onClick: (rows: T[]) => setPendingDelete(deletable(rows)) }]
+      : []),
+  ];
+  const bulkActions = allBulkActions.length ? allBulkActions : undefined;
 
   const columnSettings: ColumnSetting[] = effectiveColumns.map((c) => ({
     systemName: c.key,
@@ -174,7 +186,7 @@ export default function ResourceListPage<T>({
     ...(!readOnly && permissions.create
       ? [{ key: "add", title: `Add New ${title}`, icon: PlusCircle, href: addHref ?? `${basePath}/add` }]
       : []),
-    ...listActions,
+    ...(typeof listActions === "function" ? listActions(listContext) : listActions),
   ];
 
   const confirmDelete = async () => {
@@ -207,7 +219,7 @@ export default function ResourceListPage<T>({
         reloadColumns();
         refresh();
       }}
-      onDeleteSelected={bulkActions ? () => setPendingDelete(deletable(selected)) : undefined}
+      onDeleteSelected={canDelete && deleteAll ? () => setPendingDelete(deletable(selected)) : undefined}
       selectedCount={selected.length}
       filters={toolbar?.({ refresh })}
     >

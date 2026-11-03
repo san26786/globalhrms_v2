@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 
+import type { BulkAction, RowAction } from "@/components/DataTable/types";
+import type { ListAction } from "@/components/listview/ListViewShell";
 import ResourceListPage, { type ResourceListColumn } from "@/components/resource/ResourceListPage";
 import { HUB_DEFS } from "@/lib/employeeMngt/hub/hubDefs";
 import { HUB_SCREENS, hubBase, type HubScreenKey } from "@/lib/employeeMngt/hub/hubTypes";
@@ -13,13 +15,28 @@ import { useCurrentSession } from "@/lib/header/HeaderSessionContext";
  * its Form Settings). `emp` narrows the list to one employee (CI's employee tab, index/{EMP_ID}).
  * Rules and scoping: lib/employeeMngt/hub.
  */
-type Row = Record<string, unknown> & { id: number };
+export type HubRow = Record<string, unknown> & { id: number };
+type Row = HubRow;
+type ListContext = { refresh: () => void; permissions: { create: boolean; update: boolean; delete: boolean } };
 
 /** CI listview showed Y-m-d values as dd.mm.yyyy. */
 const ddmmyyyy = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10).split("-").reverse().join(".") : String(v ?? ""));
 const yesNo = (v: unknown) => (["1", "y", "yes", "true"].includes(String(v ?? "").toLowerCase()) ? "Yes" : "No");
 
-export default function HubList({ screen, emp }: { screen: HubScreenKey; emp?: string }) {
+/** `listActions` / `bulkActions` / `rowActions`: a screen's own header buttons, actions on the selected rows and per-row menu items. */
+export default function HubList({
+  screen,
+  emp,
+  listActions,
+  bulkActions,
+  rowActions,
+}: {
+  screen: HubScreenKey;
+  emp?: string;
+  listActions?: (ctx: ListContext) => ListAction[];
+  bulkActions?: (ctx: ListContext) => BulkAction<Row>[];
+  rowActions?: RowAction<Row>[];
+}) {
   const info = HUB_SCREENS[screen];
   const defs = HUB_DEFS[screen];
   const session = useCurrentSession();
@@ -60,6 +77,9 @@ export default function HubList({ screen, emp }: { screen: HubScreenKey; emp?: s
       addHref={emp ? `${base}/add?emp=${emp}` : `${base}/add`}
       editHref={(row) => editLink(row.id)}
       canDeleteRow={defs.canDeleteRow}
+      listActions={listActions}
+      extraBulkActions={bulkActions}
+      extraRowActions={rowActions}
     />
   );
 }

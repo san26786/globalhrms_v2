@@ -57,7 +57,12 @@ export interface HubScreenDefs {
   editsWith?: HubScreenKey;
   /** The attachment: shown as a picture on the edit form; `required` — it cannot be removed, only replaced. */
   file?: { image?: boolean; required?: boolean };
+  /** Warnings shown on the form once the chosen employee's details load (e.g. pending loans). */
+  notices?: (extras: HubExtras, values: HubValues) => string[];
 }
+
+/** Per-option data from /employee-options, by list name and option value. */
+export type HubExtras = Record<string, Record<string, Record<string, unknown>>>;
 
 export type HubDefsMap = Record<HubScreenKey, HubScreenDefs>;
 

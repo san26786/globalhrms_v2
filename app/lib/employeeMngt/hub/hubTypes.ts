@@ -24,7 +24,13 @@ export type HubScreenKey =
   | 'empReportingLocations'
   | 'empPicture'
   | 'member_documents'
-  | 'job_probation';
+  | 'job_probation'
+  | 'termination'
+  | 'exit_clearance'
+  | 'exit_gna'
+  | 'exit_finance'
+  | 'exit_facilities'
+  | 'exit_hr';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -38,6 +44,8 @@ export interface HubScreenInfo {
   /** Page path when it is not /employeeMngt/<key> (Job Detail lives under job/). */
   base?: string;
 }
+
+const EXIT_MENU = 'department_activity/department_head_supervisor';
 
 export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
   empContactAddress: { menu: 'employeeMngt/empContactAddress', title: 'Address', objectName: 'contact_address_vw', noun: 'Employee Address' },
@@ -71,6 +79,20 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
   job_probation: {
     menu: 'job/job_mst/probation', title: 'Confirmation Pending', objectName: 'job_mst_vw', noun: 'Job Detail', base: '/job/job_mst/probation',
   },
+  termination: { menu: 'employeeMngt/termination', title: 'Employee Termination', objectName: 'emp_termination_dtl_vw', noun: 'Employee Termination' },
+  // Exit and Clearance Formality: one menu (CI had none for the other departments) governs the five steps.
+  exit_clearance: {
+    menu: EXIT_MENU, title: 'Exit and Clearance Formality', objectName: 'department_head_supervisor_vw', noun: 'Department Head/Supervisor Details',
+    base: '/department_activity/department_head_supervisor',
+  },
+  exit_gna: { menu: EXIT_MENU, title: 'GNA and Admin', objectName: 'gna_and_admin_vw', noun: 'GNA and Admin Details', base: '/department_activity/department_head_supervisor/gna' },
+  exit_finance: {
+    menu: EXIT_MENU, title: 'Account Finance', objectName: 'account_finance_vw', noun: 'Account Finance Details', base: '/department_activity/department_head_supervisor/finance',
+  },
+  exit_facilities: {
+    menu: EXIT_MENU, title: 'Facilities/IT', objectName: 'facilities_it_vw', noun: 'Facilities/IT Details', base: '/department_activity/department_head_supervisor/facilities',
+  },
+  exit_hr: { menu: EXIT_MENU, title: 'Human Resource', objectName: 'human_resource_vw', noun: 'Human Resource Details', base: '/department_activity/department_head_supervisor/hr' },
 };
 
 export const isHubScreen = (key: string): key is HubScreenKey => Object.prototype.hasOwnProperty.call(HUB_SCREENS, key);
