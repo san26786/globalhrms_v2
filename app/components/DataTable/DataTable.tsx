@@ -295,11 +295,11 @@ export function DataTable<TData, TValue>({
       ) : (
         <div className="rounded-md border brand:overflow-hidden brand:rounded-2xl brand:border-slate-200 brand:bg-white brand:shadow-[0_1px_2px_rgba(16,24,40,0.04)] dark:border-white/10 dark:bg-[#111a2e]">
           <Table>
-            <TableHeader className="brand:bg-[#f6f7f9] dark:bg-white/5">
+            <TableHeader className="brand:bg-[#fbe6dd] brand:[&_tr]:border-b-2 brand:[&_tr]:border-[#e15425]/40 dark:bg-[#da5427]/15 dark:[&_tr]:border-[#da5427]/50">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow key={headerGroup.id} className="brand:hover:bg-transparent">
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} style={{ width: header.getSize() }} className="h-10 px-3 text-[12.5px] brand:font-semibold brand:text-[#323338] dark:text-[#d5dae4]">
+                    <TableHead key={header.id} style={{ width: header.getSize() }} className="h-9 px-3 text-[12px] brand:font-semibold brand:text-[#b4441f] dark:text-[#f8a27e]">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -333,11 +333,11 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={cn("brand:transition-colors brand:hover:bg-[#fdf3ee] dark:hover:bg-white/5", onRowClick && "cursor-pointer")}
+                    className={cn("transition-[background-color,box-shadow] duration-150 brand:hover:bg-[#fdf3ee] brand:hover:shadow-[inset_3px_0_0_#e15425] dark:hover:bg-[#16233d] dark:hover:shadow-[inset_3px_0_0_#f8a27e]", onRowClick && "cursor-pointer")}
                     onClick={() => onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-3 py-2.5 text-[13px]">
+                      <TableCell key={cell.id} className="px-3 py-2 text-[12.5px]">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
