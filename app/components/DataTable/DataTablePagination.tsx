@@ -38,7 +38,7 @@ export function DataTablePagination<TData>({
 
   return (
     <div className="flex flex-col-reverse items-center justify-between gap-4 sm:flex-row">
-      <div className="flex-1 text-sm text-muted-foreground brand:text-[#535768] dark:text-[#aab3c5]">
+      <div className="flex-1 text-[13px] text-muted-foreground brand:text-[#535768] dark:text-[#aab3c5]">
         {table.options.enableRowSelection ? (
           <span>
             {selectedCount} of {totalCount} row(s) selected.
@@ -49,7 +49,7 @@ export function DataTablePagination<TData>({
       </div>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
         <div className="flex items-center gap-2">
-          <p className={`text-sm font-medium ${TEXT}`}>Rows per page</p>
+          <p className={`text-[13px] font-medium ${TEXT}`}>Rows per page</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => table.setPageSize(Number(value))}
@@ -66,7 +66,7 @@ export function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className={`flex items-center justify-center text-sm font-medium ${TEXT}`}>
+        <div className={`flex items-center justify-center text-[13px] font-medium ${TEXT}`}>
           Page {table.getState().pagination.pageIndex + 1} of{" "}
           {Math.max(table.getPageCount(), 1)}
         </div>

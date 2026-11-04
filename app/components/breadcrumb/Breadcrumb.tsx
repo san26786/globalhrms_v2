@@ -23,7 +23,7 @@ export default function Breadcrumb({ mode, passedUrl, parameters, parent }: Brea
 
   return (
     <nav aria-label="Breadcrumb" className="bc-nav">
-      <ol className="bc-list flex items-center gap-2 text-sm text-gray-500 brand:text-[#535768] dark:text-[#aab3c5]">
+      <ol className="bc-list flex items-center gap-2 text-[13px] text-gray-500 brand:text-[#535768] dark:text-[#aab3c5]">
         {/* CI: Home crumb — always first */}
         <li className="bc-item">
           <Link href="/dashboard" aria-label="Home" className="bc-link bc-home flex items-center gap-1">

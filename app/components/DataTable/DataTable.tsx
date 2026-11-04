@@ -299,7 +299,7 @@ export function DataTable<TData, TValue>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} style={{ width: header.getSize() }} className="brand:h-11 brand:text-[13px] brand:font-semibold brand:text-[#323338] dark:text-[#d5dae4]">
+                    <TableHead key={header.id} style={{ width: header.getSize() }} className="h-10 px-3 text-[12.5px] brand:font-semibold brand:text-[#323338] dark:text-[#d5dae4]">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -337,7 +337,7 @@ export function DataTable<TData, TValue>({
                     onClick={() => onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="px-3 py-2.5 text-[13px]">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

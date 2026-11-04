@@ -49,8 +49,8 @@ export default function BreadcrumbHeader({
           />
 
           <div className="mt-2 flex items-center gap-2 brand:mt-3 brand:gap-3">
-            <Database className="text-blue-600 brand:h-11 brand:w-11 brand:shrink-0 brand:rounded-xl brand:bg-[#fbe6dd] brand:p-2.5 brand:text-[#b4441f] dark:bg-[#da5427]/15 dark:text-[#f8a27e]" />
-            <h1 className="text-4xl font-bold brand:font-semibold brand:text-[28px] brand:leading-tight brand:tracking-[-0.03em] brand:text-[#1a1818] dark:text-[#f1f3f8] brand:md:text-[32px]">{title}</h1>
+            <Database className="text-blue-600 brand:h-9 brand:w-9 brand:shrink-0 brand:rounded-xl brand:bg-[#fbe6dd] brand:p-2 brand:text-[#b4441f] dark:bg-[#da5427]/15 dark:text-[#f8a27e]" />
+            <h1 className="text-2xl font-bold brand:font-semibold brand:text-[22px] brand:leading-tight brand:tracking-[-0.02em] brand:text-[#1a1818] dark:text-[#f1f3f8] brand:md:text-[24px]">{title}</h1>
           </div>
         </div>
 

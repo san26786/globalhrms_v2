@@ -54,7 +54,7 @@ export function DataTableToolbar<TData>({
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-9 pl-8 brand:h-10 brand:rounded-full brand:bg-white brand:pl-10 dark:bg-[#0e1628]"
+            className="h-9 pl-8 text-[13px] md:text-[13px] brand:h-10 brand:rounded-full brand:bg-white brand:pl-10 dark:bg-[#0e1628]"
           />
         </div>
 

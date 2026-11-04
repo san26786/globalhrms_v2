@@ -92,7 +92,7 @@ function SubMenu({ nodes, onNavigate, depth = 1 }: { nodes: MenuNode[]; onNaviga
               node={sub}
               active={active}
               onNavigate={onNavigate}
-              className="block w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 truncate"
+              className="block w-full text-left px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all duration-200 truncate"
               activeClassName="text-[#7a2e12] dark:text-[#f8d3c3] bg-[#fbe6dd] dark:bg-[#da5427]/15"
               inactiveClassName="text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:translate-x-0.5"
             >
@@ -107,7 +107,7 @@ function SubMenu({ nodes, onNavigate, depth = 1 }: { nodes: MenuNode[]; onNaviga
               type="button"
               onClick={() => setOpen((o) => ({ ...o, [sub.id]: !isOpen }))}
               aria-expanded={isOpen}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all duration-200 cursor-pointer ${
                 active ? 'text-[#7a2e12] dark:text-[#f8d3c3]' : 'text-[#535768] dark:text-[#aab3c5] hover:text-[#1a1818] dark:hover:text-white hover:bg-[#f6f7f9] dark:hover:bg-white/5'
               }`}
               title={sub.name}
@@ -213,7 +213,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
 
             const baseClass = isCollapsed
               ? 'w-full flex flex-col items-center justify-center text-center gap-1 py-3 px-1 rounded-xl text-[10.5px] font-medium tracking-normal transition-all duration-200 select-none group relative cursor-pointer'
-              : 'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 select-none group relative cursor-pointer';
+              : 'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 select-none group relative cursor-pointer';
             const activeClass = 'bg-[#e15425] text-white shadow-[0_10px_22px_-12px_rgba(225,84,37,0.9)]';
             const inactiveClass = isCollapsed
               ? 'text-[#323338] dark:text-[#d5dae4] hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:text-[#1a1818] dark:hover:text-white'
@@ -319,7 +319,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
                   node={sub}
                   active={isActive(sub)}
                   onNavigate={() => setHoverId(null)}
-                  className="block w-full text-left px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150"
+                  className="block w-full text-left px-4 py-2 rounded-xl text-[12.5px] font-medium transition-all duration-150"
                   activeClassName="bg-[#e15425] text-white shadow-sm"
                   inactiveClassName="text-[#323338] dark:text-[#d5dae4] hover:bg-[#fbe6dd] dark:hover:bg-[#da5427]/15 hover:text-[#7a2e12] dark:hover:text-[#f8d3c3]"
                 >
@@ -338,7 +338,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, activeBrand }: 
           type="button"
           onClick={onToggleCollapse}
           aria-label="Toggle sidebar"
-          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-full text-[13px] font-medium text-[#323338] dark:text-[#d5dae4] hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:text-[#1a1818] dark:hover:text-white transition-all duration-200 border border-slate-200 dark:border-white/10 cursor-pointer"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-full text-[12.5px] font-medium text-[#323338] dark:text-[#d5dae4] hover:bg-[#f6f7f9] dark:hover:bg-white/5 hover:text-[#1a1818] dark:hover:text-white transition-all duration-200 border border-slate-200 dark:border-white/10 cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
             {isCollapsed ? <ChevronRight className="w-4 h-4 text-[#535768] dark:text-[#aab3c5]" /> : <ChevronLeft className="w-4 h-4 text-[#535768] dark:text-[#aab3c5]" />}
