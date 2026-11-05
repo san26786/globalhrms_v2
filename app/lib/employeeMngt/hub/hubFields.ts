@@ -38,6 +38,8 @@ export interface HubColumnDef {
   /** Form Settings attribute (defaults to key). */
   attribute?: string;
   sortable?: boolean;
+  /** Row key the column sorts by (default: key), e.g. a month name sorted by its number. */
+  sortKey?: string;
   format?: 'date' | 'yesno';
 }
 
