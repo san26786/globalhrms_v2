@@ -43,12 +43,21 @@ const [DH] = EXIT_STEPS;
 
 type Text = string | null;
 
+/** The brand block of a letterhead (also used by the payroll documents). */
+export interface LetterheadBrand {
+  id: number;
+  name: string;
+  logo: Text;
+  address: Text;
+  contact: Text;
+}
+
 interface ExitData {
   employee: {
     id: number; code: Text; name: string; title: Text; department: Text; joined: Text; separated: Text; resigned: Text;
     address: Text; phone: Text; email: Text; male: boolean;
   };
-  brand: { id: number; name: string; logo: Text; address: Text; contact: Text };
+  brand: LetterheadBrand;
   instructions: string[];
   /** Each department's item values by column (missing department: empty). */
   steps: Map<string, Record<string, Text>>;
@@ -58,9 +67,9 @@ interface ExitData {
   generated: boolean;
 }
 
-const brandAddress = `NULLIF(concat_ws(', ', NULLIF(btrim(b."ADDRESS_ONE"), ''), NULLIF(btrim(b."ADDRESS_TWO"), ''), NULLIF(btrim(b."CITY"), ''),
+export const brandAddress = `NULLIF(concat_ws(', ', NULLIF(btrim(b."ADDRESS_ONE"), ''), NULLIF(btrim(b."ADDRESS_TWO"), ''), NULLIF(btrim(b."CITY"), ''),
   NULLIF(btrim(b."STATE"), ''), ${masterName('b."country"')}), '')`;
-const brandContact = `NULLIF(concat_ws('  |  ', 'Tel: ' || NULLIF(btrim(b."TELEPHONE"), ''), 'Email: ' || NULLIF(btrim(b."EMAIL"), ''),
+export const brandContact = `NULLIF(concat_ws('  |  ', 'Tel: ' || NULLIF(btrim(b."TELEPHONE"), ''), 'Email: ' || NULLIF(btrim(b."EMAIL"), ''),
   CASE WHEN b."WEBSITE" LIKE '%.%' THEN btrim(b."WEBSITE") END), '')`;
 const latestJob = (column: string) => `(SELECT j."${column}" FROM job_mst j WHERE j."EMP_ID" = em."EMP_ID" AND j."IS_DELETED" = 0 ORDER BY j."JOB_ID" DESC LIMIT 1)`;
 
@@ -146,7 +155,7 @@ async function logoImage(logo: Text): Promise<{ data: Uint8Array; format: 'PNG' 
 }
 
 /** The letterhead: logo and brand name on top, the brand's address and contacts at the foot. */
-async function letterhead(doc: jsPDF, brand: ExitData['brand']): Promise<number> {
+export async function letterhead(doc: jsPDF, brand: LetterheadBrand): Promise<number> {
   const width = doc.internal.pageSize.getWidth();
   const height = doc.internal.pageSize.getHeight();
   const logo = await logoImage(brand.logo);

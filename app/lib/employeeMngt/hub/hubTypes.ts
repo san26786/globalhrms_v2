@@ -34,7 +34,10 @@ export type HubScreenKey =
   | 'outdoor_allowance'
   | 'payroll_summary'
   | 'advance_salary'
-  | 'incentive';
+  | 'incentive'
+  | 'emp_hrprocess'
+  | 'annexure_processing'
+  | 'my_annexures';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -115,6 +118,15 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
     base: '/advance_salary/advance_salary', section: PAYROLL,
   },
   incentive: { menu: 'incentive/incentive', title: 'Incentive', objectName: 'incentive_vw', noun: 'Incentive', base: '/incentive/incentive', section: PAYROLL },
+  emp_hrprocess: { menu: 'employeeMngt/emp_hrprocess', title: 'Employee Details', objectName: 'emp_hrprocess_vw', noun: 'Employee Details', section: PAYROLL },
+  annexure_processing: {
+    menu: 'employeeMngt/emp_sal_component_mst/indexAnnexures', title: 'Annexure Processing', objectName: 'annexures_mst_vw', noun: 'Annexure',
+    base: '/employeeMngt/emp_sal_component_mst/indexAnnexures', section: PAYROLL,
+  },
+  my_annexures: {
+    menu: 'employeeMngt/emp_sal_component_mst/annexures', title: 'My Annexures', objectName: 'annexures_mst_vw', noun: 'Annexure',
+    base: '/employeeMngt/emp_sal_component_mst/annexures', section: PAYROLL,
+  },
 };
 
 export const isHubScreen = (key: string): key is HubScreenKey => Object.prototype.hasOwnProperty.call(HUB_SCREENS, key);

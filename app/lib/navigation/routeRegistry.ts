@@ -126,6 +126,10 @@ const SAME_PATH: readonly string[] = [
   'incentive/incentive',
   'attndMngt/payroll_summary',
   'outdoor_allowance/outdoor_allowance',
+  // Payroll — employee setup and annexures (group P2)
+  'employeeMngt/emp_hrprocess',
+  'employeeMngt/emp_sal_component_mst/indexAnnexures',
+  'employeeMngt/emp_sal_component_mst/annexures',
   // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
   'job/job_mst',
   'job/job_mst/probation',
@@ -151,6 +155,11 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'employeeMngt/emp_mst/addEmployeeMst', next: '/employeeMngt/emp_mst/add' },
   { ci: 'employeeMngt/emp_mst/editEmployeeMst/:id', next: '/employeeMngt/emp_mst/edit/:id' },
   { ci: 'employeeMngt/emp_mst/editEmployeeMst/:id/TEAM_EMP', next: '/employeeMngt/emp_mst/MyTeamEmployee/edit/:id' },
+  // Payroll — Employee Details: CI's form (also Employee Manager's "Complete Hr Process") → the employee's row
+  { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp', next: '/employeeMngt/emp_hrprocess?emp=:emp' },
+  { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp/:fp', next: '/employeeMngt/emp_hrprocess?emp=:emp' },
+  // Payroll — an employee's annexures (Employee Master tab)
+  { ci: 'employeeMngt/emp_sal_component_mst/emp_annexures/:emp', next: '/employeeMngt/emp_sal_component_mst/annexures?emp=:emp' },
   // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
   { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
   { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },

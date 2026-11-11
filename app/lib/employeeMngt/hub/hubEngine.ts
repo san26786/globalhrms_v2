@@ -117,6 +117,11 @@ export interface HubConfig {
   adminOnlyWrites?: boolean;
   /** A worklist: records are added elsewhere. */
   noCreate?: boolean;
+  /** List-only screens: no edit (records change through their own actions), no delete. */
+  noEdit?: boolean;
+  noDelete?: boolean;
+  /** A worklist over another screen's records (opened with defs.editsWith): it never writes itself; Edit follows that screen's grant. */
+  worklistOf?: { menu: string; adminOnlyWrites?: boolean };
   /** Initial values of the add form. */
   defaults?: (subject: RequestSubject, brand: number | null) => Promise<HubValues>;
   /** The list's own filters (CI customFields: month / year pickers): a condition on the row keys (alias v), or null. */
@@ -433,8 +438,13 @@ function ownershipColumns(cfg: HubConfig, employee: EmployeeRef): Record<string,
 
 /** The menu grant, narrowed by the screen's own rules (admin-only writes, worklists without add). */
 async function allowed(subject: RequestSubject, cfg: HubConfig, action: 'list' | 'create' | 'update' | 'delete'): Promise<boolean> {
+  if (cfg.worklistOf && action !== 'list') {
+    if (action !== 'update' || (cfg.worklistOf.adminOnlyWrites && subject.adminLevel === 0)) return false;
+    return menuPolicy(cfg.worklistOf.menu).check(subject, 'update');
+  }
   if (action !== 'list' && cfg.adminOnlyWrites && subject.adminLevel === 0) return false;
   if (action === 'create' && cfg.noCreate) return false;
+  if ((action === 'update' && cfg.noEdit) || (action === 'delete' && cfg.noDelete)) return false;
   return menuPolicy(HUB_SCREENS[cfg.key].menu).check(subject, action);
 }
 
@@ -567,6 +577,7 @@ export function hubService(cfg: HubConfig) {
     },
 
     async update(subject: RequestSubject, rawId: string, body: unknown): Promise<{ id: number; message: string }> {
+      if (cfg.worklistOf) throw new ForbiddenError(); // edited on the owning screen
       await requireGrant(subject, cfg, 'update');
       const id = parseId(rawId);
       const row = await findRow(subject, cfg, id);
@@ -593,6 +604,7 @@ export function hubService(cfg: HubConfig) {
     },
 
     async remove(subject: RequestSubject, rawId: string): Promise<{ id: number; message: string }> {
+      if (cfg.worklistOf) throw new ForbiddenError();
       await requireGrant(subject, cfg, 'delete');
       const id = parseId(rawId);
       const row = await findRow(subject, cfg, id);

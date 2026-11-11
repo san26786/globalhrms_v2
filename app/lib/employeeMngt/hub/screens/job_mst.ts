@@ -23,7 +23,8 @@ import { brandMasters, brandOnlyMasters, currencyLabel, currencyOptions, keepCur
  * employee's brand's; the payslip password is not listed. Not migrated: the rejoin flow, the Mediclaim
  * deduction on the salary annexure and the New Regime checkbox (CI showed it but never saved it).
  */
-const LATEST_ALIVE = `NOT EXISTS (SELECT 1 FROM job_mst j2 WHERE j2."EMP_ID" = t."EMP_ID" AND j2."IS_DELETED" = 0 AND j2."JOB_ID" > t."JOB_ID")`;
+/** t is the employee's current job: no later live job row. */
+export const LATEST_ALIVE = `NOT EXISTS (SELECT 1 FROM job_mst j2 WHERE j2."EMP_ID" = t."EMP_ID" AND j2."IS_DELETED" = 0 AND j2."JOB_ID" > t."JOB_ID")`;
 const JOB_TITLE = 158;
 
 const LIST_COLUMNS = `t."EMP_GROSS_SALARY",
@@ -250,5 +251,7 @@ export const jobProbationConfig: HubConfig = {
     AND t."EMP_STATUS_ID" IN (SELECT "MSTR_ID" FROM independent_mst WHERE "MSTR_CD" IN ('PROB', 'PROBPT'))`,
   defaultSort: 'v."CONFIRMATION_DATE" ASC NULLS FIRST, v.id DESC',
   noCreate: true,
+  // Edits happen on Job Detail (its grant); the worklist itself never writes (an empty PUT here zeroed the hourly / daily / monthly pay).
+  worklistOf: { menu: 'job/job_mst', adminOnlyWrites: true },
   defaults: undefined,
 };

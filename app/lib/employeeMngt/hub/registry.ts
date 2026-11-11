@@ -27,6 +27,8 @@ import { outdoorAllowanceConfig } from './screens/outdoor_allowance';
 import { payrollSummaryConfig } from './screens/payroll_summary';
 import { advanceSalaryConfig } from './screens/advance_salary';
 import { incentiveConfig } from './screens/incentive';
+import { empHrprocessConfig } from './screens/emp_hrprocess';
+import { annexureProcessingConfig, myAnnexuresConfig } from './screens/annexures';
 
 /** Server configs of the Employee Hub record screens. */
 const CONFIGS: Record<HubScreenKey, HubConfig> = {
@@ -58,6 +60,9 @@ const CONFIGS: Record<HubScreenKey, HubConfig> = {
   payroll_summary: payrollSummaryConfig,
   advance_salary: advanceSalaryConfig,
   incentive: incentiveConfig,
+  emp_hrprocess: empHrprocessConfig,
+  annexure_processing: annexureProcessingConfig,
+  my_annexures: myAnnexuresConfig,
 };
 
 const services = new Map<HubScreenKey, HubService>();
