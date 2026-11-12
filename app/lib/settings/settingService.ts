@@ -80,6 +80,16 @@ export const settingService = {
     return map[code] ?? null;
   },
 
+  /**
+   * The stored answer itself (CI's last fallback): for a select whose options carry no value label CI returned the
+   * raw option id — e.g. SSASITC stores a master id (ITCTTDS / ITCTFLC) that `getValue` cannot resolve to a label.
+   */
+  async getRawValue(code: string, oaBrandId: number): Promise<string | null> {
+    const rows = await readAnswers(Prisma.sql`im."MSTR_CD" = ${code} AND b."OA_BRAND_ID" = ${oaBrandId}`);
+    const last = rows[rows.length - 1];
+    return last?.raw?.trim() || null;
+  },
+
   /** Brand value, falling back to the system default (brand 0), then to `fallback`. */
   async getValueOrDefault(code: string, oaBrandId: number | null, fallback: string | null = null): Promise<string | null> {
     if (oaBrandId) {

@@ -26,6 +26,7 @@ import { advanceSalaryDefs } from './defs/advance_salary';
 import { incentiveDefs } from './defs/incentive';
 import { empHrprocessDefs } from './defs/emp_hrprocess';
 import { annexureProcessingDefs, myAnnexuresDefs } from './defs/annexures';
+import { myPayslipsDefs, payrollProcessingDefs } from './defs/payslips';
 import type { HubScreenDefs } from './hubFields';
 import type { HubScreenKey } from './hubTypes';
 
@@ -62,4 +63,6 @@ export const HUB_DEFS: Record<HubScreenKey, HubScreenDefs> = {
   emp_hrprocess: empHrprocessDefs,
   annexure_processing: annexureProcessingDefs,
   my_annexures: myAnnexuresDefs,
+  payroll_processing: payrollProcessingDefs,
+  my_payslips: myPayslipsDefs,
 };

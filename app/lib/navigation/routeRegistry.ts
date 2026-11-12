@@ -130,6 +130,9 @@ const SAME_PATH: readonly string[] = [
   'employeeMngt/emp_hrprocess',
   'employeeMngt/emp_sal_component_mst/indexAnnexures',
   'employeeMngt/emp_sal_component_mst/annexures',
+  // Payroll — payroll run and payslips (group P3)
+  'employeeMngt/emp_sal_component_mst',
+  'employeeMngt/emp_sal_component_mst/paySlip',
   // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
   'job/job_mst',
   'job/job_mst/probation',
@@ -160,6 +163,7 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp/:fp', next: '/employeeMngt/emp_hrprocess?emp=:emp' },
   // Payroll — an employee's annexures (Employee Master tab)
   { ci: 'employeeMngt/emp_sal_component_mst/emp_annexures/:emp', next: '/employeeMngt/emp_sal_component_mst/annexures?emp=:emp' },
+  { ci: 'employeeMngt/emp_sal_component_mst/index', next: '/employeeMngt/emp_sal_component_mst' },
   // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
   { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
   { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },

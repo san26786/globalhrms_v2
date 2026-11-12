@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import type { RequestSubject } from '@/lib/auth/getSubject';
 import { assertInsertSafe } from '@/lib/db/sequenceGuard';
-import { columnsOf, fullName, isDate, type Tx } from '@/lib/employeeMngt/hub/hubEngine';
+import { fullName, isDate } from '@/lib/employeeMngt/hub/hubEngine';
 import { BusinessRuleError, ForbiddenError, ValidationError } from '@/lib/http/errors';
 import { getMasterIds } from '@/lib/masters/masterService';
 import { prisma } from '@/lib/prisma';
 import { menuPolicy } from '@/lib/resource/policies';
 import { settingService } from '@/lib/settings/settingService';
 import { brandOrgId } from '@/lib/systmMngt/shared';
+import { findFinancialYear } from '../financialYear';
+import { setSalaryBreakupBase, snapshotSalaryBreakup } from '../salaryBreakup';
 import { AnnexureError, computeAnnexure, type AnnexureInputs, type AnnexureRule, type AnnexureSetting, type Frequency } from './compute';
 import { centsText, toCents } from './ruleMath';
 
@@ -113,33 +115,6 @@ async function employee(id: number): Promise<Employee> {
   return { id, name: e?.name ?? `Employee #${id}`, user: e?.user ? Number(e.user) : null, oa: e?.oa ? Number(e.oa) : null, job: job ?? null };
 }
 
-/** salary_breakup (or its temp copy) of the employee and financial year: updated, else added. */
-async function setBreakup(tx: Tx, table: 'salary_breakup' | 'salary_breakup_temp', v: { emp: number; fy: number; monthly: string; gross: string; oa: number; brand: number; user: number; by: number }) {
-  await assertInsertSafe(table, 'SLB_ID');
-  await tx.$executeRawUnsafe(
-    `WITH upd AS (
-       UPDATE ${table} s SET "MONTHLY_SALARY" = $3::numeric, "CTC" = $4::numeric, "ANNUAL_SALARY" = $4::numeric, "UPDATED_BY" = $8::int, "UPDATED_ON" = now()
-       WHERE s."SLB_ID" = (SELECT "SLB_ID" FROM ${table} WHERE "EMP_ID" = $1::int AND "YEAR" = $2::int ORDER BY "SLB_ID" LIMIT 1)
-       RETURNING 1)
-     INSERT INTO ${table} ("EMP_ID", "YEAR", "MONTHLY_SALARY", "CTC", "ANNUAL_SALARY", "OA_ID", "OA_BRAND_ID", "USER_ID", "IS_DELETED", "CREATED_BY", "CREATED_ON", "UPDATED_BY", "UPDATED_ON")
-     SELECT $1::int, $2::int, $3::numeric, $4::numeric, $4::numeric, $5::int, $6::int, $7::int, 0, $8::int, now(), $8::int, now()
-     WHERE NOT EXISTS (SELECT 1 FROM upd)`,
-    v.emp, v.fy, v.monthly, v.gross, v.oa, v.brand, v.user, v.by,
-  );
-}
-
-/** CI replicateFromSalaryBreakUp: a snapshot of the breakup for the annexure's month (payroll reads the newest). */
-async function snapshotBreakup(tx: Tx, emp: number, fy: number, month: number, year: number) {
-  await assertInsertSafe('salary_breakup_for_calc', 'SLB_ID');
-  const [from, to] = await Promise.all([columnsOf('salary_breakup'), columnsOf('salary_breakup_for_calc')]);
-  const shared = [...to.values()].map((c) => c.name).filter((c) => !['SLB_ID', 'MONTH', 'YEAR'].includes(c.toUpperCase()) && from.has(c.toUpperCase()));
-  const list = shared.map((c) => `"${c}"`).join(', ');
-  await tx.$executeRawUnsafe(
-    `INSERT INTO salary_breakup_for_calc ("MONTH", "YEAR", ${list}) SELECT $3::int, $4::int, ${list} FROM salary_breakup WHERE "EMP_ID" = $1::int AND "YEAR" = $2::int`,
-    emp, fy, month, year,
-  );
-}
-
 /** One employee's annexure, written in one transaction. */
 async function writeAnnexure(subject: RequestSubject, e: Employee, b: Brand, run: { brand: number; fy: number; month: number; year: number; effective: string; isCurrent: boolean; calculateGratuity: boolean; today: string }): Promise<GenerateResult> {
   const skip = (message: string): GenerateResult => ({ empId: e.id, name: e.name, status: 'skipped', message });
@@ -204,9 +179,9 @@ async function writeAnnexure(subject: RequestSubject, e: Employee, b: Brand, run
         WHERE "EMP_ID" = ${e.id} AND "SAL_TYPE" = ${prstax} AND "IS_CURRENT" = 1 AND "EMP_SAL_ID" <> ${periodId}`;
     }
     const breakup = { emp: e.id, fy: run.fy, monthly: centsText(result.periodSalary), gross: centsText(result.gross), oa, brand: run.brand, user: e.user ?? subject.userId, by: subject.userId };
-    await setBreakup(tx, 'salary_breakup', breakup);
-    await setBreakup(tx, 'salary_breakup_temp', breakup);
-    await snapshotBreakup(tx, e.id, run.fy, run.month, run.year);
+    await setSalaryBreakupBase(tx, 'salary_breakup', breakup);
+    await setSalaryBreakupBase(tx, 'salary_breakup_temp', breakup);
+    await snapshotSalaryBreakup(tx, e.id, run.fy, run.month, run.year);
     return { yearly: yearlyId, period: periodId };
   }, { timeout: 60000 });
   return { empId: e.id, name: e.name, status: 'generated', message: 'Annexure Generated Successfully', ids };
@@ -263,12 +238,7 @@ export const annexureGenerator = {
     const month = Number(m![1]);
     const year = Number(m![2]);
 
-    const [fy] = await prisma.$queryRaw<Array<{ id: number }>>`
-      SELECT p."PERIOD_ID" AS id FROM period_mst p
-      WHERE p."OA_BRAND_ID" = ${brand} AND p."IS_DELETED" = 0
-        AND p."PERIOD_TYPE_ID" = (SELECT "MSTR_ID" FROM independent_mst WHERE "MSTR_CD" = 'OPTFY' ORDER BY "MSTR_ID" LIMIT 1)
-        AND make_date(${year}::int, ${month}::int, 1) BETWEEN p."PERIOD_START_DATE" AND p."PERIOD_END_DATE"
-      ORDER BY p."PERIOD_ID" LIMIT 1`;
+    const fy = await findFinancialYear(brand, month, year);
     if (!fy) throw new ValidationError('Validation failed.', { monthYear: [`No financial year covers ${String(month).padStart(2, '0')}/${year} for this brand.`] });
     const b = await brandInputs(brand, Number(fy.id));
     if (!b.basicPercent) throw new BusinessRuleError('Basic salary percentage (SSAMTPLBP) is not set for this brand.');

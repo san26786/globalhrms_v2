@@ -37,7 +37,9 @@ export type HubScreenKey =
   | 'incentive'
   | 'emp_hrprocess'
   | 'annexure_processing'
-  | 'my_annexures';
+  | 'my_annexures'
+  | 'payroll_processing'
+  | 'my_payslips';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -126,6 +128,14 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
   my_annexures: {
     menu: 'employeeMngt/emp_sal_component_mst/annexures', title: 'My Annexures', objectName: 'annexures_mst_vw', noun: 'Annexure',
     base: '/employeeMngt/emp_sal_component_mst/annexures', section: PAYROLL,
+  },
+  payroll_processing: {
+    menu: 'employeeMngt/emp_sal_component_mst', title: 'Payroll Processing', objectName: 'emp_basic_sal_mst_vw', noun: 'Payslip',
+    base: '/employeeMngt/emp_sal_component_mst', section: PAYROLL,
+  },
+  my_payslips: {
+    menu: 'employeeMngt/emp_sal_component_mst/paySlip', title: 'My Payslips', objectName: 'emp_basic_sal_mst_vw', noun: 'Payslip',
+    base: '/employeeMngt/emp_sal_component_mst/paySlip', section: PAYROLL,
   },
 };
 
