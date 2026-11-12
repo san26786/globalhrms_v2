@@ -30,6 +30,9 @@ import { incentiveConfig } from './screens/incentive';
 import { empHrprocessConfig } from './screens/emp_hrprocess';
 import { annexureProcessingConfig, myAnnexuresConfig } from './screens/annexures';
 import { myPayslipsConfig, payrollProcessingConfig } from './screens/payslips';
+import { salaryBreakupConfig } from './screens/salary_breakup';
+import { salaryComponentsConfig } from './screens/salary_components';
+import { salaryReportConfig } from './screens/salary_report';
 
 /** Server configs of the Employee Hub record screens. */
 const CONFIGS: Record<HubScreenKey, HubConfig> = {
@@ -66,6 +69,9 @@ const CONFIGS: Record<HubScreenKey, HubConfig> = {
   my_annexures: myAnnexuresConfig,
   payroll_processing: payrollProcessingConfig,
   my_payslips: myPayslipsConfig,
+  salary_report: salaryReportConfig,
+  salary_components: salaryComponentsConfig,
+  salary_breakup: salaryBreakupConfig,
 };
 
 const services = new Map<HubScreenKey, HubService>();

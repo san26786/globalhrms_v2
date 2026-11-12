@@ -39,7 +39,10 @@ export type HubScreenKey =
   | 'annexure_processing'
   | 'my_annexures'
   | 'payroll_processing'
-  | 'my_payslips';
+  | 'my_payslips'
+  | 'salary_report'
+  | 'salary_components'
+  | 'salary_breakup';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -136,6 +139,19 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
   my_payslips: {
     menu: 'employeeMngt/emp_sal_component_mst/paySlip', title: 'My Payslips', objectName: 'emp_basic_sal_mst_vw', noun: 'Payslip',
     base: '/employeeMngt/emp_sal_component_mst/paySlip', section: PAYROLL,
+  },
+  // Payroll — reports (group P4)
+  salary_report: {
+    menu: 'employeeMngt/emp_sal_component_mst/viewMonthlySalaryReport', title: 'Salary Report', objectName: 'emp_salary_report_vw', noun: 'Payslip',
+    base: '/employeeMngt/emp_sal_component_mst/viewMonthlySalaryReport', section: PAYROLL,
+  },
+  salary_components: {
+    menu: 'employeeMngt/emp_sal_component_dtl', title: 'Component Wise Salary Breakup', objectName: 'emp_basic_sal_dtl_vw', noun: 'Salary Component',
+    base: '/employeeMngt/emp_sal_component_dtl', section: PAYROLL,
+  },
+  salary_breakup: {
+    menu: 'employeeMngt/emp_sal_component_dtl/SalaryBreakUp', title: 'Salary Breakup', objectName: 'salary_breakup_vw', noun: 'Salary Breakup',
+    base: '/employeeMngt/emp_sal_component_dtl/SalaryBreakUp', section: PAYROLL,
   },
 };
 

@@ -13,8 +13,8 @@ import { masterName, type HubConfig } from '../hubEngine';
  * normal user without an employee record sees nothing (CI showed them every paid payslip of every brand); payslips of
  * deleted employees are not listed.
  */
-const amount = (column: string) => `to_char(t."${column}", 'FM99999999999999990.00') AS "${column}", t."${column}" AS "${column}_N"`;
-const asInt = (column: string, digits: string) => `CASE WHEN t."${column}" ~ '^\\s*[0-9]{${digits}}\\s*$' THEN btrim(t."${column}")::int END`;
+export const amount = (column: string) => `to_char(t."${column}", 'FM99999999999999990.00') AS "${column}", t."${column}" AS "${column}_N"`;
+export const asInt = (column: string, digits: string) => `CASE WHEN t."${column}" ~ '^\\s*[0-9]{${digits}}\\s*$' THEN btrim(t."${column}")::int END`;
 const line = (code: string) => `(SELECT to_char(d."ACTUAL_AMOUNT", 'FM99999999999999990.00') FROM emp_basic_sal_dtl d
     WHERE d."SAL_MST_ID" = t."EMP_SAL_ID" AND d."IS_DELETED" = 0
       AND d."SAL_COMP_ID" = (SELECT im."MSTR_ID" FROM independent_mst im WHERE im."MSTR_CD" = '${code}' ORDER BY im."MSTR_ID" LIMIT 1)
@@ -29,8 +29,8 @@ const LIST_COLUMNS = `${amount('ACTUAL_AMOUNT')}, ${amount('EARNED_AMOUNT')},
   ${line('SCINTX')} AS "INCOME_TAX", ${line('PCINCARR')} AS "INCENTIVES_ARREARS"`;
 
 export const PAYSLIP_ALIVE = `t."IS_DELETED" = 0 AND t."SAL_TYPE" = (SELECT im."MSTR_ID" FROM independent_mst im WHERE im."MSTR_CD" = 'PRSTPS' ORDER BY im."MSTR_ID" LIMIT 1)`;
-const STATUS = /^[A-Z]{2,10}$/;
-const MONTH_YEAR = /^(0?[1-9]|1[0-2])\/(\d{4})$/;
+export const STATUS = /^[A-Z]{2,10}$/;
+export const MONTH_YEAR = /^(0?[1-9]|1[0-2])\/(\d{4})$/;
 
 const shared = {
   table: 'emp_basic_sal_mst',

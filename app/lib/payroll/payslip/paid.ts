@@ -10,15 +10,20 @@ import { menuPolicy } from '@/lib/resource/policies';
  * CI emp_sal_component_mst::paid (Salary Report → "Mark as Paid"): the payslips' transaction status. A paid
  * payslip is released to the employee (My Payslips lists only paid ones).
  *
- * Behaviour changes: admins with Payroll Processing's edit grant, payslips in their scope only (CI took any id —
+ * Behaviour changes: admins with the edit grant of the calling screen (Payroll Processing or the Salary Report), payslips in their scope only (CI took any id —
  * an annexure too — from any user); payslips can be marked unpaid again (CI's "Mark as Unpaid" was commented out,
  * so a flag set by mistake could never be cleared); the change is stamped.
  */
 const MENU = 'employeeMngt/emp_sal_component_mst';
+/** The screens that mark payslips paid, by the key their pages send. */
+export const PAID_MENUS: Record<string, string> = {
+  payroll_processing: MENU,
+  salary_report: 'employeeMngt/emp_sal_component_mst/viewMonthlySalaryReport',
+};
 const schema = z.object({ ids: z.array(z.coerce.number().int().positive()).max(500), paid: z.boolean() });
 
-export async function markPayslipsPaid(subject: RequestSubject, body: unknown): Promise<{ count: number; message: string }> {
-  if (subject.adminLevel === 0 || !(await menuPolicy(MENU).check(subject, 'update'))) throw new ForbiddenError();
+export async function markPayslipsPaid(subject: RequestSubject, body: unknown, opts: { menu?: string } = {}): Promise<{ count: number; message: string }> {
+  if (subject.adminLevel === 0 || !(await menuPolicy(opts.menu ?? MENU).check(subject, 'update'))) throw new ForbiddenError();
   const { ids, paid } = schema.parse(body ?? {});
   const unique = [...new Set(ids)];
   if (!unique.length) throw new ValidationError('Please select at least one payslip.', { ids: ['Please select at least one payslip.'] });

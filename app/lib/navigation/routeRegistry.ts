@@ -133,6 +133,13 @@ const SAME_PATH: readonly string[] = [
   // Payroll — payroll run and payslips (group P3)
   'employeeMngt/emp_sal_component_mst',
   'employeeMngt/emp_sal_component_mst/paySlip',
+  // Payroll — reports (group P4)
+  'employeeMngt/emp_sal_component_mst/viewMonthlySalaryReport',
+  'employeeMngt/emp_sal_component_dtl',
+  'employeeMngt/emp_sal_component_dtl/SalaryBreakUp',
+  'employeeMngt/emp_sal_component_dtl/professionalTax',
+  'employeeMngt/emp_sal_component_dtl/MonthlyGrossReport',
+  'employeeMngt/emp_sal_component_dtl/MonthlyNetReport',
   // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
   'job/job_mst',
   'job/job_mst/probation',
@@ -164,6 +171,12 @@ const RENAMED: readonly RouteRule[] = [
   // Payroll — an employee's annexures (Employee Master tab)
   { ci: 'employeeMngt/emp_sal_component_mst/emp_annexures/:emp', next: '/employeeMngt/emp_sal_component_mst/annexures?emp=:emp' },
   { ci: 'employeeMngt/emp_sal_component_mst/index', next: '/employeeMngt/emp_sal_component_mst' },
+  // Payroll — reports: CI's /{emp}/{fy} segments are page state here (0 = not given)
+  { ci: 'employeeMngt/emp_sal_component_dtl/index', next: '/employeeMngt/emp_sal_component_dtl' },
+  { ci: 'employeeMngt/emp_sal_component_dtl/SalaryBreakUp/:x', next: '/employeeMngt/emp_sal_component_dtl/SalaryBreakUp' },
+  { ci: 'employeeMngt/emp_sal_component_dtl/professionalTax/:emp/:fy', next: '/employeeMngt/emp_sal_component_dtl/professionalTax?emp=:emp&fy=:fy' },
+  { ci: 'employeeMngt/emp_sal_component_dtl/MonthlyGrossReport/:emp/:fy', next: '/employeeMngt/emp_sal_component_dtl/MonthlyGrossReport?emp=:emp&fy=:fy' },
+  { ci: 'employeeMngt/emp_sal_component_dtl/MonthlyNetReport/:emp/:fy', next: '/employeeMngt/emp_sal_component_dtl/MonthlyNetReport?emp=:emp&fy=:fy' },
   // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
   { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
   { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },
