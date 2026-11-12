@@ -79,7 +79,9 @@ export interface GetTableDtlParams {
    * CI raw $colNm "COLUMN IN (…)" (e.g. period_mst: PERIOD_TYPE_ID IN (enabled types)). An empty
    * list matches no row, like CI's "1 = 2" fallback.
    */
-  whereIn?: { column: string; values: FilterValue[] };
+  whereIn?: { column: string; values: FilterValue[]; includeNull?: boolean };
+  /** CI raw $colNm "COLUMN != value" pairs (a NULL column does not match, as in MySQL). */
+  whereNot?: Array<{ column: string; value: FilterValue }>;
   /**
    * Columns fetched with every row but not listed (CI row-action conditions such as
    * IS_VERIFIED = 'No' read them). Ignored when the relation does not have them.
@@ -448,6 +450,7 @@ async function getTableRows<T>(
     colNm,
     colValue,
     whereIn,
+    whereNot,
     extraSelect = [],
     orgColumnName,
     orgId,
@@ -508,9 +511,13 @@ async function getTableRows<T>(
   }
 
   if (whereIn) {
-    whereParts.push(
-      whereIn.values.length ? `${ident(whereIn.column)} IN (${whereIn.values.map(bind).join(", ")})` : "1 = 2",
-    );
+    const inSql = whereIn.values.length ? `${ident(whereIn.column)} IN (${whereIn.values.map(bind).join(", ")})` : "1 = 2";
+    // CI "(COL = 0 OR COL IS NULL OR COL = x)": NULL counts as a match.
+    whereParts.push(whereIn.includeNull ? `(${inSql} OR ${ident(whereIn.column)} IS NULL)` : inSql);
+  }
+
+  for (const { column, value } of whereNot ?? []) {
+    whereParts.push(`${ident(column)} <> ${bind(value)}`);
   }
 
   // Org/brand scoping — only for org-level admins (isAdmin === 1), same as CI.

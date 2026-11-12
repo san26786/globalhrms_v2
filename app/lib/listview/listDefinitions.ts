@@ -1,5 +1,5 @@
 import type { AccessPolicy } from '@/lib/resource/types';
-import { menuPolicy } from '@/lib/resource/policies';
+import { anyOf, menuPolicy } from '@/lib/resource/policies';
 import type { RequestSubject } from '@/lib/auth/getSubject';
 import { periodListScope } from '@/lib/periodMngt';
 import { companyDocumentsService } from '@/lib/systmMngt/companyDocuments';
@@ -7,11 +7,17 @@ import { oaBrandSettingsService } from '@/lib/systmMngt/oaBrandSettings';
 import { orgAccountsService } from '@/lib/systmMngt/orgAccounts';
 import { oaBrandsService } from '@/lib/systmMngt/oaBrands';
 import { employeePaymentsService } from '@/lib/systmMngt/employeePayments';
+import { itemListScope, ownListScope, teamListScope, timesheetListActions } from '@/lib/timesheet/timesheet.lists';
+import { projectsListScope, projectsPolicy } from '@/lib/timesheet/userProjects';
+import { timesheetEmpListActions, timesheetEmpListScope, timesheetEmpPolicy } from '@/lib/timesheet/timesheetEmployee';
 
 /** Static filters decided per request: column = value pairs and/or one "column IN (…)". */
 export interface ListScope {
   equals?: Array<{ column: string; value: string | number }>;
-  in?: { column: string; values: Array<string | number> };
+  /** CI raw $colNm "COLUMN != value" (e.g. team timesheets: everything but drafts). */
+  notEquals?: Array<{ column: string; value: string | number }>;
+  /** `includeNull`: a NULL column matches too (CI "(USER_ID = 0 OR USER_ID IS NULL OR USER_ID = x)"). */
+  in?: { column: string; values: Array<string | number>; includeNull?: boolean };
 }
 
 /**
@@ -46,6 +52,11 @@ export interface ListDefinition {
   /** What CI passed as $userID: the session user (default) or the session brand (oaBrandID). */
   userScope?: 'user' | 'brand';
   /**
+   * CI $approverColumnName with $ApproverID = session user (e.g. MyTeamTimesheet → APPROVER_ID):
+   * normal users see the rows they approve instead of their own rows.
+   */
+  approverColumn?: string;
+  /**
    * CI index($arg…) → $colNm / $colValue decided per request (e.g. period_mst's period type /
    * status filters). Receives the page's query parameters; replaces `where`.
    */
@@ -64,7 +75,92 @@ export interface ListDefinition {
   deleteAll?: boolean;
   /** CI $actions['delete'] per row (default true when deleteApi is set); false = Delete Selected only. */
   rowDelete?: boolean;
+  /** CI offered Delete only from this admin level (e.g. 1: `is_admin != 0`); default every level the policy allows. */
+  deleteMinLevel?: 0 | 1 | 2;
+  /**
+   * CI $listActions beyond Add / Sync / Delete Selected — declared here, rendered by EntityListView
+   * from GET /api/listview/{list}/actions (visibility and dialog options resolved per request).
+   */
+  listActions?: ListActionDefinition[];
 }
+
+/** Icons a configured list action may use (mapped to lucide icons in EntityListView). */
+export type ListActionIcon = 'plus-circle' | 'cog' | 'clock' | 'user' | 'users' | 'thumbs-up' | 'thumbs-down' | 'upload' | 'refresh';
+
+/** A field of a list-action dialog (CI getCustomFields modal controls). */
+export interface ListActionField {
+  /** Body key sent to the API. */
+  name: string;
+  label: string;
+  type: 'select' | 'date' | 'checkbox';
+  required?: boolean;
+  placeholder?: string;
+  /** select: options resolved on the server per request. */
+  options?: (subject: RequestSubject) => Promise<Array<{ value: number | string; label: string }>>;
+  /** date: may not be before this field; filled from it while empty or earlier (CI start → end date). */
+  minField?: string;
+}
+
+/** Serializable request sent by an action: `ids` of the selected rows are added when `selection` is set. */
+export interface ListActionRequest {
+  url: string;
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** Static body merged with the dialog values / selected ids. */
+  body?: Record<string, unknown>;
+}
+
+/** Where a button is implemented — documentation only, never sent to the browser. */
+export interface ListActionReference {
+  /** CI controller method / modal the button reproduces. */
+  ci: string;
+  /** Next handler (service function) the API calls. */
+  handler?: string;
+  /** Model / service / repository used. */
+  service?: string;
+  /** Implementation files (page, route, service, schema …). */
+  files: string[];
+}
+
+/**
+ * CI $data['listActions'][] entry: `link` (CI url, no type) navigates; `api` (CI type 'button' +
+ * formaction) calls `request`, with the selected rows when `selection` is set; `dialog` (CI
+ * data-toggle="modal") opens a form whose values are sent with `request`.
+ */
+export interface ListActionDefinition {
+  key: string;
+  /** CI 'title' (tooltip). */
+  title: string;
+  icon: ListActionIcon;
+  kind: 'link' | 'api' | 'dialog';
+  /** link: target page. */
+  href?: string;
+  /** api / dialog: the call made. */
+  request?: ListActionRequest;
+  /** api: send the selected rows' `column` values as `ids`; `emptyMessage` when nothing is selected. */
+  selection?: { column: string; emptyMessage: string };
+  /** dialog: CI modal. */
+  dialog?: { title: string; submitText: string; fields: ListActionField[] };
+  /** After success: reload the rows (default true). */
+  reload?: boolean;
+  /** After success: also re-read the page's own data (e.g. filter options). */
+  reloadPage?: boolean;
+  /** Policy grant required (menu permission_dtl), e.g. 'create' for Add. */
+  permission?: 'create' | 'update' | 'delete';
+  /** Minimum session admin level (CI `is_admin != 0` → 1). */
+  minAdminLevel?: 0 | 1 | 2;
+  /** Further CI conditions (settings, permission class, current tab). */
+  visible?: (subject: RequestSubject, query: Record<string, string>) => Promise<boolean>;
+  ref: ListActionReference;
+}
+
+/** What the browser receives for a visible action (functions resolved, `ref` dropped). */
+export type ResolvedListAction = Omit<ListActionDefinition, 'visible' | 'ref' | 'dialog' | 'permission' | 'minAdminLevel'> & {
+  dialog?: {
+    title: string;
+    submitText: string;
+    fields: Array<Omit<ListActionField, 'options'> & { options?: Array<{ value: string; label: string }> }>;
+  };
+};
 
 export const LIST_DEFINITIONS = {
   /** CI utilities/dashboard_menu::index() */
@@ -293,6 +389,82 @@ export const LIST_DEFINITIONS = {
     orgColumn: 'OA_BRAND_ID',
     userColumn: 'USER_ID',
     deleteAll: false,
+  },
+  /**
+   * CI timesheet/timesheet::index($status, $period) — the caller's timesheets (brand admins: the
+   * brand's), filtered by ?status= / ?period=. Delete for administrators only (CI is_admin != 0).
+   */
+  timesheet: {
+    title: 'My Timesheet',
+    titleCode: 'TIFE',
+    objNm: 'timesheet_vw',                  // view: prisma/sql/views/timesheet_vw.sql
+    primaryKey: 'TS_ID',
+    policy: menuPolicy('timesheet/timesheet'),
+    editHref: '/timesheet/timesheet/edit',  // Add is a list action (CI "Add New My Timesheet")
+    deleteApi: '/api/timesheet/timesheet',
+    deleteMinLevel: 1,
+    orgColumn: 'OABRANDID',
+    userColumn: 'USERID',
+    scope: ownListScope,
+    listActions: timesheetListActions(false),
+  },
+  /** CI timesheet/timesheet::MyTeamTimesheet($status, $period) — the timesheets the caller approves. */
+  timesheet_team: {
+    title: 'Team Timesheets',
+    titleCode: 'FMTTT',
+    objNm: 'timesheet_vw',
+    primaryKey: 'TS_ID',
+    policy: anyOf(menuPolicy('timesheet/timesheet/MyTeamTimesheet'), menuPolicy('timesheet/timesheet')),
+    editHref: '/timesheet/timesheet/team/edit',
+    deleteApi: '/api/timesheet/timesheet',
+    deleteMinLevel: 1,
+    orgColumn: 'OABRANDID',
+    approverColumn: 'APPROVER_ID',          // CI $approverColumnName / $ApproverID = session user
+    scope: teamListScope,
+    listActions: timesheetListActions(true),
+  },
+  /** CI timesheet/timesheetItem::index() — the caller's timesheet items (brand admins: the brand's), ?period= filter. */
+  timesheet_item: {
+    title: 'Timesheet Item',
+    titleCode: 'TTMN',
+    objNm: 'timesheet_item_vw',             // view: prisma/sql/views/timesheet_vw.sql
+    primaryKey: 'TS_ITEM_ID',
+    policy: anyOf(menuPolicy('timesheet/timesheetItem'), menuPolicy('timesheet/timesheet')),
+    addHref: '/timesheet/timesheetItem/add',
+    editHref: '/timesheet/timesheetItem/edit',
+    deleteApi: '/api/timesheet/timesheetItem',
+    deleteAll: false,
+    orgColumn: 'OABRANDID',
+    userColumn: 'USERID',
+    scope: itemListScope,
+  },
+  /**
+   * CI timesheet/timesheet_emp::index($empStatus) — the brand's timesheet employees (a user: his own
+   * row), ?status= Employment Status filter; "Sync Module" for administrators. Rules: lib/timesheet/timesheetEmployee.
+   */
+  timesheet_emp: {
+    title: 'Timesheet Employee',
+    titleCode: 'TEMN',
+    objNm: 'timesheet_employee_vw',         // view: prisma/sql/views/timesheet_vw.sql
+    primaryKey: 'TS_EMP_ID',
+    policy: timesheetEmpPolicy,
+    editHref: '/timesheet/timesheet_emp/edit',
+    deleteApi: '/api/timesheet/timesheet_emp',
+    orgColumn: 'OABRANDID',
+    userColumn: 'REF_EMP_ID',               // CI $usercolumnname = 'REF_EMP_ID' (session user)
+    scope: timesheetEmpListScope,
+    listActions: timesheetEmpListActions,
+  },
+  /** CI timesheet/timesheet::userProjects($userId) — "My Projects" / "Configure Projects" (no add / edit / delete). */
+  user_projects: {
+    title: 'Configure Projects',
+    objNm: 'user_project_details_vw',       // view: prisma/sql/views/timesheet_vw.sql
+    primaryKey: 'PROJECT_ID',
+    policy: projectsPolicy,
+    orgColumn: 'OA_BRAND_ID',
+    extraColumns: ['UPD_ID'],
+    deleteAll: true,
+    scope: projectsListScope,
   },
   /** CI systmMngt/document_template::index() */
   document_template: {

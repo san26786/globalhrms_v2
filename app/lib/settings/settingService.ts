@@ -80,6 +80,35 @@ export const settingService = {
     return map[code] ?? null;
   },
 
+  /**
+   * CI getSettingAttributeValue for a checkbox (multi-option) attribute: the brand's latest answer is
+   * a comma-separated list of option ids, returned as their labels (e.g. weekly off SSAWKO →
+   * ["Saturday", "Sunday"]). A single-option answer gives a one-element list; no answer → [].
+   */
+  async getValues(code: string, oaBrandId: number): Promise<string[]> {
+    const [latest] = await prisma.$queryRaw<Array<{ raw: string | null }>>`
+      SELECT b."SETTING_ATTRIBUTE_OPTIONS_ID" AS raw
+      FROM oa_brand_setting_attribute_mst b
+      JOIN setting_group_attribute_mst sgam ON sgam."SETTING_ATTRIBUTE_ID" = b."SETTING_ATTRIBUTE_ID"
+      JOIN independent_mst im ON im."MSTR_ID" = sgam."SYSTEM_SETTING_ATTRIBUTE_ID"
+      WHERE im."MSTR_CD" = ${code} AND b."OA_BRAND_ID" = ${oaBrandId} AND sgam."IS_DELETED" = 0
+      ORDER BY b."OA_BRAND_SETTING_ATTRIBUTE_ID" DESC
+      LIMIT 1`;
+    const ids = (latest?.raw ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => /^\d+$/.test(s))
+      .map(Number);
+    if (!ids.length) return [];
+    const rows = await prisma.$queryRaw<Array<{ id: number; label: string | null }>>`
+      SELECT v."SETTING_ATTRIBUTE_OPTIONS_ID" AS id, vim."MSTR_NM" AS label
+      FROM "setting_group_attribute_Value_mst" v
+      JOIN independent_mst vim ON vim."MSTR_ID" = v."SYSTEM_SETTING_ATTRIBUTE_VALUE_ID"
+      WHERE v."SETTING_ATTRIBUTE_OPTIONS_ID" IN (${Prisma.join(ids)})`;
+    const byId = new Map(rows.map((r) => [Number(r.id), r.label?.trim() ?? '']));
+    return ids.map((id) => byId.get(id) ?? '').filter(Boolean);
+  },
+
   /** Brand value, falling back to the system default (brand 0), then to `fallback`. */
   async getValueOrDefault(code: string, oaBrandId: number | null, fallback: string | null = null): Promise<string | null> {
     if (oaBrandId) {

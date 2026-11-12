@@ -13,6 +13,7 @@ import type { DynamicField, FieldRules, SelectOption } from "@/lib/form-builder/
 import { buildDefaultValues } from "@/lib/form-builder/utils/defaultValues";
 import type { ZodType } from "zod";
 import { entityForm, type EntitySpec, type EntitySubject } from "./entityFields";
+import type { FormButton, FormTable } from "./formExtras";
 
 /** Whether an object schema rejects `name` when it is missing (CI 'required' rule). */
 function requiredBy(schema: ZodType | undefined): (name: string) => boolean {
@@ -96,8 +97,13 @@ export type FormConfig<Ctx = any, Params = any, Rec = any, Scope = any> = {
 
   /** Extra inputs the metadata cannot describe (CI formview_v field list). */
   fields?: FieldSpec<ResolvedState<Ctx, Params, Rec, Scope>>[];
+  /**
+   * Per-field additions by name, applied to the entity inputs and `fields` alike — what a CI
+   * controller added around getColDetails (order, a fill script, a read-only attribute…).
+   */
+  fieldProps?: Record<string, Partial<FieldSpec<ResolvedState<Ctx, Params, Rec, Scope>>>>;
   /** Add-mode values (and fallbacks for edit). */
-  defaults?: Row | ((s: ResolvedState<Ctx, Params, Rec, Scope>) => Row);
+  defaults?: Row | ((s: ResolvedState<Ctx, Params, Rec, Scope>) => Row | Promise<Row>);
   /** Existing record → form values (edit mode). Defaults to the record as-is. */
   toValues?: (record: Rec, s: ResolvedState<Ctx, Params, Rec, Scope>) => Row;
   /** Not rendered, value still submitted (CI form_hidden). */
@@ -116,6 +122,15 @@ export type FormConfig<Ctx = any, Params = any, Rec = any, Scope = any> = {
     apiPath?: string;
     submit?: (s: ResolvedState<Ctx, Params, Rec, Scope>) => FormSubmit;
   };
+  /** CI $data['buttons']: workflow actions offered on this record (see formExtras.ts). */
+  buttons?: (s: ResolvedState<Ctx, Params, Rec, Scope> & { canSubmit: boolean }) => Promise<FormButton[]> | FormButton[];
+  /** CI tableHeader / tableBody: child tables shown under the form (see formExtras.ts). */
+  tables?: (s: ResolvedState<Ctx, Params, Rec, Scope> & { canSubmit: boolean }) => Promise<FormTable[]> | FormTable[];
+  /**
+   * CI saveButton = false: the record is shown but cannot be saved (e.g. a submitted timesheet).
+   * Narrows `permissions` per record; it never grants more than they do.
+   */
+  canSubmit?: (s: InitState<Ctx, Params, Rec, Scope>) => Promise<boolean> | boolean;
 };
 
 /** The JSON an init endpoint returns — everything a form page needs to render and save. */
@@ -137,6 +152,10 @@ export interface FormInitPayload<Rec = unknown, Scope = unknown> {
   scope: Scope;
   lookups: Record<string, any>;
   extra: Row;
+  /** CI $data['buttons'] (empty when the config has none). */
+  buttons: FormButton[];
+  /** CI child tables (empty when the config has none). */
+  tables: FormTable[];
 }
 
 const ALL_PERMISSIONS: FormPermissions = { create: true, update: true, delete: true };
@@ -193,7 +212,8 @@ export async function initForm<Ctx, Params, Rec, Scope>(
     })(),
   ]);
   if (mode === "add" && !permissions.create) throw new ForbiddenError();
-  const canSubmit = mode === "add" ? permissions.create : permissions.update;
+  const allowed = mode === "add" ? permissions.create : permissions.update;
+  const canSubmit = allowed && (config.canSubmit ? await config.canSubmit(full) : true);
 
   const extra = config.derive ? await config.derive(lookups, full) : {};
   const state: ResolvedState<Ctx, Params, Rec, Scope> = { ...full, lookups };
@@ -205,8 +225,9 @@ export async function initForm<Ctx, Params, Rec, Scope>(
     lookups[f.name] ? { ...f, type: "select", optionsFrom: f.name } : f,
   );
 
+  const props = config.fieldProps ?? {};
   const fields = resolveFields(
-    [...entitySpecs, ...(config.fields ?? [])],
+    [...entitySpecs, ...(config.fields ?? [])].map((f) => (props[f.name] ? { ...f, ...props[f.name] } : f)),
     state,
     namesFor(config.hiddenFields, state),
     namesFor(config.readonlyFields, state),
@@ -214,7 +235,7 @@ export async function initForm<Ctx, Params, Rec, Scope>(
     !canSubmit,
   );
 
-  const explicitDefaults = typeof config.defaults === "function" ? config.defaults(state) : (config.defaults ?? {});
+  const explicitDefaults = typeof config.defaults === "function" ? await config.defaults(state) : (config.defaults ?? {});
   // Field defaults / type fallbacks first, then the module's defaults.
   const defaults = { ...buildDefaultValues(fields), ...explicitDefaults };
   const recordValues = record
@@ -227,6 +248,12 @@ export async function initForm<Ctx, Params, Rec, Scope>(
     : config.actions?.apiPath
       ? { url: id ? `${config.actions.apiPath}/${id}` : config.actions.apiPath, method: id ? ("PUT" as const) : ("POST" as const) }
       : null;
+
+  const extrasState = { ...state, canSubmit };
+  const [buttons, tables] = await Promise.all([
+    config.buttons ? config.buttons(extrasState) : [],
+    config.tables ? config.tables(extrasState) : [],
+  ]);
 
   return {
     title: id ? config.titles.edit : config.titles.add,
@@ -243,5 +270,7 @@ export async function initForm<Ctx, Params, Rec, Scope>(
     scope,
     lookups,
     extra,
+    buttons,
+    tables,
   };
 }

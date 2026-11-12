@@ -51,6 +51,52 @@ export interface ModuleSyncResult {
 
 const EMP_NAME_SQL = `TRIM(CONCAT(COALESCE(e."EMP_NAME", ''), ' ', COALESCE(e."EMP_MIDDLE_NM", ''), ' ', COALESCE(e."EMPLST_NM", '')))`;
 
+/**
+ * CI modulesync_m::syncEmployeesNew($table, $brand): upsert the brand's employees into a module's
+ * employee table. No authorization here — callers check their own screen's policy (Sync Employee
+ * Details, or a module list's "Sync Module" button such as timesheet/timesheet_emp).
+ */
+export async function syncModuleEmployees(table: ModuleSyncTable, oaBrandId: number) {
+  const { pk } = MODULE_SYNC_MODULES[table];
+  // Identifiers come from the fixed whitelist above, never from the request.
+  const t = `"${table}"`;
+  const k = `"${pk}"`;
+
+  await assertInsertSafe(table, pk);
+
+  const [updated, inserted, managersLinked] = await prisma.$transaction(async (tx) => {
+    const updatedRows = await tx.$executeRawUnsafe(
+      `UPDATE ${t} m
+          SET "EMP_NM" = ${EMP_NAME_SQL}, "REF_EMP_CD" = e."EMP_NBR", "IS_MANAGER" = e."IS_MANAGER"
+         FROM emp_mst e
+        WHERE e."OA_BRAND_ID" = $1 AND m."OA_BRAND_ID" = $1 AND m."REF_EMP_ID" = e."REF_EMP_ID"`,
+      oaBrandId,
+    );
+    const insertedRows = await tx.$executeRawUnsafe(
+      `INSERT INTO ${t} ("REF_EMP_ID", "REF_EMP_CD", "EMP_NM", "IS_MANAGER", "OA_ID", "OA_BRAND_ID", "IS_DELETED")
+       SELECT DISTINCT ON (e."REF_EMP_ID") e."REF_EMP_ID", e."EMP_NBR", ${EMP_NAME_SQL}, e."IS_MANAGER", e."OA_ID", e."OA_BRAND_ID", 0
+         FROM emp_mst e
+        WHERE e."OA_BRAND_ID" = $1 AND e."REF_EMP_ID" IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM ${t} x WHERE x."REF_EMP_ID" = e."REF_EMP_ID" AND x."OA_BRAND_ID" = $1)
+        ORDER BY e."REF_EMP_ID", e."EMP_ID"`,
+      oaBrandId,
+    );
+    // MANAGER_ID = the module-table id of the employee's manager (CI sub-select on emp_mst.MANAGER_ID).
+    const managerRows = await tx.$executeRawUnsafe(
+      `UPDATE ${t} m
+          SET "MANAGER_ID" = (
+            SELECT ct.${k} FROM ${t} ct JOIN emp_mst em ON em."REF_EMP_ID" = ct."REF_EMP_ID"
+             WHERE em."EMP_ID" = e."MANAGER_ID" AND ct."OA_BRAND_ID" = $1
+             ORDER BY ct.${k} LIMIT 1)
+         FROM emp_mst e
+        WHERE e."OA_BRAND_ID" = $1 AND m."OA_BRAND_ID" = $1 AND m."REF_EMP_ID" = e."REF_EMP_ID"`,
+      oaBrandId,
+    );
+    return [updatedRows, insertedRows, managerRows] as const;
+  });
+  return { updated, inserted, managersLinked };
+}
+
 class ModuleSyncService {
   async authorize(subject: RequestSubject) {
     if (!(await policy.check(subject, 'list'))) throw new ForbiddenError();
@@ -69,43 +115,8 @@ class ModuleSyncService {
     const input = moduleSyncSchema.parse(body);
     const brand = await resolveBrand(subject, subject.adminLevel === 2 ? (input.oaBrandId ?? null) : null);
     const table = input.module;
-    const { pk, label } = MODULE_SYNC_MODULES[table];
-    // Identifiers come from the fixed whitelist above, never from the request.
-    const t = `"${table}"`;
-    const k = `"${pk}"`;
-
-    await assertInsertSafe(table, pk);
-
-    const [updated, inserted, managersLinked] = await prisma.$transaction(async (tx) => {
-      const updatedRows = await tx.$executeRawUnsafe(
-        `UPDATE ${t} m
-            SET "EMP_NM" = ${EMP_NAME_SQL}, "REF_EMP_CD" = e."EMP_NBR", "IS_MANAGER" = e."IS_MANAGER"
-           FROM emp_mst e
-          WHERE e."OA_BRAND_ID" = $1 AND m."OA_BRAND_ID" = $1 AND m."REF_EMP_ID" = e."REF_EMP_ID"`,
-        brand.oaBrandId,
-      );
-      const insertedRows = await tx.$executeRawUnsafe(
-        `INSERT INTO ${t} ("REF_EMP_ID", "REF_EMP_CD", "EMP_NM", "IS_MANAGER", "OA_ID", "OA_BRAND_ID", "IS_DELETED")
-         SELECT DISTINCT ON (e."REF_EMP_ID") e."REF_EMP_ID", e."EMP_NBR", ${EMP_NAME_SQL}, e."IS_MANAGER", e."OA_ID", e."OA_BRAND_ID", 0
-           FROM emp_mst e
-          WHERE e."OA_BRAND_ID" = $1 AND e."REF_EMP_ID" IS NOT NULL
-            AND NOT EXISTS (SELECT 1 FROM ${t} x WHERE x."REF_EMP_ID" = e."REF_EMP_ID" AND x."OA_BRAND_ID" = $1)
-          ORDER BY e."REF_EMP_ID", e."EMP_ID"`,
-        brand.oaBrandId,
-      );
-      // MANAGER_ID = the module-table id of the employee's manager (CI sub-select on emp_mst.MANAGER_ID).
-      const managerRows = await tx.$executeRawUnsafe(
-        `UPDATE ${t} m
-            SET "MANAGER_ID" = (
-              SELECT ct.${k} FROM ${t} ct JOIN emp_mst em ON em."REF_EMP_ID" = ct."REF_EMP_ID"
-               WHERE em."EMP_ID" = e."MANAGER_ID" AND ct."OA_BRAND_ID" = $1
-               ORDER BY ct.${k} LIMIT 1)
-           FROM emp_mst e
-          WHERE e."OA_BRAND_ID" = $1 AND m."OA_BRAND_ID" = $1 AND m."REF_EMP_ID" = e."REF_EMP_ID"`,
-        brand.oaBrandId,
-      );
-      return [updatedRows, insertedRows, managerRows] as const;
-    });
+    const { label } = MODULE_SYNC_MODULES[table];
+    const { updated, inserted, managersLinked } = await syncModuleEmployees(table, brand.oaBrandId);
 
     return {
       module: table,

@@ -15,6 +15,8 @@ export type FieldType =
   | "date"
   | "datetime"
   | "time"
+  /** Native date input; the value is the calendar day "yyyy-mm-dd" (DATE columns). */
+  | "date-input"
   | "file"
   | "switch"
   | "hidden";
@@ -98,6 +100,14 @@ export interface DynamicField {
    * options stay empty — that is how the child waits for its parent.
    */
   optionsUrl?: string;
+
+  /**
+   * CI form script that fills other inputs from the chosen value (e.g. a period fills its start and
+   * end dates): when the user changes this field, `url` ({name} placeholders filled with current
+   * values) is fetched and every `map` target field is set from that key of the response data.
+   * An empty value clears the targets. Loading a record does not trigger it.
+   */
+  fillFrom?: { url: string; map: Record<string, string> };
 }
 
 export interface DynamicForm {

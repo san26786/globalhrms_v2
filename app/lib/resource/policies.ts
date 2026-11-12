@@ -43,6 +43,20 @@ export const readOnlyForAll: AccessPolicy = {
  * on the menu entry of `menuUrl` (CI-style path, e.g. 'systmInfoMgr/systm_setting').
  * If no menu entry exists for the URL the `fallback` policy decides (default: admins only).
  */
+/**
+ * Allowed when any of the policies allows (checked in order). CI checked the grant of the menu the
+ * user came from (session permission_id = ?pid), so a sub-screen reached from a parent menu (e.g. a
+ * timesheet's items, reached from Timesheet) is allowed by the parent's grant as well as its own.
+ */
+export function anyOf(...policies: AccessPolicy[]): AccessPolicy {
+  return {
+    async check(subject, action) {
+      for (const p of policies) if (await p.check(subject, action)) return true;
+      return false;
+    },
+  };
+}
+
 export function menuPolicy(menuUrl: string, fallback: AccessPolicy = adminOnly): AccessPolicy {
   return {
     async check(subject, action) {
