@@ -236,7 +236,7 @@ export default function HubForm({
   return (
     <ResourceFormPage<HubValues>
       title={`${mode === "add" ? "Add" : "Edit"} ${info.noun}`}
-      breadcrumb={["Employee Hub", info.title]}
+      breadcrumb={[info.section ?? "Employee Hub", info.title]}
       mode={mode}
       id={id}
       apiPath={api}

@@ -119,6 +119,8 @@ export interface HubConfig {
   noCreate?: boolean;
   /** Initial values of the add form. */
   defaults?: (subject: RequestSubject, brand: number | null) => Promise<HubValues>;
+  /** The list's own filters (CI customFields: month / year pickers): a condition on the row keys (alias v), or null. */
+  listFilter?: (rawQuery: Record<string, string>, sql: SqlBuilder) => string | null;
 }
 
 // ------------------------------------------------------------------ validation helper
@@ -469,6 +471,9 @@ async function contextFor(subject: RequestSubject, cfg: HubConfig, employee: Emp
 
 export function hubService(cfg: HubConfig) {
   return {
+    /** What the caller may do on the screen (its sub-resources use it too). */
+    permissions: (subject: RequestSubject) => permissions(subject, cfg),
+
     async list(subject: RequestSubject, rawQuery: Record<string, string>): Promise<ListResult<Record<string, unknown>> & { permissions: ResourcePermissions }> {
       await requireGrant(subject, cfg, 'list');
       const query = parseListQuery(rawQuery);
@@ -477,6 +482,8 @@ export function hubService(cfg: HubConfig) {
       const emp = Number(rawQuery.emp);
       const empFilter = Number.isInteger(emp) && emp > 0 ? `AND em."EMP_ID" = ${sql.p(emp)}::integer` : '';
       const filters: string[] = [];
+      const own = cfg.listFilter?.(rawQuery, sql);
+      if (own) filters.push(own);
       if (query.search) {
         const term = sql.p(`%${query.search}%`);
         filters.push(`(${['EMP_NBR', 'EMP_FULL_NAME', ...cfg.search].map((c) => `v."${c}"::text ILIKE ${term}`).join(' OR ')})`);

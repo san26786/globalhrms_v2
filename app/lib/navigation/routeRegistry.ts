@@ -121,6 +121,11 @@ const SAME_PATH: readonly string[] = [
   'employeeMngt/empPicture',
   'employeeMngt/member_documents',
   'employeeMngt/termination',
+  // Payroll — inputs (group P1)
+  'advance_salary/advance_salary',
+  'incentive/incentive',
+  'attndMngt/payroll_summary',
+  'outdoor_allowance/outdoor_allowance',
   // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
   'job/job_mst',
   'job/job_mst/probation',

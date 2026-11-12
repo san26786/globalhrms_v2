@@ -30,7 +30,11 @@ export type HubScreenKey =
   | 'exit_gna'
   | 'exit_finance'
   | 'exit_facilities'
-  | 'exit_hr';
+  | 'exit_hr'
+  | 'outdoor_allowance'
+  | 'payroll_summary'
+  | 'advance_salary'
+  | 'incentive';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -43,9 +47,14 @@ export interface HubScreenInfo {
   noun: string;
   /** Page path when it is not /employeeMngt/<key> (Job Detail lives under job/). */
   base?: string;
+  /** Breadcrumb root (default "Employee Hub"). */
+  section?: string;
 }
 
 const EXIT_MENU = 'department_activity/department_head_supervisor';
+
+/** Payroll inputs (group P1) follow the same per-employee record pattern. */
+const PAYROLL = 'Payroll';
 
 export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
   empContactAddress: { menu: 'employeeMngt/empContactAddress', title: 'Address', objectName: 'contact_address_vw', noun: 'Employee Address' },
@@ -93,6 +102,19 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
     menu: EXIT_MENU, title: 'Facilities/IT', objectName: 'facilities_it_vw', noun: 'Facilities/IT Details', base: '/department_activity/department_head_supervisor/facilities',
   },
   exit_hr: { menu: EXIT_MENU, title: 'Human Resource', objectName: 'human_resource_vw', noun: 'Human Resource Details', base: '/department_activity/department_head_supervisor/hr' },
+  outdoor_allowance: {
+    menu: 'outdoor_allowance/outdoor_allowance', title: 'Outdoor Allowance Details', objectName: 'outdoor_allowance_vw', noun: 'Outdoor Allowance Detail',
+    base: '/outdoor_allowance/outdoor_allowance', section: PAYROLL,
+  },
+  payroll_summary: {
+    menu: 'attndMngt/payroll_summary', title: 'Payroll Attendance Summary', objectName: 'payroll_attendance_summary_vw', noun: 'Payroll Summary',
+    base: '/attndMngt/payroll_summary', section: PAYROLL,
+  },
+  advance_salary: {
+    menu: 'advance_salary/advance_salary', title: 'Advance Salary', objectName: 'advance_salary_vw', noun: 'Advance Salary',
+    base: '/advance_salary/advance_salary', section: PAYROLL,
+  },
+  incentive: { menu: 'incentive/incentive', title: 'Incentive', objectName: 'incentive_vw', noun: 'Incentive', base: '/incentive/incentive', section: PAYROLL },
 };
 
 export const isHubScreen = (key: string): key is HubScreenKey => Object.prototype.hasOwnProperty.call(HUB_SCREENS, key);

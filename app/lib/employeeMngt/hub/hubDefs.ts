@@ -20,6 +20,10 @@ import { memberDocumentsDefs } from './defs/member_documents';
 import { membershipDefs } from './defs/membership';
 import { terminationDefs } from './defs/termination';
 import { exitClearanceDefs, exitStepDefs } from './defs/exit_clearance';
+import { outdoorAllowanceDefs } from './defs/outdoor_allowance';
+import { payrollSummaryDefs } from './defs/payroll_summary';
+import { advanceSalaryDefs } from './defs/advance_salary';
+import { incentiveDefs } from './defs/incentive';
 import type { HubScreenDefs } from './hubFields';
 import type { HubScreenKey } from './hubTypes';
 
@@ -49,4 +53,8 @@ export const HUB_DEFS: Record<HubScreenKey, HubScreenDefs> = {
   termination: terminationDefs,
   exit_clearance: exitClearanceDefs,
   ...exitStepDefs,
+  outdoor_allowance: outdoorAllowanceDefs,
+  payroll_summary: payrollSummaryDefs,
+  advance_salary: advanceSalaryDefs,
+  incentive: incentiveDefs,
 };

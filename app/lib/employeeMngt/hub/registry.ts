@@ -23,6 +23,10 @@ import { memberDocumentsConfig } from './screens/member_documents';
 import { membershipConfig } from './screens/membership';
 import { terminationConfig } from './screens/termination';
 import { exitClearanceConfig, exitStepConfigs } from './screens/exit_clearance';
+import { outdoorAllowanceConfig } from './screens/outdoor_allowance';
+import { payrollSummaryConfig } from './screens/payroll_summary';
+import { advanceSalaryConfig } from './screens/advance_salary';
+import { incentiveConfig } from './screens/incentive';
 
 /** Server configs of the Employee Hub record screens. */
 const CONFIGS: Record<HubScreenKey, HubConfig> = {
@@ -50,6 +54,10 @@ const CONFIGS: Record<HubScreenKey, HubConfig> = {
   termination: terminationConfig,
   exit_clearance: exitClearanceConfig,
   ...exitStepConfigs,
+  outdoor_allowance: outdoorAllowanceConfig,
+  payroll_summary: payrollSummaryConfig,
+  advance_salary: advanceSalaryConfig,
+  incentive: incentiveConfig,
 };
 
 const services = new Map<HubScreenKey, HubService>();

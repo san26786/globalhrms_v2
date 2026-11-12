@@ -54,7 +54,7 @@ export default function DynamicFieldWrapper({
         <div className="w-1/4 space-y-0 text-end">
           <label
             htmlFor={htmlFor}
-            className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 brand:text-[#323338] dark:text-[#d5dae4]"
+            className="inline-flex items-center gap-1 text-[13px] font-medium text-gray-700 brand:text-[#323338] dark:text-[#d5dae4]"
           >
             <span>{label}</span>
 

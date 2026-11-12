@@ -245,7 +245,7 @@ export default function Header({
           <span className="text-[#535768] dark:text-[#aab3c5] text-[11px] font-medium uppercase tracking-widest hidden sm:block truncate">
             {brandName ? `Welcome to ${brandName}` : 'Enterprise HR Console'}
           </span>
-          <span className="text-[#1a1818] dark:text-[#f1f3f8] text-[15px] sm:text-[17px] font-medium tracking-[-0.01em] flex items-center gap-1 mt-1 sm:mt-1.5 leading-none">
+          <span className="text-[#1a1818] dark:text-[#f1f3f8] text-[14px] sm:text-[15px] font-medium tracking-[-0.01em] flex items-center gap-1 mt-1 sm:mt-1.5 leading-none">
             Welcome back, <span className="text-[#0b5394] dark:text-[#8cb8f0] font-semibold truncate">{displayName}</span>
           </span>
         </div>
@@ -484,7 +484,7 @@ export default function Header({
                   {initial}
                 </div>
                 <div className="flex flex-col leading-none">
-                  <span className="text-[14px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{displayName}</span>
+                  <span className="text-[13px] font-semibold text-[#1a1818] dark:text-[#f1f3f8]">{displayName}</span>
                   <span className="text-[12px] text-[#535768] dark:text-[#aab3c5] mt-1">{USER_LEVEL_LABEL[session.userLevel]}</span>
                 </div>
               </div>

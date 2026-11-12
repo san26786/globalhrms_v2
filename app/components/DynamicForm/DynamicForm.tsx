@@ -67,7 +67,7 @@ export default function DynamicForm<T extends FieldValues>({
       <div className="rounded-3xl border bg-white p-6 shadow-sm brand:relative brand:border-slate-200 brand:shadow-[0_1px_2px_rgba(16,24,40,0.04)] brand:before:absolute brand:before:inset-x-8 brand:before:top-0 brand:before:h-1 brand:before:rounded-b-full brand:before:bg-gradient-to-r brand:before:from-[#e15425] brand:before:to-[#0b5394] dark:border-white/10 dark:bg-[#111a2e]">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 brand:text-[#535768] dark:text-[#aab3c5]">
+            <div className="flex items-center gap-2 text-[13px] text-gray-500 brand:text-[#535768] dark:text-[#aab3c5]">
               {breadcrumb.map((crumb) => (
                 <React.Fragment key={crumb}>
                   <span>{crumb}</span>
@@ -80,8 +80,8 @@ export default function DynamicForm<T extends FieldValues>({
             </div>
 
             <div className="mt-2 flex items-center gap-2 brand:mt-3 brand:gap-3">
-              <Database className="text-blue-600 h-6 w-6 brand:h-11 brand:w-11 brand:shrink-0 brand:rounded-xl brand:bg-[#fbe6dd] brand:p-2.5 brand:text-[#b4441f] dark:bg-[#da5427]/15 dark:text-[#f8a27e]" />
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800 brand:font-semibold brand:text-[28px] brand:leading-tight brand:tracking-[-0.03em] brand:text-[#1a1818] brand:md:text-[32px] dark:text-[#f1f3f8] animate-in fade-in slide-in-from-left-2 duration-200">
+              <Database className="text-blue-600 h-6 w-6 brand:h-9 brand:w-9 brand:shrink-0 brand:rounded-xl brand:bg-[#fbe6dd] brand:p-2 brand:text-[#b4441f] dark:bg-[#da5427]/15 dark:text-[#f8a27e]" />
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-800 brand:font-semibold brand:text-[22px] brand:leading-tight brand:tracking-[-0.02em] brand:text-[#1a1818] brand:md:text-[24px] dark:text-[#f1f3f8] animate-in fade-in slide-in-from-left-2 duration-200">
                 {title}
               </h1>
             </div>
