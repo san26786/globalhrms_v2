@@ -1,9 +1,11 @@
 import { BusinessRuleError } from '@/lib/http/errors';
+import { getMasterId } from '@/lib/masters/masterService';
 import { prisma } from '@/lib/prisma';
 import { savePhone } from '../../empContacts';
 import { empPhoneDefs } from '../defs/emp_phone';
 import { asId, insertRow, masterName, softDeleteRow, str, updateRow, type HubConfig, type HubContext, type Tx } from '../hubEngine';
 import { keepCurrent, masterLabel, mastersByCode } from '../hubOptions';
+import type { HubValues } from '../hubTypes';
 
 /**
  * CI employeeMngt/emp_phone ("Employee Phone"): an employee's phone numbers (oa_contact_phones rows with
@@ -84,6 +86,12 @@ export const empPhoneConfig: HubConfig = {
   bind: { COUNTRY_CODE: 'COUNTRY_CODE', phone_typ: 'PHONE_TYPE', is_primary: 'IS_PRIMARY' },
   deleteMode: 'soft',
   messages: { created: 'Successfully Added Employee Phone', updated: 'Successfully Updated Employee Phone Details', deleted: 'Successfully Deleted' },
+
+  // CI preselected +44 (master 3623, CC44) on the add form.
+  defaults: async (): Promise<HubValues> => {
+    const cc44 = await getMasterId('CC44');
+    return cc44 ? { COUNTRY_CODE: String(cc44) } : {};
+  },
 
   options: async (_subject, _brand, row) => {
     const [codes, types] = await Promise.all([mastersByCode('CTCD'), mastersByCode('PNT')]);

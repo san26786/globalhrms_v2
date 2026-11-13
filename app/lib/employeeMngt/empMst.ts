@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { menuPolicy } from '@/lib/resource/policies';
 import { activeBrand, brandOrgId, type IdLabel } from '@/lib/systmMngt/shared';
 import { linkEmail, linkPhone, type ContactOwner } from './empContacts';
-import { EMAIL_EXPR, PHONE_EXPR, SqlBuilder, managerOptions, scopeFor } from './empList';
+import { EMAIL_EXPR, PHONE_EXPR, SqlBuilder, managerOptions, ownEmployeeId, scopeFor } from './empList';
 import {
   EMP_SCREENS,
   USER_READ_ONLY,
@@ -71,6 +71,16 @@ async function findAccessible(subject: RequestSubject, empId: number, action: 'r
               to_char(em."EMP_DRI_LICE_EXP_DATE", 'YYYY-MM-DD') AS dl_exp_text, ${EMAIL_EXPR} AS email_text, ${PHONE_EXPR} AS phone_text
        FROM emp_mst em WHERE em."EMP_ID" = ${sql.p(empId)} AND em."IS_DELETED" = 0 AND ${scope} LIMIT 1`,
       ...sql.params,
+    );
+    if (rows[0]) return rows[0];
+  }
+  // CI employeeMngt/emp_mst/myInfo (a normal user's login landing): their own record, with no menu grant needed.
+  if (action !== 'delete' && subject.oaBrandId) {
+    const rows = await prisma.$queryRawUnsafe<Row[]>(
+      `SELECT em.*, to_char(em."DOB", 'YYYY-MM-DD') AS dob_text, to_char(em."MARRIAGE_DATE", 'YYYY-MM-DD') AS marriage_text,
+              to_char(em."EMP_DRI_LICE_EXP_DATE", 'YYYY-MM-DD') AS dl_exp_text, ${EMAIL_EXPR} AS email_text, ${PHONE_EXPR} AS phone_text
+       FROM emp_mst em WHERE em."EMP_ID" = $1::int AND em."IS_DELETED" = 0 AND em."REF_EMP_ID" = $2::int AND em."OA_BRAND_ID" = $3::int LIMIT 1`,
+      empId, subject.userId, subject.oaBrandId,
     );
     if (rows[0]) return rows[0];
   }
@@ -294,10 +304,13 @@ export const empMstService = {
   /** CI initForm data: dropdowns, Caste / Race for India brands, the user's read-only fields. */
   async form(subject: RequestSubject): Promise<EmpFormModel> {
     const can = await Promise.all((['all', 'team'] as EmpScreen[]).map((sc) => menuPolicy(EMP_SCREENS[sc].menu).check(subject, 'list')));
-    if (!can.some(Boolean)) throw new ForbiddenError();
+    const own = await ownEmployeeId(subject);
+    // My Info: a user may open their own form without the Employee Manager grant (CI myInfo).
+    if (!can.some(Boolean) && !own) throw new ForbiddenError();
     const brand = activeBrand(subject);
-    const [options, india] = await Promise.all([formOptions(subject, brand), isIndiaBrand(brand)]);
-    return { options, showCasteRace: india, restricted: subject.adminLevel === 0 };
+    const [options, india, cc91] = await Promise.all([formOptions(subject, brand), isIndiaBrand(brand), getMasterId('CC91')]);
+    // CI preselected +91 (CC91) on the add form and for a record without a code.
+    return { options, showCasteRace: india, restricted: subject.adminLevel === 0, defaultCountryCode: cc91, ownEmployeeId: own };
   },
 
   async get(subject: RequestSubject, rawId: string): Promise<EmpValues> {

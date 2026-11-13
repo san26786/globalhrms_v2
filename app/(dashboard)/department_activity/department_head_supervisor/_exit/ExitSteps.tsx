@@ -5,38 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { authFetch } from "@/lib/auth/authFetch";
 import { EXIT_STEPS, type ExitStepKey } from "@/lib/employeeMngt/hub/defs/exit_clearance";
-import { HUB_SCREENS, hubBase } from "@/lib/employeeMngt/hub/hubTypes";
+import { HUB_SCREENS } from "@/lib/employeeMngt/hub/hubTypes";
 import HubForm from "../../../employeeMngt/_hub/HubForm";
+import ExitHrForm from "./ExitHrForm";
+import { LIST, formHref, nextAfter, stepRecord } from "./exitClient";
 
 /**
  * CI department_activity/* (exit_form_tabs_v): an employee's exit clearance, one department per tab, in
  * CI's "Save And Next" order (Department Head / Supervisor → G&A → Finance → Facilities / IT → HR → the
- * clearance list). A step opens its saved record, or a new one.
+ * clearance list). A step opens its saved record, or a new one. The Human Resource step adds CI's
+ * document buttons (ExitHrForm). Routes and API helpers: ./exitClient.
  */
-const LIST = hubBase("exit_clearance");
-
-/** The step's own page for the employee: picks edit or add (steps 2–5). */
-export const stepEntry = (key: ExitStepKey, emp: string) => `${hubBase(key)}?emp=${encodeURIComponent(emp)}`;
-
-/** Where a save of `key` goes: the next department, or back to the list after the last one. */
-export function nextAfter(key: ExitStepKey, emp: string): string {
-  const i = EXIT_STEPS.findIndex((s) => s.key === key);
-  const following = EXIT_STEPS[i + 1];
-  return following ? stepEntry(following.key, emp) : LIST;
-}
-
-/** The employee's live record of the step, if any. */
-async function stepRecord(key: ExitStepKey, emp: string): Promise<number | null> {
-  const res = await authFetch(`/api/employeeMngt/${key}?${new URLSearchParams({ emp, page: "1", limit: "1" })}`);
-  const json = (await res.json().catch(() => null)) as { success?: boolean; data?: Array<{ id: number }>; message?: string } | null;
-  if (!res.ok || !json?.success) throw new Error(json?.message ?? "Could not load the exit clearance.");
-  return json.data?.[0]?.id ?? null;
-}
-
-const formHref = (key: ExitStepKey, emp: string, id: number | null) =>
-  `${hubBase(key)}/${id ? `edit/${id}` : "add"}?emp=${encodeURIComponent(emp)}`;
 
 /** The department tabs for one employee; a tab not yet saved shows as pending. */
 export function ExitStepTabs({ emp, current }: { emp: string; current: ExitStepKey }) {
@@ -81,7 +61,11 @@ export function ExitStepForm({ step, mode, id, emp }: { step: ExitStepKey; mode:
   return (
     <>
       {emp ? <ExitStepTabs emp={emp} current={step} /> : null}
-      <HubForm screen={step} mode={mode} id={id} emp={emp} back={LIST} next={(employee) => nextAfter(step, employee)} />
+      {step === "exit_hr" ? (
+        <ExitHrForm mode={mode} id={id} emp={emp} />
+      ) : (
+        <HubForm screen={step} mode={mode} id={id} emp={emp} back={LIST} next={(employee) => nextAfter(step, employee)} />
+      )}
     </>
   );
 }

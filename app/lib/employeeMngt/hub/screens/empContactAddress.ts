@@ -51,6 +51,19 @@ export const employeeAddressSql = (alias: string) => `(SELECT ${FULL_ADDRESS} FR
   ORDER BY (t."IS_PRIMARY_ADD" ~ '^\\s*0*1(\\.0*)?\\s*$') DESC, (t."IS_CURRENT_ADD" ~ '^\\s*0*1(\\.0*)?\\s*$') DESC, t."CNTCT_ADD_ID" DESC
   LIMIT 1)`;
 
+/**
+ * The employee `alias`'s address of one type (CI emp_mst_vw: OFFICE_ADDRESS = type CATO, RESIDENTIAL_ADDRESS = type CATH and
+ * primary) as one line — for the ESR reports.
+ */
+export const employeeAddressOfTypeSql = (alias: string, typeCode: string, primaryOnly = false) => `(SELECT ${FULL_ADDRESS} FROM contact_address t
+  LEFT JOIN address_mst am ON am."ADDRESS_ID" = t."ADD_ID"
+  WHERE t."IS_DELETED" = 0 AND am."ADDRESS_ID" IS NOT NULL
+    AND t."CNTCT_ADD_TYPE_ID" = (SELECT im."MSTR_ID" FROM independent_mst im WHERE im."MSTR_CD" = '${typeCode.replace(/[^A-Z]/g, '')}' ORDER BY im."MSTR_ID" LIMIT 1)
+    ${primaryOnly ? `AND t."IS_PRIMARY_ADD" ~ '^\\s*0*1(\\.0*)?\\s*$'` : ''}
+    AND COALESCE((SELECT cm."REF_EMP_ID" FROM contact_mst cm WHERE cm."CNTCT_ID" = t."CNTCT_ID"), t."USER_ID") = ${alias}."REF_EMP_ID"
+  ORDER BY t."CNTCT_ADD_ID" DESC
+  LIMIT 1)`;
+
 /** Text value or null. */
 const text = (v: string | boolean) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 

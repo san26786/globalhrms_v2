@@ -21,11 +21,38 @@ export interface RouteRule {
   ci: string;
   /** Next href template, e.g. '/common/master-data?typeId=:typeId'. */
   next: string;
+  /** Forward only (an old CI link): never used to name the current page, so the screen's own rule — and its menu
+   *  grant — governs it. */
+  legacy?: boolean;
 }
 
 /* ------------------------------------------------------------------------------------------ */
 /* Registry — one row per migrated CI screen                                                    */
 /* ------------------------------------------------------------------------------------------ */
+
+/** Employee Hub — an employee's record screens (app/(dashboard)/employeeMngt/[screen]); CI opened them as {screen}/index/{emp}. */
+const EMP_RECORD_SCREENS: readonly string[] = [
+  'employeeMngt/empContactAddress',
+  'employeeMngt/emp_education',
+  'employeeMngt/emergency_contact_dtl',
+  'employeeMngt/emp_email',
+  'employeeMngt/emp_phone',
+  'employeeMngt/emp_language',
+  'employeeMngt/dependent_dtl',
+  'employeeMngt/bank_dtl',
+  'employeeMngt/emp_nationality',
+  'employeeMngt/membership',
+  'employeeMngt/empLicence',
+  'employeeMngt/empWorkExp',
+  'employeeMngt/immigration_dtl',
+  'employeeMngt/emp_investments',
+  'employeeMngt/emp_reporting',
+  'employeeMngt/emp_work_shift',
+  'employeeMngt/empReportingLocations',
+  'employeeMngt/empPicture',
+  'employeeMngt/member_documents',
+  'employeeMngt/termination',
+];
 
 /** Screens whose Next route is the CI URI itself (module folders were kept 1:1). */
 const SAME_PATH: readonly string[] = [
@@ -100,27 +127,10 @@ const SAME_PATH: readonly string[] = [
   // Employee Hub
   'employeeMngt/emp_mst',
   'employeeMngt/emp_mst/MyTeamEmployee',
+  // CI myInfo: a normal user's own Personal form
+  'employeeMngt/emp_mst/myInfo',
   // Employee Hub — an employee's records (app/(dashboard)/employeeMngt/[screen])
-  'employeeMngt/empContactAddress',
-  'employeeMngt/emp_education',
-  'employeeMngt/emergency_contact_dtl',
-  'employeeMngt/emp_email',
-  'employeeMngt/emp_phone',
-  'employeeMngt/emp_language',
-  'employeeMngt/dependent_dtl',
-  'employeeMngt/bank_dtl',
-  'employeeMngt/emp_nationality',
-  'employeeMngt/membership',
-  'employeeMngt/empLicence',
-  'employeeMngt/empWorkExp',
-  'employeeMngt/immigration_dtl',
-  'employeeMngt/emp_investments',
-  'employeeMngt/emp_reporting',
-  'employeeMngt/emp_work_shift',
-  'employeeMngt/empReportingLocations',
-  'employeeMngt/empPicture',
-  'employeeMngt/member_documents',
-  'employeeMngt/termination',
+  ...EMP_RECORD_SCREENS,
   // Payroll — inputs (group P1)
   'advance_salary/advance_salary',
   'incentive/incentive',
@@ -166,8 +176,11 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'employeeMngt/emp_mst/editEmployeeMst/:id', next: '/employeeMngt/emp_mst/edit/:id' },
   { ci: 'employeeMngt/emp_mst/editEmployeeMst/:id/TEAM_EMP', next: '/employeeMngt/emp_mst/MyTeamEmployee/edit/:id' },
   // Payroll — Employee Details: CI's form (also Employee Manager's "Complete Hr Process") → the employee's row
-  { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp', next: '/employeeMngt/emp_hrprocess?emp=:emp' },
-  { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp/:fp', next: '/employeeMngt/emp_hrprocess?emp=:emp' },
+  { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp', next: '/employeeMngt/emp_hrprocess?emp=:emp', legacy: true },
+  { ci: 'employeeMngt/emp_hrprocess/addhrdetails/:emp/:fp', next: '/employeeMngt/emp_hrprocess?emp=:emp', legacy: true },
+  // Employee Hub — an employee's tabs (CI emp_tabs_v links {screen}/index/{emp})
+  ...EMP_RECORD_SCREENS.map((s) => ({ ci: `${s}/index/:emp`, next: `/${s}?emp=:emp`, legacy: true })),
+  { ci: 'job/job_mst/index/:emp', next: '/job/job_mst?emp=:emp', legacy: true },
   // Payroll — an employee's annexures (Employee Master tab)
   { ci: 'employeeMngt/emp_sal_component_mst/emp_annexures/:emp', next: '/employeeMngt/emp_sal_component_mst/annexures?emp=:emp' },
   { ci: 'employeeMngt/emp_sal_component_mst/index', next: '/employeeMngt/emp_sal_component_mst' },
@@ -383,6 +396,7 @@ export function matchScore(href: string, pathname: string, search: URLSearchPara
 export function ciUrlForLocation(pathname: string, search: URLSearchParams): string | null {
   let best: { score: number; ci: string } | null = null;
   for (const c of COMPILED) {
+    if (c.rule.legacy) continue;
     // Rules with captures are reversed through their query / path parameters.
     const captures: Record<string, string> = {};
     const target = parseHref(c.rule.next);

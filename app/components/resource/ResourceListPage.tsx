@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Eye, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/DataTable";
@@ -68,6 +68,16 @@ interface ResourceListPageProps<T> {
   deleteAll?: boolean;
   /** Extra controls rendered above the table (CI listview $customFields). */
   toolbar?: (ctx: { refresh: () => void }) => React.ReactNode;
+  /**
+   * CI listview's search box under every column: each column without a `filterParam` gets one, sent as
+   * `cs_<column key>=text` (the API matches it as "contains", across all pages — lib/resource/columnSearch.ts).
+   */
+  columnSearch?: boolean;
+  /** CI $emp_tabs: the employee's tab strip above the list, and the "Next Tab" chevron. */
+  tabs?: React.ReactNode;
+  nextTabHref?: string;
+  /** Without the edit grant, offer "View" (the edit form, read-only) instead of nothing (CI showed the record). */
+  viewWhenReadOnly?: boolean;
 }
 
 interface ListContext {
@@ -100,6 +110,10 @@ export default function ResourceListPage<T>({
   canDeleteRow,
   deleteAll = true,
   toolbar,
+  columnSearch = false,
+  tabs,
+  nextTabHref,
+  viewWhenReadOnly = false,
 }: ResourceListPageProps<T>) {
   const router = useRouter();
   const [pendingDelete, setPendingDelete] = useState<T[] | null>(null);
@@ -133,7 +147,7 @@ export default function ResourceListPage<T>({
     accessorKey: c.key,
     header: c.header,
     enableSorting: !!c.sortKey,
-    enableColumnFilter: !!c.filterParam,
+    enableColumnFilter: !!c.filterParam || columnSearch,
     ...(c.cell ? { cell: ({ row }) => c.cell!(row.original) } : {}),
   }));
 
@@ -150,6 +164,9 @@ export default function ResourceListPage<T>({
             onClick: (row: T) => router.push(editHref ? editHref(row) : `${basePath}/edit/${getId(row)}`),
           },
         ]
+      : []),
+    ...(!permissions.update && viewWhenReadOnly
+      ? [{ label: "View", icon: Eye, show: canEditRow, onClick: (row: T) => router.push(editHref ? editHref(row) : `${basePath}/edit/${getId(row)}`) }]
       : []),
     ...extraRowActions,
     ...(canDelete
@@ -222,6 +239,8 @@ export default function ResourceListPage<T>({
       onDeleteSelected={canDelete && deleteAll ? () => setPendingDelete(deletable(selected)) : undefined}
       selectedCount={selected.length}
       filters={toolbar?.({ refresh })}
+      tabs={tabs}
+      nextTabHref={nextTabHref}
     >
       {error && <p className="mb-3 text-sm text-red-500 brand:text-rose-700 dark:text-rose-300">{error}</p>}
 
@@ -238,7 +257,9 @@ export default function ResourceListPage<T>({
                 Object.fromEntries(
                   effectiveColumns.flatMap((c) => {
                     const value = filters[c.sortKey ?? c.key];
-                    return c.filterParam && value ? [[c.filterParam, value]] : [];
+                    if (!value) return [];
+                    if (c.filterParam) return [[c.filterParam, value]];
+                    return columnSearch ? [[`cs_${c.key}`, value]] : [];
                   }),
                 ),
               ),

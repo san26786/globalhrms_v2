@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type DefaultValues, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
+import type { LucideIcon } from "lucide-react";
 
 import DynamicForm from "@/components/DynamicForm/DynamicForm";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
@@ -52,6 +53,18 @@ interface ResourceFormPageProps<TForm extends FieldValues, TDto> {
   submitMethod?: "POST" | "PUT";
   /** Offer "Save and Add" in add mode (default true). */
   allowSaveAndAdd?: boolean;
+  /** Also offer it on the edit form (CI formview_v): save, then open the add form (`addHref`, default `${basePath}/add`). */
+  saveAndAddOnEdit?: boolean;
+  addHref?: string;
+  /**
+   * Runs after a "Save and Add" save, before the form resets (add) or the add form opens (edit) — e.g. to upload a file
+   * for the saved record. Return false to stop there.
+   */
+  onSavedAndAdd?: (data: unknown) => Promise<boolean | void> | boolean | void;
+  /** More save buttons (CI "Save And Next"…): each saves, then calls its `after` with the response data. */
+  extraSaves?: Array<{ key: string; label: string; icon?: LucideIcon; after: (data: unknown) => void }>;
+  /** False: view only — no save buttons (a caller without the edit grant). */
+  canSubmit?: boolean;
   /** Called with the response data after a successful save instead of navigating to basePath. */
   onSaved?: (data: unknown) => void;
   /**
@@ -113,6 +126,11 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   submitUrl,
   submitMethod,
   allowSaveAndAdd = true,
+  saveAndAddOnEdit = false,
+  addHref,
+  onSavedAndAdd,
+  extraSaves = [],
+  canSubmit: canSubmitProp,
   onSaved,
   useFormEffects = noFormEffects,
   children,
@@ -153,7 +171,9 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldLoad, initUrl, loadUrl, id, apiPath, mode]);
 
-  const save = async (values: TForm, andAdd: boolean) => {
+  /** `kind`: "save", "add" (Save and Add) or the key of one of `extraSaves`. */
+  const save = async (values: TForm, kind: string) => {
+    const andAdd = kind === "add";
     setSubmitting(true);
     try {
       const target = init?.submit ?? {
@@ -175,8 +195,13 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
         throw new Error(json.message ?? "Save failed.");
       }
       toast.success(json.data?.message ?? (mode === "edit" ? "Successfully updated record." : "Successfully added."));
-      if (andAdd) form.reset((init?.defaults as DefaultValues<TForm> | undefined) ?? defaultValues);
-      else if (onSaved) onSaved(json.data);
+      const extra = extraSaves.find((x) => x.key === kind);
+      if (extra) extra.after(json.data);
+      else if (andAdd) {
+        if (onSavedAndAdd && (await onSavedAndAdd(json.data)) === false) return;
+        if (mode === "edit") router.push(addHref ?? `${basePath}/add`);
+        else form.reset((init?.defaults as DefaultValues<TForm> | undefined) ?? defaultValues);
+      } else if (onSaved) onSaved(json.data);
       else router.push(basePath);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed.");
@@ -223,7 +248,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   if (loading) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
   if (loadError) return <p className="p-6 text-sm text-red-500">{loadError}</p>;
 
-  const canSubmit = init?.canSubmit ?? true;
+  const canSubmit = (canSubmitProp ?? true) && (init?.canSubmit ?? true);
 
   if (renderForm) {
     return renderForm({
@@ -233,7 +258,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
       mode,
       fields: resolvedFields,
       submitting,
-      onSubmit: (v) => save(v, false),
+      onSubmit: (v) => save(v, "save"),
       onCancel: () => router.push(basePath),
     });
   }
@@ -248,8 +273,10 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
         fields={resolvedFields}
         submitting={submitting}
         canSubmit={canSubmit}
-        onSubmit={(v) => save(v, false)}
-        onSaveAndAdd={mode === "add" && allowSaveAndAdd ? (v) => save(v, true) : undefined}
+        onSubmit={(v) => save(v, "save")}
+        onSaveAndAdd={allowSaveAndAdd && (mode === "add" || saveAndAddOnEdit) ? (v) => save(v, "add") : undefined}
+        saveAndAddOnEdit={saveAndAddOnEdit}
+        extraSubmits={extraSaves.map((x) => ({ key: x.key, label: x.label, icon: x.icon, onSubmit: (v: TForm) => save(v, x.key) }))}
         onCancel={() => router.push(basePath)}
       >
         {children}

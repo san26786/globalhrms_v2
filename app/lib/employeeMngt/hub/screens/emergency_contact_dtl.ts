@@ -104,6 +104,12 @@ export const emergencyContactDtlConfig: HubConfig = {
   deleteMode: 'soft',
   messages: { created: 'Successfully Added Emergency Contact Detail', updated: 'Successfully Updated Emergency Contact Detail', deleted: 'Successfully Deleted' },
 
+  // CI preselected +44 (master 3623, CC44) for the mobile, tel and office numbers on the add form.
+  defaults: async () => {
+    const cc44 = await getMasterId('CC44');
+    return cc44 ? Object.fromEntries(PHONES.map((p) => [p.country, String(cc44)])) : {};
+  },
+
   options: async (_subject, brand, row) => {
     const [relations, codes] = await Promise.all([brandMasters({ id: RELATION }, brand), mastersByCode('CTCD')]);
     let countryCodes = codes;

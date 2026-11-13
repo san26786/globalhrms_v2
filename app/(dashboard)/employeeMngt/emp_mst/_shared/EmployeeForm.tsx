@@ -1,9 +1,16 @@
 "use client";
 
+import { useRef } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 import ResourceFormPage from "@/components/resource/ResourceFormPage";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
 import { EMP_SCREENS, USER_READ_ONLY, type EmpFormModel, type EmpScreen, type EmpValues } from "@/lib/employeeMngt/empTypes";
 import { useInit } from "../../../systmMngt/_shared/useInit";
+import { EmployeeTabStrip } from "../../_hub/EmployeeTabs";
+import EmployeePicture, { uploadEmployeePicture } from "./EmployeePicture";
+import ResignationLetter from "./ResignationLetter";
 
 /**
  * CI employeeMngt/emp_mst initForm — the employee's "Personal" tab (add / edit). As CI: Caste and Race
@@ -26,7 +33,10 @@ const EMPTY: EmpValues = {
 const NO_LICENCE = ["na", "n/a", "not available"];
 const opts = (list: Array<{ value: number; label: string }>) => list.map((o) => ({ value: String(o.value), label: o.label }));
 
-export default function EmployeeForm({ mode, screen, id }: { mode: "add" | "edit"; screen: EmpScreen; id?: string }) {
+/** `variant="me"`: CI myInfo — the caller's own Personal form (the login landing of normal users). */
+export default function EmployeeForm({ mode, screen, id, variant }: { mode: "add" | "edit"; screen: EmpScreen; id?: string; variant?: "me" }) {
+  const router = useRouter();
+  const picture = useRef<File | undefined>(undefined);
   const { data, error } = useInit<EmpFormModel>(`${API}/form`);
   if (error) return <p className="p-6 text-sm text-red-500">{error}</p>;
   if (!data) return <p className="p-6 text-sm text-gray-400">Loading…</p>;
@@ -90,18 +100,44 @@ export default function EmployeeForm({ mode, screen, id }: { mode: "add" | "edit
     ];
   };
 
+  const me = variant === "me";
+  const listPath = me ? "/employeeMngt/emp_mst/myInfo" : config.base;
+  const defaultCode = data.defaultCountryCode ? String(data.defaultCountryCode) : "";
+  // After the save: the picture picked on the form, then the next page.
+  const finish = async (saved: unknown, next: (empId: string) => string) => {
+    const empId = String((saved as { id?: number } | null)?.id ?? id ?? "");
+    const file = picture.current;
+    picture.current = undefined;
+    if (file && empId) {
+      const problem = await uploadEmployeePicture(empId, file);
+      if (problem) toast.error(`Saved, but the picture was not saved: ${problem}`);
+    }
+    router.push(next(empId));
+  };
+  // A normal user on their own record (CI: Send Resignation Letter for is_admin 0).
+  const ownRecord = restricted && mode === "edit" && !!id && String(data.ownEmployeeId ?? "") === id;
+
   return (
     <ResourceFormPage<EmpValues>
-      title={mode === "add" ? "Add Employee Manager" : "Edit Employee Manager"}
-      breadcrumb={["Employee Hub", config.title]}
+      title={me ? "Employee Details" : mode === "add" ? "Add Employee Manager" : "Edit Employee Manager"}
+      breadcrumb={["Employee Hub", me ? "Employee Details" : config.title]}
       mode={mode}
       id={id}
       apiPath={API}
-      basePath={config.base}
+      basePath={listPath}
       objectName="emp_manager_new_vw"
       allowSaveAndAdd={false}
       useFields={useFields}
-      defaultValues={EMPTY}
-    />
+      // CI preselected +91 on the add form and for a record without a country code.
+      defaultValues={{ ...EMPTY, COUNTRY_CODE: defaultCode }}
+      toForm={(dto: EmpValues) => ({ ...dto, COUNTRY_CODE: dto.COUNTRY_CODE || defaultCode })}
+      onSaved={(saved) => finish(saved, () => listPath)}
+      // CI "Save And Next": save, then the employee's Job Detail.
+      extraSaves={[{ key: "next", label: "Save And Next", after: (saved) => void finish(saved, (empId) => `/job/job_mst?emp=${empId}`) }]}
+    >
+      {mode === "edit" && id ? <EmployeeTabStrip emp={id} personal={me ? "me" : screen === "team" ? "team" : undefined} /> : null}
+      {ownRecord ? <ResignationLetter /> : null}
+      <EmployeePicture empId={mode === "edit" ? id : undefined} onPick={(f) => (picture.current = f)} />
+    </ResourceFormPage>
   );
 }

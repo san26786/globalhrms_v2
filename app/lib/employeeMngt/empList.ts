@@ -2,6 +2,7 @@ import type { RequestSubject } from '@/lib/auth/getSubject';
 import { getMasterId, getMasterOptionsByType } from '@/lib/masters/masterService';
 import { permissionRepository } from '@/lib/permission/permissionRepository';
 import { prisma } from '@/lib/prisma';
+import { columnSearchConditions } from '@/lib/resource/columnSearch';
 import { parseListQuery } from '@/lib/resource/listQuery';
 import { menuPolicy } from '@/lib/resource/policies';
 import type { ListResult, ResourcePermissions } from '@/lib/resource/types';
@@ -80,6 +81,10 @@ const SORTS: Record<string, string> = {
   DOB: 'v."DOB"',
 };
 
+/** Row keys the list shows (and searches per column). */
+const SEARCHABLE_COLUMNS = ['EMP_NBR', 'TITLE_NM', 'EMP_NAME', 'EMP_MIDDLE_NM', 'EMPLST_NM', 'EMP_FULL_NAME', 'EMP_INITIALS', 'IS_MANAGER', 'KNOWN_AS',
+  'MANAGER', 'DOB', 'DEPARTMENT', 'GENDER', 'EMAIL_ADD', 'FULL_PHONE_NBR', 'EMP_STATUS', 'OA_BRAND_CD'];
+
 const HR_CLASS_CODES = ['PCHE', 'PCHM'];
 
 /** CI getEmpIdFromUserID(): the caller's own employee row in the active brand. */
@@ -149,6 +154,8 @@ export const empListService = {
       filters.push(`(${['EMP_NBR', 'EMP_FULL_NAME', 'KNOWN_AS', 'EMP_INITIALS', 'EMAIL_ADD', 'DEPARTMENT', 'MANAGER', 'TITLE_NM']
         .map((c) => `v."${c}" ILIKE ${term}`).join(' OR ')})`);
     }
+    // CI listview's per-column search boxes.
+    filters.push(...columnSearchConditions(rawQuery, SEARCHABLE_COLUMNS, (v) => sql.p(v)));
     const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
     const sort = query.sort && SORTS[query.sort] ? `${SORTS[query.sort]} ${query.dir === 'desc' ? 'DESC' : 'ASC'} NULLS LAST, v.id DESC` : 'v.id DESC';
     const from = `(SELECT ${LIST_COLUMNS} FROM emp_mst em WHERE em."IS_DELETED" = 0 AND ${scope}) v ${where}`;

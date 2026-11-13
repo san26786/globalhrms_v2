@@ -124,6 +124,10 @@ export interface EmpFormModel {
   showCasteRace: boolean;
   /** The caller is a normal user: USER_READ_ONLY fields are read-only. */
   restricted: boolean;
+  /** CI's preselected phone country code (+91). */
+  defaultCountryCode: number | null;
+  /** The caller's own employee in the active brand (My Info). */
+  ownEmployeeId: number | null;
 }
 
 /** CI dlnumber_valid: letters, digits and slashes, not only digits. */

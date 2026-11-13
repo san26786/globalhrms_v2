@@ -61,6 +61,11 @@ export interface HubScreenDefs {
   file?: { image?: boolean; required?: boolean };
   /** Warnings shown on the form once the chosen employee's details load (e.g. pending loans). */
   notices?: (extras: HubExtras, values: HubValues) => string[];
+  /**
+   * Fields the form fills while the user types (CI JS such as dependent_dtl.js calculateAge): when one of `from` is
+   * changed by the user (never by the record loading), `field` is set to `value(values)`; null leaves it as it is.
+   */
+  computed?: Array<{ field: string; from: string[]; value: (values: HubValues) => string | null }>;
 }
 
 /** Per-option data from /employee-options, by list name and option value. */

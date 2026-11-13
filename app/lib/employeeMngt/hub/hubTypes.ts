@@ -182,4 +182,6 @@ export interface HubFormModel {
   flags: Record<string, boolean>;
   /** Initial values of the add form. */
   defaults: HubValues;
+  /** The caller may save this form (add: the create grant; edit: the edit grant) — else it is shown read-only. */
+  canSave: boolean;
 }

@@ -22,9 +22,11 @@ import { latestExitSql, separationDateSql } from './termination';
  *
  * As CI: the Exit Form Setting of the employee's brand must exist (its four instruction lines head the exit
  * form); "Generate" marks the clearance generated (IS_GENERATED), after which the list offers the exit
- * form, relieving order and experience letter; only admins generate. Behaviour changes: the PDFs are built
- * from the current records on every download (CI wrote files under exit_form/ … and served a stale or
- * missing one); the brand is the employee's (CI used the session's); CI's three letter templates differed
+ * form, relieving order and experience letter; only admins generate, and admins may also produce the
+ * relieving order and experience letter before that (CI's Human Resource form buttons "Generate Relieving
+ * Order" / "Generate Experience Letter"; here: admins with the menu's update grant, as for generating).
+ * Behaviour changes: the PDFs are built from the current records on every download (CI wrote files under
+ * exit_form/ … and served a stale or missing one); the brand is the employee's (CI used the session's); CI's three letter templates differed
  * only in their header art, so there is one layout (brand logo and name, brand address in the footer);
  * the letters are signed "HR Manager, <brand>" (CI printed one company's HR manager for every customer);
  * the relieving order quotes the resignation date (CI left "dated" blank) and the experience letter gives
@@ -299,11 +301,17 @@ const RENDER: Record<ExitDocument, (data: ExitData) => Promise<jsPDF>> = {
 
 const fileSafe = (v: string) => v.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'employee';
 
+/** CI is_admin != 0 (the generate buttons): an admin with the menu's update grant. */
+const mayGenerate = async (subject: RequestSubject) => subject.adminLevel > 0 && (await menuPolicy(MENU).check(subject, 'update'));
+
 export const exitDocumentService = {
-  /** The PDF of the clearance `id`; the letters only once the exit form is generated (CI's list conditions). */
+  /**
+   * The PDF of the clearance `id` (anyone who may see it). The letters once the exit form is generated (CI's
+   * list), or before that for those who may generate (CI's Human Resource form buttons).
+   */
   async render(subject: RequestSubject, id: string, kind: ExitDocument): Promise<{ name: string; data: Buffer }> {
     const data = await exitData(subject, id);
-    if (kind !== 'exit-form' && !data.generated) throw new BusinessRuleError('Generate the exit form first.');
+    if (kind !== 'exit-form' && !data.generated && !(await mayGenerate(subject))) throw new BusinessRuleError('Generate the exit form first.');
     const doc = await RENDER[kind](data);
     doc.setProperties({ title: `${EXIT_DOCUMENTS[kind]} - ${data.employee.name}`, author: data.brand.name, creator: 'Global HR' });
     return { name: `${fileSafe(EXIT_DOCUMENTS[kind])}_${fileSafe(data.employee.code ?? String(data.employee.id))}.pdf`, data: Buffer.from(doc.output('arraybuffer')) };
@@ -311,7 +319,7 @@ export const exitDocumentService = {
 
   /** CI generateExitForm: marks the clearance generated (admins with the menu's update grant). */
   async generate(subject: RequestSubject, id: string): Promise<{ message: string }> {
-    if (subject.adminLevel === 0 || !(await menuPolicy(MENU).check(subject, 'update'))) throw new ForbiddenError();
+    if (!(await mayGenerate(subject))) throw new ForbiddenError();
     await exitData(subject, id); // scope + Exit Form Setting present
     await prisma.$executeRawUnsafe(
       `UPDATE ${DH.table} SET "IS_GENERATED" = 1, "UPDATED_BY" = $2::text, "UPDATED_ON" = now() WHERE "${DH.pk}" = $1::integer AND "IS_DELETED" = 0`,

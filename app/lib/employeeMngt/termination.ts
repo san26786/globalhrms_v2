@@ -1,12 +1,15 @@
 import { z } from 'zod';
 import type { RequestSubject } from '@/lib/auth/getSubject';
+import { appBaseUrl } from '@/lib/auth/passwordReset';
 import { USER_STATUS, userStatusId } from '@/lib/auth/userStatus';
 import { BusinessRuleError, ForbiddenError, ValidationError } from '@/lib/http/errors';
 import { getMasterId } from '@/lib/masters/masterService';
+import { createEmailLayout, sendEmail } from '@/lib/notification/email';
 import { prisma } from '@/lib/prisma';
 import { menuPolicy } from '@/lib/resource/policies';
-import { ownEmployeeId } from './empList';
-import { insertRow, updateRow, type EmployeeRef, type Tx } from './hub/hubEngine';
+import { EMAIL_EXPR, ownEmployeeId } from './empList';
+import { NOTICE_MONTHS } from './hub/defs/termination';
+import { fullName, insertRow, masterName, updateRow, type EmployeeRef, type Tx } from './hub/hubEngine';
 
 /**
  * Employee Termination (CI employeeMngt/termination): what an exit record does to the employee, and the
@@ -28,15 +31,24 @@ import { insertRow, updateRow, type EmployeeRef, type Tx } from './hub/hubEngine
  * The table has no resignation STATUS column (CI wrote one that PostgreSQL does not have), so a request
  * is "pending" while it is a resignation with a resigned-on date and neither an accepted-on nor a
  * termination date; accepting sets both, rejecting turns it into "Employment Retained" (CI's reason for
- * an employee who stays). Not migrated: CI's e-mails (the app has no mailer; CI's went to a fixed address
- * of one company and, for accept / reject, always to the same wrong employee).
+ * an employee who stays).
+ *
+ * E-mails (CI sendResignation / change_resignation_status, with CI's subjects and texts), sent once the
+ * database write has committed: a resignation goes to HR ("Resignation letter from {name}") and to the
+ * employee ("Resignation Letter"); an accepted or rejected one to its employee ("Resignation Status").
+ * A mail that cannot be sent is logged and named in the API message; the saved record stays.
+ * Behaviour changes: HR's mail goes to the brand's e-mail address (Brands master, oa_brands.EMAIL; CI
+ * used one company's fixed address) and links to this list for the employee (CI's Accept / Reject links
+ * went to a URL that needs a selection and only showed "Please Select the Leave"); the employee's address
+ * is their contact e-mail, else their login's; the employee's copy is sent even when HR's fails (CI sent
+ * it only after HR's); the status mail says Accepted or Rejected (CI said Rejected for both) and goes to
+ * each decided employee (CI: always the first employee of the table); values are HTML-escaped.
  */
 const MENU = 'employeeMngt/termination';
 export const REASON_TYPE = 157;
 const RESIGNATION = ['ETRRCR', 'ETRRSP', 'ETRO'];
 const INVOLUNTARY = ['ETRCNR', 'ETRDS', 'ETRLO'];
 const LEFT = ['ETRD', 'ETRPDC', 'ETRRT'];
-const NOTICE_MONTHS = 3;
 
 export const reasonCode = (alias: string) => `(SELECT im."MSTR_CD" FROM independent_mst im WHERE im."MSTR_ID" = ${alias}."EMP_TERMINATION_ID" LIMIT 1)`;
 
@@ -219,10 +231,109 @@ const decideSchema = z.object({ ids: z.array(z.coerce.number().int().positive())
 
 const ddmmyyyy = (d: string) => d.split('-').reverse().join('.');
 
+// ------------------------------------------------------------------ e-mails
+
+/** The mailer (a seam: tests replace `send` so nothing leaves the machine). */
+export const terminationMailer = { send: sendEmail };
+
+interface MailPerson {
+  name: string;
+  email: string | null;
+  designation: string | null;
+  brandName: string;
+  brandEmail: string | null;
+}
+
+const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/;
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+const text = (value: string) => escapeHtml(value).replace(/\r?\n/g, '<br>');
+
+/** What the mails say about each employee: name, address (contact e-mail, else the login's), current designation, brand. */
+async function mailPeople(employeeIds: number[]): Promise<Map<number, MailPerson>> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ id: number; name: string; email: string | null; designation: string | null; brandName: string | null; brandEmail: string | null }>>(
+    `SELECT em."EMP_ID" AS id, ${fullName('em')} AS name,
+       COALESCE(NULLIF(btrim(${EMAIL_EXPR}), ''), (SELECT NULLIF(btrim(u."REG_EMAIL_ID"), '') FROM user_mst u WHERE u."USER_ID" = em."REF_EMP_ID" LIMIT 1)) AS email,
+       ${masterName(`(SELECT j."DESIGNATION_ID" FROM job_mst j WHERE j."EMP_ID" = em."EMP_ID" AND j."IS_DELETED" = 0 ORDER BY j."JOB_ID" DESC LIMIT 1)`)} AS designation,
+       b."OA_BRAND_NM" AS "brandName", NULLIF(btrim(b."EMAIL"), '') AS "brandEmail"
+     FROM emp_mst em LEFT JOIN oa_brands b ON b."OA_BRAND_ID" = em."OA_BRAND_ID"
+     WHERE em."EMP_ID" = ANY($1::int[])`,
+    employeeIds,
+  );
+  return new Map(rows.map((r) => [Number(r.id), {
+    name: r.name, email: r.email, designation: r.designation, brandName: r.brandName ?? '', brandEmail: r.brandEmail,
+  }]));
+}
+
+/** Sends one mail; returns null, or why it was not sent (logged — the database write it reports on stays). */
+async function deliver(to: string | null, subject: string, content: string, missing: string): Promise<string | null> {
+  if (!to || !EMAIL_RE.test(to)) {
+    console.warn(`[termination] e-mail "${subject}" not sent: ${missing}.`);
+    return missing;
+  }
+  // The layout puts the title in the page unescaped; a subject is one line.
+  const result = await terminationMailer.send({ to, subject: subject.replace(/\s+/g, ' ').trim(), html: createEmailLayout(content, escapeHtml(subject)) })
+    .catch((e: unknown) => ({ success: false, error: e instanceof Error ? e.message : String(e) }));
+  if (result.success) return null;
+  console.error(`[termination] e-mail "${subject}" not sent:`, result.error);
+  return 'the mail service failed';
+}
+
+/** Absolute link into the app for an e-mail (APP_URL; the request's origin in development), or null. */
+function appLink(origin: string | undefined, path: string): string | null {
+  try {
+    const base = appBaseUrl(origin ?? '');
+    return /^https?:\/\//.test(base) ? `${base}${path}` : null;
+  } catch {
+    return null;
+  }
+}
+
+/** CI sendResignation's two mails: to HR (with the way to accept or reject it) and the employee's copy. */
+async function sendResignationMails(employeeId: number, reason: string, date: string, origin?: string): Promise<string[]> {
+  const person = (await mailPeople([employeeId])).get(employeeId);
+  if (!person) return ['the employee was not found'];
+  const link = appLink(origin, `/employeeMngt/termination?emp=${employeeId}`);
+  const toHr = `<p>Dear Admin,</p>
+    <p>I would like to inform you of intention to resign from ${escapeHtml(person.designation ?? '')} at ${escapeHtml(person.brandName)} on date: ${date.split('-').join('.')}</p>
+    <p>Thank you for the opportunities to grow and learn under your guidance</p>
+    <p><strong>Resignation Reason:</strong> ${text(reason)}</p>
+    <p>Regards,<br>${escapeHtml(person.name)}.</p>
+    ${link
+      ? `<p><a class="btn" href="${escapeHtml(link)}">Accept or Reject Resignation</a></p>`
+      : '<p>Accept or reject it in Employee Management &rarr; Employee Termination.</p>'}`;
+  const toEmployee = `<p>Dear ${escapeHtml(person.name)},</p>
+    <p>You had Applied for Resignation to admin of ${escapeHtml(person.brandName)} on date:${date}</p>
+    <p><strong>Resignation Reason:</strong> ${text(reason)}</p>`;
+  const [hr, own] = await Promise.all([
+    deliver(person.brandEmail, `Resignation letter from ${person.name}`, toHr, 'the brand has no e-mail address'),
+    deliver(person.email, 'Resignation Letter', toEmployee, 'there is no e-mail address on your record'),
+  ]);
+  return [hr && `to HR (${hr})`, own && `to you (${own})`].filter((p): p is string => !!p);
+}
+
+/** CI change_resignation_status's mail to each decided employee ("Resignation Status"). */
+async function sendStatusMails(employeeIds: number[], accepted: boolean): Promise<string[]> {
+  const people = await mailPeople(employeeIds);
+  const problems = await Promise.all([...new Set(employeeIds)].map(async (id) => {
+    const person = people.get(id);
+    if (!person) return null;
+    const content = `<p>Dear ${escapeHtml(person.name)},</p>
+      <p>Your Resignation has been ${accepted ? 'Accepted' : 'Rejected'}.</p>
+      <p>Regards,<br>Admin,<br>${escapeHtml(person.brandName)}.</p>`;
+    const problem = await deliver(person.email, 'Resignation Status', content, 'no e-mail address');
+    return problem && `${person.name} (${problem})`;
+  }));
+  return problems.filter((p): p is string => !!p);
+}
+
 export const terminationService = {
-  /** CI sendResignation: a normal user's resignation, as one pending record. */
-  async resign(subject: RequestSubject, body: unknown): Promise<{ id: number; message: string }> {
-    if (!(await can(subject, 'list'))) throw new ForbiddenError();
+  /**
+   * CI sendResignation: a normal user's resignation, as one pending record, then CI's two mails
+   * (`origin`: the request's, for the mail's link when APP_URL is not set in development).
+   */
+  async resign(subject: RequestSubject, body: unknown, origin?: string): Promise<{ id: number; message: string; mailProblems: string[] }> {
+    // Only ever the caller's own employee, so no menu grant is needed: CI's "Send Resignation Letter" on the Personal form
+    // (My Info, emp_mst send_mail) was open to every normal user; Employee Termination's button reaches the same rule.
     if (subject.adminLevel !== 0) throw new BusinessRuleError('Record the resignation with Add New Employee Termination.');
     const reason = (resignSchema.parse(body ?? {}).reason ?? '').trim();
     if (!reason) throw new ValidationError('Validation failed.', { reason: ['The Reason field is required.'] });
@@ -245,15 +356,27 @@ export const terminationService = {
     const resigned = await getMasterId('ETRRSP', { typeId: REASON_TYPE });
     if (!resigned) throw new BusinessRuleError('The termination reason "Resigned" is not configured.');
 
-    const id = await prisma.$transaction(async (tx) => insertRow(tx, 'emp_termination_dtl', 'TERMINATION_ID', {
-      EMP_ID: own, EMP_NBR: employee.code, EMP_TERMINATION_ID: resigned, RESIGNED_ON: await dbToday(tx), TERMINATION_COMMENTS: reason,
-      OA_ID: employee.oa, OA_BRAND_ID: Number(employee.brand), USER_ID: employee.user ?? subject.userId,
-    }, subject.userId));
-    return { id, message: 'Your resignation has been sent to HR.' };
+    const { id, date } = await prisma.$transaction(async (tx) => {
+      const today = await dbToday(tx);
+      const newId = await insertRow(tx, 'emp_termination_dtl', 'TERMINATION_ID', {
+        EMP_ID: own, EMP_NBR: employee.code, EMP_TERMINATION_ID: resigned, RESIGNED_ON: today, TERMINATION_COMMENTS: reason,
+        OA_ID: employee.oa, OA_BRAND_ID: Number(employee.brand), USER_ID: employee.user ?? subject.userId,
+      }, subject.userId);
+      return { id: newId, date: today };
+    });
+    // After the commit: a mail that fails is reported, the resignation stays.
+    const mailProblems = await sendResignationMails(own, reason, date, origin).catch((e: unknown) => {
+      console.error('[termination] resignation e-mails not sent:', e);
+      return ['to HR and to you (the e-mails could not be prepared)'];
+    });
+    const message = mailProblems.length
+      ? `Your resignation has been sent to HR, but the e-mail ${mailProblems.join(' and ')} could not be sent.`
+      : 'Your resignation has been sent to HR. The e-mails have been sent.';
+    return { id, message, mailProblems };
   },
 
-  /** CI change_resignation_status/{TRMSA|TRMSR}: accept or reject pending resignations (admins, in scope). */
-  async decide(subject: RequestSubject, body: unknown): Promise<{ count: number; message: string }> {
+  /** CI change_resignation_status/{TRMSA|TRMSR}: accept or reject pending resignations (admins, in scope), then mail each employee. */
+  async decide(subject: RequestSubject, body: unknown): Promise<{ count: number; message: string; mailProblems: string[] }> {
     if (subject.adminLevel === 0 || !(await can(subject, 'update'))) throw new ForbiddenError();
     const { ids, action } = decideSchema.parse(body ?? {});
     const unique = [...new Set(ids)];
@@ -288,7 +411,14 @@ export const terminationService = {
       }
     }, { timeout: 60000 });
     const n = rows.length;
-    return { count: n, message: action === 'accept' ? `${n === 1 ? 'Resignation' : `${n} resignations`} accepted.` : `${n === 1 ? 'Resignation' : `${n} resignations`} rejected.` };
+    const done = `${n === 1 ? 'Resignation' : `${n} resignations`} ${action === 'accept' ? 'accepted' : 'rejected'}.`;
+    // After the commit: a mail that fails is reported, the decision stays.
+    const mailProblems = await sendStatusMails(rows.map((r) => Number(r.emp)), action === 'accept').catch((e: unknown) => {
+      console.error('[termination] resignation status e-mails not sent:', e);
+      return ['every employee (the e-mails could not be prepared)'];
+    });
+    const message = mailProblems.length ? `${done} The e-mail could not be sent to ${mailProblems.join(', ')}.` : `${done} The employee${n === 1 ? ' has' : 's have'} been e-mailed.`;
+    return { count: n, message, mailProblems };
   },
 
   /**

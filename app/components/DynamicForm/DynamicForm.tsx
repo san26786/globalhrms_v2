@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { UseFormReturn, FieldValues } from "react-hook-form";
-import { ChevronRight, Database, Plus, X, Save } from "lucide-react";
+import { ChevronRight, ChevronsRight, Database, Plus, X, Save, type LucideIcon } from "lucide-react";
 
 import FormRenderer from "./FormRenderer";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,10 @@ interface DynamicFormProps<T extends FieldValues> {
   submitting?: boolean;
   /** False for a view-only form (no modify permission): the save buttons are not shown. */
   canSubmit?: boolean;
+  /** CI formview_v also offered "Save And Add" on the edit form (it saved, then opened a new form). */
+  saveAndAddOnEdit?: boolean;
+  /** More save buttons (CI formview_v submit buttons such as "Save And Next"): each saves, then runs its own step. */
+  extraSubmits?: Array<{ key: string; label: string; icon?: LucideIcon; onSubmit: (data: T) => void }>;
 }
 
 export default function DynamicForm<T extends FieldValues>({
@@ -40,6 +44,8 @@ export default function DynamicForm<T extends FieldValues>({
   breadcrumb = ["Bank Manager", "Bank Account Details"],
   submitting = false,
   canSubmit = true,
+  saveAndAddOnEdit = false,
+  extraSubmits = [],
 }: DynamicFormProps<T>) {
   const {
     register,
@@ -48,10 +54,14 @@ export default function DynamicForm<T extends FieldValues>({
     formState: { errors },
   } = form;
 
-  const [submitType, setSubmitType] = useState<"save" | "saveAndAdd">("save");
+  const [submitType, setSubmitType] = useState<string>("save");
+  const showSaveAndAdd = canSubmit && !!onSaveAndAdd && (mode === "add" || saveAndAddOnEdit);
 
   const handleFormSubmit = (data: T) => {
-    if (submitType === "saveAndAdd" && onSaveAndAdd) {
+    const extra = extraSubmits.find((x) => x.key === submitType);
+    if (extra) {
+      extra.onSubmit(data);
+    } else if (submitType === "saveAndAdd" && onSaveAndAdd) {
       onSaveAndAdd(data);
     } else {
       onSubmit(data);
@@ -101,7 +111,7 @@ export default function DynamicForm<T extends FieldValues>({
             )}
 
             {/* Header Save & Add Button */}
-            {canSubmit && mode === "add" && onSaveAndAdd && (
+            {showSaveAndAdd && (
               <Button
                 type="submit"
                 form="dynamic-form"
@@ -113,6 +123,26 @@ export default function DynamicForm<T extends FieldValues>({
                 <Plus className="h-5 w-5 stroke-[2.5]" />
               </Button>
             )}
+
+            {canSubmit &&
+              extraSubmits.map((x) => {
+                const Icon = x.icon ?? ChevronsRight;
+                return (
+                  <Button
+                    key={x.key}
+                    type="submit"
+                    form="dynamic-form"
+                    disabled={submitting}
+                    onClick={() => setSubmitType(x.key)}
+                    size="icon"
+                    className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md brand:bg-[#0b5394] brand:hover:bg-[#094679] dark:shadow-black/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                    title={x.label}
+                    aria-label={x.label}
+                  >
+                    <Icon className="h-5 w-5 stroke-[2.5]" />
+                  </Button>
+                );
+              })}
 
             {/* Header Cancel Button */}
             {onCancel && (
@@ -160,7 +190,7 @@ export default function DynamicForm<T extends FieldValues>({
             </Button>
           )}
 
-          {canSubmit && mode === "add" && onSaveAndAdd && (
+          {showSaveAndAdd && (
             <Button
               type="submit"
               form="dynamic-form"
@@ -170,6 +200,20 @@ export default function DynamicForm<T extends FieldValues>({
               Save And Add
             </Button>
           )}
+
+          {canSubmit &&
+            extraSubmits.map((x) => (
+              <Button
+                key={x.key}
+                type="submit"
+                form="dynamic-form"
+                disabled={submitting}
+                onClick={() => setSubmitType(x.key)}
+                className="rounded-full bg-emerald-600 hover:bg-emerald-700 brand:bg-[#0b5394] brand:hover:bg-[#094679] text-white px-6 h-10 text-sm font-semibold shadow-md dark:shadow-black/30 transition-all duration-200 active:scale-95 border-0"
+              >
+                {x.label}
+              </Button>
+            ))}
 
           <Button
             type="button"

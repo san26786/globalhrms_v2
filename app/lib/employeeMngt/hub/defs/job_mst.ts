@@ -6,6 +6,11 @@ export const HOURLY_BASIS = '52832';
 
 const partTime = (v: Record<string, string | boolean>) => String(v.EMP_TYPE_ID) === PART_TIME_TYPE;
 
+/** `flags` key of a Former employee (EMSF): adding a job for them offers "Is Rejoin" (CI job_mst initForm). */
+export const formerFlag = (employeeId: string | boolean | number | undefined) => `former:${String(employeeId ?? '')}`;
+/** Set by the screen's read() on the values of a stored job: the rejoin choice belongs to adding a job only. */
+export const STORED_JOB = 'JOB_ID';
+
 /** The columns of CI's job_mst_vw that HR reads (ids, the cost-centre code and the payslip password left out). */
 export const JOB_COLUMNS: HubColumnDef[] = [
   { key: 'EMP_NBR', header: 'Employee Code', sortable: true },
@@ -45,6 +50,11 @@ export const JOB_COLUMNS: HubColumnDef[] = [
 /** CI job/job_mst — an employee's job record (columns of job_mst_vw). */
 export const jobMstDefs: HubScreenDefs = {
   fields: [
+    // CI: shown when adding a job for a Former employee; ticked, the save brings them back (screens/job_mst.ts).
+    {
+      name: 'IS_REJOIN', label: 'Is Rejoin', type: 'checkbox', attribute: 'IS_REJOIN',
+      hidden: (v, flags) => STORED_JOB in v || !flags[formerFlag(v.EMP_ID)],
+    },
     { name: 'DATE_OF_JOINING', label: 'Date of Joining', type: 'date', required: true, attribute: 'DATE_OF_JOINING' },
     { name: 'PAYROLL_START_DATE', label: 'Payroll Start Date', type: 'date', attribute: 'PAYROLL_START_DATE' },
     { name: 'EMP_TYPE_ID', label: 'Employee Type', type: 'select', required: true, options: 'empTypes', attribute: 'TYPE_NAME' },

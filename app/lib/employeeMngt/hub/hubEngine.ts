@@ -6,6 +6,7 @@ import { readStored, storeUpload, type AttachmentStore } from '@/lib/files/attac
 import { BusinessRuleError, ForbiddenError, NotFoundError, ValidationError } from '@/lib/http/errors';
 import { prisma } from '@/lib/prisma';
 import { parseListQuery } from '@/lib/resource/listQuery';
+import { columnSearchConditions } from '@/lib/resource/columnSearch';
 import { menuPolicy } from '@/lib/resource/policies';
 import type { ListResult, ResourcePermissions } from '@/lib/resource/types';
 import { brandOrgId, parseId, type IdLabel } from '@/lib/systmMngt/shared';
@@ -498,6 +499,8 @@ export function hubService(cfg: HubConfig) {
         const term = sql.p(`%${query.search}%`);
         filters.push(`(${['EMP_NBR', 'EMP_FULL_NAME', ...cfg.search].map((c) => `v."${c}"::text ILIKE ${term}`).join(' OR ')})`);
       }
+      // CI listview's per-column search boxes (row keys of the screen's columns only).
+      filters.push(...columnSearchConditions(rawQuery, ['EMP_NBR', 'EMP_FULL_NAME', 'OA_BRAND_CD', ...cfg.defs.columns.map((c) => c.key)], (v) => sql.p(v)));
       const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
       const sortable = ['EMP_NBR', 'EMP_FULL_NAME', 'OA_BRAND_CD', ...cfg.sorts];
       const sort = query.sort && sortable.includes(query.sort)
@@ -528,7 +531,8 @@ export function hubService(cfg: HubConfig) {
         cfg.flags ? cfg.flags(brand) : Promise.resolve({}),
         cfg.defaults && !row ? cfg.defaults(subject, brand) : Promise.resolve({}),
       ]);
-      return { employees, ownEmployeeId: own, options, flags, defaults, restricted: subject.adminLevel === 0 };
+      const canSave = await allowed(subject, cfg, row ? 'update' : 'create');
+      return { employees, ownEmployeeId: own, options, flags, defaults, restricted: subject.adminLevel === 0, canSave };
     },
 
     /** The dropdowns of the chosen employee (`rawEmp`), or of the record being edited (`rawId`). */

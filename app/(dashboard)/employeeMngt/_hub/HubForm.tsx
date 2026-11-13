@@ -12,6 +12,7 @@ import { HUB_DEFS } from "@/lib/employeeMngt/hub/hubDefs";
 import { fieldIsHidden, fieldIsRequired, type HubExtras } from "@/lib/employeeMngt/hub/hubFields";
 import { HUB_SCREENS, hubBase, type HubFormModel, type HubOption, type HubScreenKey, type HubValues } from "@/lib/employeeMngt/hub/hubTypes";
 import { useInit } from "../../systmMngt/_shared/useInit";
+import { EmployeeTabStrip } from "./EmployeeTabs";
 
 /**
  * CI employeeMngt/<screen>::initForm (formview_v) for the Employee Hub record screens: the employee
@@ -104,6 +105,8 @@ const NO_EMPLOYEE_OPTIONS: EmployeeOptions = { options: {}, extras: {} };
 /**
  * `back`: the list to return to (a worklist that opened this form, e.g. Confirmation Pending).
  * `next`: where a save goes instead, for the saved employee (CI "Save And Next"); Cancel still goes back.
+ * `extraSaves`: more labelled save buttons (CI form buttons such as exit clearance "Save and Preview"): each saves the
+ * record (and uploads its file), then runs `after` with the saved employee and record id.
  */
 export default function HubForm({
   screen,
@@ -112,6 +115,7 @@ export default function HubForm({
   emp,
   back,
   next,
+  extraSaves,
 }: {
   screen: HubScreenKey;
   mode: "add" | "edit";
@@ -119,6 +123,7 @@ export default function HubForm({
   emp?: string;
   back?: string;
   next?: (employee: string) => string;
+  extraSaves?: Array<{ key: string; label: string; after: (employee: string, recordId: number | null) => void }>;
 }) {
   const info = HUB_SCREENS[screen];
   const defs = HUB_DEFS[screen];
@@ -160,6 +165,18 @@ export default function HubForm({
         form.setValue(field, String(details[key] ?? ""), { shouldDirty: true });
       }
     }, [pick, form, prefill]);
+
+    // defs.computed: re-worked out when a source field the user changed (dirty) changes.
+    const computed = defs.computed;
+    const sources = computed ? JSON.stringify(form.watch(computed.flatMap((c) => c.from))) : "";
+    useEffect(() => {
+      if (!computed) return;
+      for (const c of computed) {
+        if (!c.from.some((f) => form.getFieldState(f).isDirty)) continue;
+        const next = c.value(form.getValues());
+        if (next !== null && next !== String(form.getValues(c.field) ?? "")) form.setValue(c.field, next, { shouldDirty: true });
+      }
+    }, [sources, form, computed]);
   };
 
   const fileField = defs.fields.find((f) => f.type === "file");
@@ -205,33 +222,40 @@ export default function HubForm({
         return rest;
       }
     : undefined;
-  const toPayload = next
-    ? (values: HubValues) => {
-        savedEmployee.current = String(values.EMP_ID ?? "");
-        return withoutFile ? withoutFile(values) : values;
-      }
-    : withoutFile;
+  const toPayload = (values: HubValues) => {
+    savedEmployee.current = String(values.EMP_ID ?? "");
+    return withoutFile ? withoutFile(values) : values;
+  };
   const afterSave = () => (next && savedEmployee.current ? next(savedEmployee.current) : listPath);
+  /** The file picked on the form goes up once the record has an id; false when that failed (the form stays). */
+  const uploadPending = async (saved: unknown): Promise<boolean> => {
+    const recordId = (saved as { id?: number } | null)?.id ?? id;
+    const file = pendingFile.current;
+    pendingFile.current = undefined;
+    if (!file || !recordId) return true;
+    const body = new FormData();
+    body.append("file", file);
+    const res = await authFetch(`${api}/${recordId}/file`, { method: "POST", body });
+    const json = await res.json().catch(() => null);
+    if (res.ok && json?.success) return true;
+    toast.error(`Saved, but the attachment was not uploaded: ${json?.message ?? "upload failed."}`);
+    router.push(`${base}/edit/${recordId}${emp ? `?emp=${emp}` : ""}`);
+    return false;
+  };
   const onSaved = fileField
     ? async (saved: unknown) => {
-        const recordId = (saved as { id?: number } | null)?.id ?? id;
-        const file = pendingFile.current;
-        if (file && recordId) {
-          const body = new FormData();
-          body.append("file", file);
-          const res = await authFetch(`${api}/${recordId}/file`, { method: "POST", body });
-          const json = await res.json().catch(() => null);
-          if (!res.ok || !json?.success) {
-            toast.error(`Saved, but the attachment was not uploaded: ${json?.message ?? "upload failed."}`);
-            router.push(`${base}/edit/${recordId}${emp ? `?emp=${emp}` : ""}`);
-            return;
-          }
-        }
-        router.push(afterSave());
+        if (await uploadPending(saved)) router.push(afterSave());
       }
     : next
       ? () => router.push(afterSave())
       : undefined;
+  // CI "Save And Add" (add and edit forms): save, upload the file, then a new form for the same employee.
+  const onSavedAndAdd = async (saved: unknown) => {
+    if (fileField && !(await uploadPending(saved))) return false;
+    if (mode === "edit") router.push(`${base}/add${savedEmployee.current || emp ? `?emp=${savedEmployee.current || emp}` : ""}`);
+    return true;
+  };
+  const tabEmployee = emp ?? (mode === "edit" && data.restricted ? String(data.ownEmployeeId ?? "") : undefined);
 
   return (
     <ResourceFormPage<HubValues>
@@ -246,9 +270,23 @@ export default function HubForm({
       defaultValues={defaults}
       toPayload={toPayload}
       onSaved={onSaved}
-      allowSaveAndAdd={!fileField && !next}
-      useFormEffects={defs.employeeOptions || defs.prefill ? useEmployeeEffects : undefined}
+      allowSaveAndAdd={!next}
+      saveAndAddOnEdit={!next}
+      onSavedAndAdd={onSavedAndAdd}
+      canSubmit={data.canSave}
+      extraSaves={extraSaves?.map((x) => ({
+        key: x.key,
+        label: x.label,
+        after: (saved: unknown) =>
+          void (async () => {
+            if (fileField && !(await uploadPending(saved))) return;
+            const recordId = (saved as { id?: number } | null)?.id ?? (id ? Number(id) : null);
+            x.after(savedEmployee.current || emp || "", recordId);
+          })(),
+      }))}
+      useFormEffects={defs.employeeOptions || defs.prefill || defs.computed ? useEmployeeEffects : undefined}
     >
+      <EmployeeTabStrip emp={tabEmployee} personal={data.restricted ? "me" : undefined} />
       {notices.length ? (
         <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
           {notices.map((n) => (

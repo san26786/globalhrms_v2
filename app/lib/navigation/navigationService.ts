@@ -71,6 +71,35 @@ async function menuQueryParams(subject: RequestSubject, request: MenuRequest): P
   };
 }
 
+export interface EmployeeTab {
+  label: string;
+  href: string;
+}
+
+/**
+ * CI include/emp_tabs_v (dashboardnew_m->getChildMenu(EMPM, true)): the employee's tab strip on the Personal form and on
+ * every record list opened for one employee — "Personal" plus the Employee Hub menus marked SHOW_TAB that the caller's
+ * grants allow, in menu order, each opened for this employee (CI `<menu URL>/index/{EMP_ID}` → the screen with ?emp=).
+ * `personalHref`: the Personal form to link (Employee Manager edit, Team edit or My Info).
+ */
+/** CI const_helper EMPM: the "EMPLOYEE MANAGEMENT" menu (the code EMPM also names master 714, "Project manager"). */
+const EMPLOYEE_MANAGEMENT_MENU = 917;
+
+export async function getEmployeeTabs(subject: RequestSubject, empId: number, personalHref: string): Promise<EmployeeTab[]> {
+  const params = await menuQueryParams(subject, { parentId: EMPLOYEE_MANAGEMENT_MENU, showTabs: true });
+  const rows = params ? await queryMenuLevel(params) : [];
+  const tabs: EmployeeTab[] = [{ label: 'Personal', href: personalHref }];
+  for (const row of rows) {
+    const link = resolveCiUrl(row.URL);
+    if (link.kind !== 'internal') continue; // not migrated: no tab rather than a dead one
+    const [path, query] = link.href.split('?');
+    const q = new URLSearchParams(query ?? '');
+    q.set('emp', String(empId));
+    if (!tabs.some((t) => t.href.split('?')[0] === path)) tabs.push({ label: row.MENU_NAME, href: `${path}?${q.toString()}` });
+  }
+  return tabs;
+}
+
 export interface ChildMenuItem {
   /** REL_DET_ID */
   id: number;

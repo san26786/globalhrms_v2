@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 import type { BulkAction, RowAction } from "@/components/DataTable/types";
 import type { ListAction } from "@/components/listview/ListViewShell";
@@ -8,6 +10,8 @@ import ResourceListPage, { type ResourceListColumn } from "@/components/resource
 import { HUB_DEFS } from "@/lib/employeeMngt/hub/hubDefs";
 import { HUB_SCREENS, hubBase, type HubScreenKey } from "@/lib/employeeMngt/hub/hubTypes";
 import { useCurrentSession } from "@/lib/header/HeaderSessionContext";
+import { authFetch } from "@/lib/auth/authFetch";
+import { useEmployeeTabs } from "./EmployeeTabs";
 
 /**
  * CI employeeMngt/<screen>::index() (listview_v) for the Employee Hub record screens: the records of
@@ -21,6 +25,26 @@ type ListContext = { refresh: () => void; permissions: { create: boolean; update
 
 /** CI listview showed Y-m-d values as dd.mm.yyyy. */
 const ddmmyyyy = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10).split("-").reverse().join(".") : String(v ?? ""));
+/** The record's attachment (GET {api}/{id}/file), saved under its stored name. */
+async function downloadAttachment(api: string, id: number) {
+  try {
+    const res = await authFetch(`${api}/${id}/file`);
+    if (!res.ok) {
+      const json = (await res.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(json?.message ?? "Document Not Found!!");
+    }
+    const name = /filename="?([^";]+)"?/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? `document-${id}`;
+    const href = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = decodeURIComponent(name);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "Document Not Found!!");
+  }
+}
+
 const yesNo = (v: unknown) => (["1", "y", "yes", "true"].includes(String(v ?? "").toLowerCase()) ? "Yes" : "No");
 
 /**
@@ -48,6 +72,17 @@ export default function HubList({
   const defs = HUB_DEFS[screen];
   const session = useCurrentSession();
   const base = hubBase(screen);
+  // CI: a list opened for one employee shows their tabs and "Next Tab" (a normal user's Personal tab is My Info).
+  const { strip, nextHref } = useEmployeeTabs(emp, session?.userLevel === 0 ? "me" : undefined);
+  const hasFile = defs.fields.some((f) => f.type === "file");
+  const allRowActions = useMemo<RowAction<Row>[]>(
+    () => [
+      // CI member_documents / file screens: the row's attachment.
+      ...(hasFile ? [{ label: "Download", icon: Download, onClick: (r: Row) => downloadAttachment(`/api/employeeMngt/${screen}`, r.id) }] : []),
+      ...(rowActions ?? []),
+    ],
+    [hasFile, rowActions, screen],
+  );
 
   const columns = useMemo(() => {
     const list: ResourceListColumn<Row>[] = defs.columns.map((c) => ({
@@ -89,8 +124,12 @@ export default function HubList({
       canDeleteRow={defs.canDeleteRow}
       listActions={listActions}
       extraBulkActions={bulkActions}
-      extraRowActions={rowActions}
+      extraRowActions={allRowActions}
+      tabs={strip}
+      nextTabHref={nextHref}
+      viewWhenReadOnly
       toolbar={toolbar}
+      columnSearch
     />
   );
 }

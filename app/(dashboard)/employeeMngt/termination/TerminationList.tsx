@@ -14,7 +14,8 @@ import HubList, { type HubRow } from "../_hub/HubList";
 /**
  * CI employeeMngt/termination list: the exit records, plus CI's toolbar — a normal user sends a
  * resignation letter (one pending record for HR); admins accept or reject the selected pending
- * resignations and bring the employees' statuses up to date with exits whose date has passed.
+ * resignations and bring the employees' statuses up to date with exits whose date has passed. The
+ * resignation and the decisions are e-mailed (CI's mails); one that could not be sent shows as a warning.
  * Rules: lib/employeeMngt/termination.ts.
  */
 const API = "/api/employeeMngt/termination";
@@ -24,15 +25,21 @@ type Pending =
   | { kind: "accept" | "reject"; ids: number[]; refresh: () => void }
   | { kind: "statuses"; refresh: () => void };
 
-async function post(url: string, body?: unknown): Promise<string> {
+/** `warn`: the write succeeded but an e-mail could not be sent (the message says which). */
+async function post(url: string, body?: unknown): Promise<{ message: string; warn: boolean }> {
   const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body ?? {}),
   });
-  const json = (await res.json().catch(() => null)) as { success?: boolean; message?: string; errors?: Record<string, string[]> } | null;
+  const json = (await res.json().catch(() => null)) as {
+    success?: boolean;
+    message?: string;
+    errors?: Record<string, string[]>;
+    data?: { mailProblems?: string[] };
+  } | null;
   if (!res.ok || !json?.success) throw new Error(Object.values(json?.errors ?? {})[0]?.[0] ?? json?.message ?? "The request failed.");
-  return json.message ?? "Done.";
+  return { message: json.message ?? "Done.", warn: !!json.data?.mailProblems?.length };
 }
 
 const TEXT: Record<Exclude<Pending["kind"], "resign">, { title: string; description: (n: number) => string; button: string }> = {
@@ -67,13 +74,14 @@ export default function TerminationList({ emp }: { emp?: string }) {
     if (pending.kind === "resign" && !reason.trim()) return toast.error("The Reason field is required.");
     setBusy(true);
     try {
-      const message =
+      const { message, warn } =
         pending.kind === "resign"
           ? await post(`${API}/resign`, { reason })
           : pending.kind === "statuses"
             ? await post(`${API}/recompute`)
             : await post(`${API}/resignation-status`, { ids: pending.ids, action: pending.kind });
-      toast.success(message);
+      if (warn) toast.warning(message);
+      else toast.success(message);
       setPending(null);
       setReason("");
       pending.refresh();
