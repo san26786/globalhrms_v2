@@ -47,8 +47,8 @@ export default function TimesheetEmpList({ status }: { status: string }) {
       query={query}
       filters={
         filters?.showFilter ? (
-          <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#111a2e]">
-            <label className="grid gap-1 text-sm font-medium text-slate-700 dark:text-[#d5dae4]">
+          <div className="flex flex-wrap items-end gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-300 hover:shadow-[0_18px_40px_-24px_rgba(6,27,49,0.3)] dark:border-white/10 dark:bg-[#111a2e]">
+            <label className="grid gap-1.5 text-[13px] font-medium text-slate-700 brand:text-[#1a1818] dark:text-[#f1f3f8]">
               Employment Status
               <SearchableSelect
                 ariaLabel="Employment Status"

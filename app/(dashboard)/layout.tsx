@@ -65,6 +65,8 @@ const DARK_READY_SECTIONS = [
   "/employeeMngt",
   "/job",
   "/department_activity",
+  // Timesheet: lists, forms, Manage Timesheet, projects and timesheet employees.
+  "/timesheet",
 ];
 
 /** CI header_v <title><?php echo $title ?></title>: the active menu item's name. */
