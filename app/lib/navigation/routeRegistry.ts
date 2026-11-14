@@ -155,6 +155,13 @@ const SAME_PATH: readonly string[] = [
   'job/job_mst/probation',
   // Exit and Clearance Formality (app/(dashboard)/department_activity/department_head_supervisor)
   'department_activity/department_head_supervisor',
+  // Timesheet (app/(dashboard)/timesheet/…)
+  'timesheet/timesheet',
+  'timesheet/timesheet/timesheetBlock',   // "Manage Timesheet" / "Submit for Approval Timesheet"
+  'timesheet/timesheet/userProjects',     // "My Projects" / "Configure Projects"
+  'timesheet/timesheetItem',              // "Timesheet Item"
+  'timesheet/new_timesheet_item',         // "New Timesheet Item"
+  'timesheet/timesheet_emp',              // "Timesheet Employee" (Sync Module)
 ];
 
 /** Screens whose Next folder differs from the CI URI. */
@@ -193,6 +200,37 @@ const RENAMED: readonly RouteRule[] = [
   // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
   { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
   { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },
+  // Timesheet — CI index/{status}/{period} and MyTeamTimesheet/{status}/{period} filters are query
+  // parameters here (status = the CI master id, so the menu entries such as index/6970 still match).
+  { ci: 'timesheet/timesheet/index/:status', next: '/timesheet/timesheet?status=:status' },
+  { ci: 'timesheet/timesheet/index/:status/:period', next: '/timesheet/timesheet?status=:status&period=:period' },
+  { ci: 'timesheet/timesheet/index/:status/:period/TIMESHEET_PERIOD', next: '/timesheet/timesheet?status=:status&period=:period' },
+  { ci: 'timesheet/timesheet/newTimesheet', next: '/timesheet/timesheet/add' },
+  { ci: 'timesheet/timesheet/editTimesheet/:id', next: '/timesheet/timesheet/edit/:id' },
+  { ci: 'timesheet/timesheet/MyTeamTimesheet', next: '/timesheet/timesheet/team' },
+  { ci: 'timesheet/timesheet/MyTeamTimesheet/:status', next: '/timesheet/timesheet/team?status=:status' },
+  { ci: 'timesheet/timesheet/MyTeamTimesheet/:status/:period', next: '/timesheet/timesheet/team?status=:status&period=:period' },
+  {
+    ci: 'timesheet/timesheet/MyTeamTimesheet/:status/:period/TIMESHEET_PERIOD',
+    next: '/timesheet/timesheet/team?status=:status&period=:period',
+  },
+  { ci: 'timesheet/timesheet/newTimesheet/:period/TEAM', next: '/timesheet/timesheet/team/add' },
+  { ci: 'timesheet/timesheet/editTimesheet/:id/:status/TEAM', next: '/timesheet/timesheet/team/edit/:id' },
+  // CI timesheetBlock/{monthOffset}/{empId} and userProjects/{userId}: the month / employee are page state here.
+  { ci: 'timesheet/timesheet/timesheetBlock/:offset', next: '/timesheet/timesheet/timesheetBlock' },
+  { ci: 'timesheet/timesheet/timesheetBlock/:offset/:empId', next: '/timesheet/timesheet/timesheetBlock' },
+  { ci: 'timesheet/timesheet/userProjects/:userId', next: '/timesheet/timesheet/userProjects?userId=:userId' },
+  // Timesheet items (CI timesheetItem/newTmshtItem/{tsId}/{oaId}/{brandId}/{userId}, editTmshtItem/{id}/…)
+  { ci: 'timesheet/timesheetItem/newTmshtItem', next: '/timesheet/timesheetItem/add' },
+  { ci: 'timesheet/timesheetItem/newTmshtItem/:tsId', next: '/timesheet/timesheetItem/add?tsId=:tsId' },
+  { ci: 'timesheet/timesheetItem/newTmshtItem/:tsId/:oaId/:brandId/:userId', next: '/timesheet/timesheetItem/add?tsId=:tsId' },
+  { ci: 'timesheet/timesheetItem/editTmshtItem/:id', next: '/timesheet/timesheetItem/edit/:id' },
+  { ci: 'timesheet/timesheetItem/editTmshtItem/:id/:tsId', next: '/timesheet/timesheetItem/edit/:id' },
+  { ci: 'timesheet/timesheetItem/editTmshtItem/:id/:tsId/:oaId/:brandId/:userId', next: '/timesheet/timesheetItem/edit/:id' },
+  { ci: 'timesheet/new_timesheet_item/index/:date', next: '/timesheet/new_timesheet_item?date=:date' },
+  { ci: 'timesheet/timesheet_emp/index/:status', next: '/timesheet/timesheet_emp?status=:status' },
+  { ci: 'timesheet/timesheet_emp/editTimesheetEmp/:id', next: '/timesheet/timesheet_emp/edit/:id' },
+  { ci: 'timesheet/timesheet_emp/editTimesheetEmp/:id/TEAM', next: '/timesheet/timesheet_emp/edit/:id' },
   // Bank Manager
   { ci: 'bankmanager/bankdetails', next: '/bank-manager/bank-details' },
   { ci: 'bankmanager/sheetimport', next: '/bank-manager/bank-transaction' },

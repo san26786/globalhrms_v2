@@ -18,6 +18,8 @@ interface DynamicFormProps<T extends FieldValues> {
   cancelText?: string;
   onCancel?: () => void;
   children?: React.ReactNode;
+  /** Content under the form card (CI formview_v child table, e.g. a timesheet's items). */
+  after?: React.ReactNode;
   /** Breadcrumb trail shown above the title, e.g. ["User", "User Master"]. The Add/Edit crumb is appended. */
   breadcrumb?: string[];
   /** Disables the save buttons while a request is in flight. */
@@ -41,6 +43,7 @@ export default function DynamicForm<T extends FieldValues>({
   cancelText = "Cancel",
   onCancel,
   children,
+  after,
   breadcrumb = ["Bank Manager", "Bank Account Details"],
   submitting = false,
   canSubmit = true,
@@ -225,6 +228,8 @@ export default function DynamicForm<T extends FieldValues>({
           </Button>
         </div>
       </form>
+
+      {after}
     </div>
   );
 }

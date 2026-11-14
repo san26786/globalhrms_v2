@@ -3,15 +3,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table';
-import { Pencil, PlusCircle, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  Clock,
+  Cog,
+  Pencil,
+  PlusCircle,
+  RefreshCw,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
+  Upload,
+  User,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { DataTable } from '@/components/DataTable';
 import type { BulkAction, RowAction } from '@/components/DataTable/types';
 import ConfirmDelete from '@/components/Dialog/ConfirmDelete';
+import ListActionDialog from '@/components/listview/ListActionDialog';
 import ListViewShell, { type ListAction } from '@/components/listview/ListViewShell';
 import { authFetch } from '@/lib/auth/authFetch';
 import type { ColumnSetting } from '@/lib/import-export/ExportService';
+import type { ListActionIcon, ResolvedListAction } from '@/lib/listview/listDefinitions';
 
 /**
  * The generic CI list view: `<EntityListView list="dashboard_menu" />`. Everything else comes from
@@ -44,6 +59,34 @@ function formatCell(value: unknown): string {
   return DATE_ONLY.exec(text)?.[1] ?? text;
 }
 
+/** Icons of the configured list actions (listDefinitions `listActions[].icon`). */
+const ACTION_ICONS: Record<ListActionIcon, LucideIcon> = {
+  'plus-circle': PlusCircle,
+  cog: Cog,
+  clock: Clock,
+  user: User,
+  users: Users,
+  'thumbs-up': ThumbsUp,
+  'thumbs-down': ThumbsDown,
+  upload: Upload,
+  refresh: RefreshCw,
+};
+
+/** Calls a configured action's endpoint; throws the API's (first validation) message on failure. */
+async function callAction(request: NonNullable<ResolvedListAction['request']>, body: Record<string, unknown>): Promise<string | undefined> {
+  const res = await authFetch(request.url, {
+    method: request.method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...(request.body ?? {}), ...body }),
+  });
+  const json = (await res.json().catch(() => null)) as { success?: boolean; message?: string; errors?: Record<string, string[]> } | null;
+  if (!res.ok || !json?.success) {
+    const first = json?.errors ? Object.values(json.errors)[0]?.[0] : undefined;
+    throw new Error(first ?? json?.message ?? 'The action failed.');
+  }
+  return json.message;
+}
+
 /** What module-specific actions get: the selected rows and a list reload. */
 export interface ListContext {
   selected: Row[];
@@ -58,6 +101,7 @@ export default function EntityListView({
   query,
   filters,
   tabs,
+  onActionDone,
 }: {
   /** Key of lib/listview/listDefinitions.ts. */
   list: string;
@@ -73,6 +117,8 @@ export default function EntityListView({
   filters?: ReactNode;
   /** CI tabs_v (e.g. the brand tabs OA Brands / Company Documents / Company Attributes). */
   tabs?: ReactNode;
+  /** After a configured action marked `reloadPage` succeeded: re-read page data (e.g. filter options). */
+  onActionDone?: (key: string) => void;
 }) {
   const router = useRouter();
   const [meta, setMeta] = useState<Omit<ListResponse, 'data' | 'total' | 'success' | 'message'> | null>(null);
@@ -91,7 +137,11 @@ export default function EntityListView({
   const [deleting, setDeleting] = useState(false);
   const tableRef = useRef(null);
   const [syncing, setSyncing] = useState(false);
-  
+  // Configured list actions (listDefinitions `listActions`), resolved per page query.
+  const [configured, setConfigured] = useState<ResolvedListAction[]>([]);
+  const [runningAction, setRunningAction] = useState<string | null>(null);
+  const [openDialog, setOpenDialog] = useState<ResolvedListAction | null>(null);
+
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(t);
@@ -141,6 +191,21 @@ export default function EntityListView({
       cancelled = true;
     };
   }, [list, queryKey, pagination, sorting, debounced, columnFilters, version]);
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch(`/api/listview/${encodeURIComponent(list)}/actions?${queryKey}`, { cache: 'no-store' })
+      .then(async (res) => {
+        const json = (await res.json().catch(() => null)) as { success?: boolean; data?: ResolvedListAction[] } | null;
+        if (!cancelled) setConfigured(res.ok && json?.success ? (json.data ?? []) : []);
+      })
+      .catch(() => {
+        if (!cancelled) setConfigured([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [list, queryKey]);
 
   const pk = meta?.primaryKey ?? 'ID';
   const idOf = useCallback((row: Row) => String(row[pk] ?? ''), [pk]);
@@ -207,6 +272,40 @@ export default function EntityListView({
     }
   };
 
+  const afterAction = (action: ResolvedListAction, message: string | undefined) => {
+    toast.success(message ?? 'Done.');
+    if (action.reload !== false) {
+      setSelected([]);
+      refresh();
+    }
+    if (action.reloadPage) onActionDone?.(action.key);
+  };
+
+  const runApiAction = async (action: ResolvedListAction) => {
+    if (!action.request || runningAction) return;
+    let body: Record<string, unknown> = {};
+    if (action.selection) {
+      if (!selected.length) return toast.error(action.selection.emptyMessage);
+      const column = action.selection.column;
+      body = { ids: selected.map((row) => Number(row[column])) };
+    }
+    setRunningAction(action.key);
+    try {
+      afterAction(action, await callAction(action.request, body));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'The action failed.');
+    } finally {
+      setRunningAction(null);
+    }
+  };
+
+  const configuredActions: ListAction[] = configured.map((action) => {
+    const base = { key: action.key, title: action.title, icon: ACTION_ICONS[action.icon] ?? Cog };
+    if (action.kind === 'link') return { ...base, href: action.href ?? '#' };
+    if (action.kind === 'dialog') return { ...base, onClick: () => setOpenDialog(action) };
+    return { ...base, disabled: runningAction !== null, onClick: () => void runApiAction(action) };
+  });
+
   const columnSettings: ColumnSetting[] = (meta?.columns ?? []).map((c) => ({
     systemName: c.name,
     displayName: c.label,
@@ -217,6 +316,7 @@ export default function EntityListView({
   const headerActions: ListAction[] = [
     ...(links?.add ? [{ key: 'add', title: `Add New ${title ?? meta?.title ?? ''}`.trim(), icon: PlusCircle, href: links.add }] : []),
     ...(links?.sync ? [{ key: 'sync', title: 'Sync', icon: RefreshCw, onClick: handleSync, disabled: syncing }] : []),
+    ...configuredActions,
     ...(typeof listActions === 'function' ? listActions({ selected, refresh }) : listActions),
   ];
 
@@ -258,6 +358,15 @@ export default function EntityListView({
           isFetching: loading,
         }}
       />
+
+      {openDialog?.dialog && openDialog.request && (
+        <ListActionDialog
+          key={openDialog.key}
+          dialog={openDialog.dialog}
+          onClose={() => setOpenDialog(null)}
+          onSubmit={async (values) => afterAction(openDialog, await callAction(openDialog.request!, values))}
+        />
+      )}
 
       <ConfirmDelete
         open={pendingDelete !== null}

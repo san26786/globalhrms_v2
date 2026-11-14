@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 
 import DynamicForm from "@/components/DynamicForm/DynamicForm";
+import FormButtonBar, { type FormButtonResult } from "@/components/resource/FormButtonBar";
+import FormChildTable from "@/components/resource/FormChildTable";
 import type { DynamicField } from "@/lib/form-builder/formTypes";
 import { fillUrlTemplate, isFieldVisible } from "@/lib/form-builder/utils/visibility";
 import type { FormInitPayload } from "@/lib/form-init/initForm";
@@ -144,6 +146,10 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   const [loading, setLoading] = useState(shouldLoad);
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Bumped by a form button / child-table change: the init payload is read again (status, buttons, totals).
+  const [reloadKey, setReloadKey] = useState(0);
+  // Last seen values of `fillFrom` fields; null until the loaded record is the baseline.
+  const previousFill = useRef<Record<string, string> | null>(null);
 
   useEffect(() => {
     if (!shouldLoad) return;
@@ -156,6 +162,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
         if (!json.success) throw new Error(json.message ?? "Failed to load record.");
         if (initUrl) {
           const payload = json.data as FormInitPayload;
+          previousFill.current = null;
           setInit(payload);
           form.reset(payload.values as TForm);
         } else {
@@ -169,7 +176,7 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
     };
     // `form`/`toForm` are stable for the lifetime of the page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldLoad, initUrl, loadUrl, id, apiPath, mode]);
+  }, [shouldLoad, initUrl, loadUrl, id, apiPath, mode, reloadKey]);
 
   /** `kind`: "save", "add" (Save and Add) or the key of one of `extraSaves`. */
   const save = async (values: TForm, kind: string) => {
@@ -231,6 +238,36 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
     });
   });
 
+  // CI form scripts that fill inputs from a choice (DynamicField.fillFrom): only a change the user
+  // makes after the record is loaded triggers it.
+  useEffect(() => {
+    if (loading) return;
+    const sources = configuredFields.filter((f) => f.fillFrom);
+    if (!sources.length) return;
+    const now = Object.fromEntries(sources.map((f) => [f.name, String(values[f.name] ?? "")]));
+    const before = previousFill.current;
+    previousFill.current = now;
+    if (!before) return;
+    for (const f of sources) {
+      if (before[f.name] === now[f.name] || !f.fillFrom) continue;
+      const { url, map } = f.fillFrom;
+      const setTargets = (data: Record<string, unknown> | null) => {
+        for (const [target, key] of Object.entries(map)) {
+          form.setValue(target as Path<TForm>, (data?.[key] ?? "") as never, { shouldDirty: true });
+        }
+      };
+      const target = fillUrlTemplate(url, values);
+      if (!target) {
+        setTargets(null);
+        continue;
+      }
+      authFetch(target, { cache: "no-store" })
+        .then((res) => res.json())
+        .then((json) => setTargets(json?.success ? (json.data as Record<string, unknown>) : null))
+        .catch(() => setTargets(null));
+    }
+  });
+
   const { columns: formConfig } = useListColumns(objectName);
   // CI getVisibleColForFV: a field whose attribute is not visible in the form is not shown. Required
   // fields stay visible — hiding one would make every save fail validation.
@@ -249,6 +286,21 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
   if (loadError) return <p className="p-6 text-sm text-red-500">{loadError}</p>;
 
   const canSubmit = (canSubmitProp ?? true) && (init?.canSubmit ?? true);
+
+  // After a form button: the response's redirect, else the button's `then` (default: read the form again).
+  const afterButton = ({ button, redirect }: FormButtonResult) => {
+    const next = redirect ?? button.then ?? "reload";
+    if (next === "reload") setReloadKey((k) => k + 1);
+    else router.push(next === "list" ? basePath : next);
+  };
+  const buttonBar = init?.buttons?.length ? <FormButtonBar buttons={init.buttons} onDone={afterButton} /> : null;
+  const childTables = init?.tables?.length ? (
+    <>
+      {init.tables.map((t) => (
+        <FormChildTable key={t.key} table={t} onChanged={() => setReloadKey((k) => k + 1)} />
+      ))}
+    </>
+  ) : null;
 
   if (renderForm) {
     return renderForm({
@@ -278,7 +330,9 @@ export default function ResourceFormPage<TForm extends FieldValues, TDto = TForm
         saveAndAddOnEdit={saveAndAddOnEdit}
         extraSubmits={extraSaves.map((x) => ({ key: x.key, label: x.label, icon: x.icon, onSubmit: (v: TForm) => save(v, x.key) }))}
         onCancel={() => router.push(basePath)}
+        after={childTables}
       >
+        {buttonBar}
         {children}
       </DynamicForm>
     </div>

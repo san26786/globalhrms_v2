@@ -49,11 +49,14 @@ export const GET = withApi<{ list: string }>(async ({ req, params, subject }) =>
       colNm: equals.map((w) => w.column),
       colValue: equals.map((w) => w.value),
       whereIn: scope.in,
+      whereNot: scope.notEquals,
       extraSelect: def.extraColumns,
       orgColumnName: def.orgColumn,
       orgId: orgValue,
       userColumnName: def.userColumn,
       userId: def.userScope === 'brand' ? subject.oaBrandId : subject.userId,
+      // CI $approverColumnName with $ApproverID = session user (team lists).
+      ...(def.approverColumn ? { approverColumnName: def.approverColumn, approverId: subject.userId } : {}),
       session: toTableDtlSession(subject),
       page,
       limit,
@@ -69,7 +72,7 @@ export const GET = withApi<{ list: string }>(async ({ req, params, subject }) =>
     }),
     def.addHref ? def.policy.check(subject, 'create') : Promise.resolve(false),
     def.editHref ? def.policy.check(subject, 'update') : Promise.resolve(false),
-    def.deleteApi ? def.policy.check(subject, 'delete') : Promise.resolve(false),
+    def.deleteApi && subject.adminLevel >= (def.deleteMinLevel ?? 0) ? def.policy.check(subject, 'delete') : Promise.resolve(false),
   ]);
 
   return ok(result.tableBody, {

@@ -71,10 +71,14 @@ export async function typeIdOf(code: string): Promise<number | null> {
   return row?.TYP_ID ?? null;
 }
 
-/** Dropdown options of one master type (CI getAllIndpMstDataByTypeId / GROUP BY MSTR_NM ORDER BY SEQUENCE). */
-export async function getMasterOptionsByType(typeId: number): Promise<MasterOption[]> {
+/**
+ * Dropdown options of one master type (CI getAllIndpMstDataByTypeId / GROUP BY MSTR_NM ORDER BY SEQUENCE).
+ * `oaBrandId`: only that brand's rows (CI getAllIndMstDetailsByTypeCode($code, $brand), e.g. a
+ * brand's timesheet projects).
+ */
+export async function getMasterOptionsByType(typeId: number, opts: { oaBrandId?: number | null } = {}): Promise<MasterOption[]> {
   const rows = await prisma.independent_mst.findMany({
-    where: { TYP_ID: typeId, ...NOT_DELETED },
+    where: { TYP_ID: typeId, ...NOT_DELETED, ...(opts.oaBrandId ? { OA_BRAND_ID: opts.oaBrandId } : {}) },
     select: { MSTR_ID: true, MSTR_NM: true, MSTR_CD: true },
     orderBy: [{ SEQUENCE: 'asc' }, { MSTR_NM: 'asc' }, { MSTR_ID: 'asc' }],
   });
@@ -91,9 +95,9 @@ export async function getMasterOptionsByType(typeId: number): Promise<MasterOpti
 }
 
 /** Options of the master type identified by common_type.TYP_CD (e.g. 'USQ' security questions). */
-export async function getMasterOptionsByTypeCode(typeCode: string): Promise<MasterOption[]> {
+export async function getMasterOptionsByTypeCode(typeCode: string, opts: { oaBrandId?: number | null } = {}): Promise<MasterOption[]> {
   const type = await prisma.common_type.findFirst({ where: { TYP_CD: typeCode }, select: { TYP_ID: true } });
-  return type ? getMasterOptionsByType(type.TYP_ID) : [];
+  return type ? getMasterOptionsByType(type.TYP_ID, opts) : [];
 }
 
 /** common_type children of a parent type (CI common_type_m getDataByParentTypeID). */

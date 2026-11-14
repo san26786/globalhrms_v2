@@ -57,8 +57,15 @@ export default function FieldFactory({
     case "tel":
     case "url":
     case "file":
+    case "time":
       return (
         <InputField field={{ ...field, readOnly: locked }} register={register} rules={rules} errors={errors} />
+      );
+
+    // Native date input: the value stays a calendar day "yyyy-mm-dd" (no time zone shift), for DATE columns.
+    case "date-input":
+      return (
+        <InputField field={{ ...field, type: "date", readOnly: locked }} register={register} rules={rules} errors={errors} />
       );
 
     case "textarea":

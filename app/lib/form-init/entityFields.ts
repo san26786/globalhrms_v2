@@ -27,6 +27,18 @@ export interface EntitySpec {
    * or stamped by the API.
    */
   columns?: string[];
+  /**
+   * CI getColDetails' alias argument: the view column whose label a table column uses when the view
+   * renames it (timesheet.TOT_TS_DURATION is listed as timesheet_vw.TOTAL_TS_DURATION).
+   */
+  aliases?: Record<string, string>;
+  /** Control type per column where the metadata cannot tell (e.g. a master id shown as a select). */
+  types?: Record<string, string>;
+  /**
+   * CI getColDetails' explicit $required argument per column; wins over the column's NOT NULL flag
+   * (CI passed 0 for columns such as timesheet.TS_PRJ_ID although they are NOT NULL).
+   */
+  required?: Record<string, boolean>;
 }
 
 export interface EntityMeta {
@@ -159,8 +171,8 @@ export async function entityFields(
   const fields = columns.flatMap((column, order): DynamicField[] => {
     const a = byName.get(column);
     if (!a) return [];
-    const required = a.IS_NULL.toUpperCase() === "NO" || isRequired(column);
-    const type = controlType(a);
+    const required = spec.required?.[column] ?? (a.IS_NULL.toUpperCase() === "NO" || isRequired(column));
+    const type = spec.types?.[column] ?? controlType(a);
     const rules: FieldRules | undefined =
       (type === "text" || type === "textarea") && a.OBJ_SZ > 0 ? { maxLength: a.OBJ_SZ } : undefined;
     return [{
@@ -170,7 +182,7 @@ export async function entityFields(
       type,
       required,
       order,
-      ...display(column, required, displayMap.get(column.toLowerCase())),
+      ...display(column, required, displayMap.get((spec.aliases?.[column] ?? column).toLowerCase())),
       ...(rules ? { rules } : {}),
     }];
   });
