@@ -107,6 +107,7 @@ const NO_EMPLOYEE_OPTIONS: EmployeeOptions = { options: {}, extras: {} };
  * `next`: where a save goes instead, for the saved employee (CI "Save And Next"); Cancel still goes back.
  * `extraSaves`: more labelled save buttons (CI form buttons such as exit clearance "Save and Preview"): each saves the
  * record (and uploads its file), then runs `after` with the saved employee and record id.
+ * `saveAndAdd={false}`: no "Save And Add" (CI forms with saveAndAddButton = false, e.g. Investment Details).
  */
 export default function HubForm({
   screen,
@@ -116,6 +117,7 @@ export default function HubForm({
   back,
   next,
   extraSaves,
+  saveAndAdd = true,
 }: {
   screen: HubScreenKey;
   mode: "add" | "edit";
@@ -124,6 +126,7 @@ export default function HubForm({
   back?: string;
   next?: (employee: string) => string;
   extraSaves?: Array<{ key: string; label: string; after: (employee: string, recordId: number | null) => void }>;
+  saveAndAdd?: boolean;
 }) {
   const info = HUB_SCREENS[screen];
   const defs = HUB_DEFS[screen];
@@ -270,8 +273,8 @@ export default function HubForm({
       defaultValues={defaults}
       toPayload={toPayload}
       onSaved={onSaved}
-      allowSaveAndAdd={!next}
-      saveAndAddOnEdit={!next}
+      allowSaveAndAdd={!next && saveAndAdd}
+      saveAndAddOnEdit={!next && saveAndAdd}
       onSavedAndAdd={onSavedAndAdd}
       canSubmit={data.canSave}
       extraSaves={extraSaves?.map((x) => ({

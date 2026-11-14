@@ -42,7 +42,8 @@ export type HubScreenKey =
   | 'my_payslips'
   | 'salary_report'
   | 'salary_components'
-  | 'salary_breakup';
+  | 'salary_breakup'
+  | 'form16';
 
 export interface HubScreenInfo {
   /** CI menu URL — its permission_dtl grant governs the screen. */
@@ -153,6 +154,8 @@ export const HUB_SCREENS: Record<HubScreenKey, HubScreenInfo> = {
     menu: 'employeeMngt/emp_sal_component_dtl/SalaryBreakUp', title: 'Salary Breakup', objectName: 'salary_breakup_vw', noun: 'Salary Breakup',
     base: '/employeeMngt/emp_sal_component_dtl/SalaryBreakUp', section: PAYROLL,
   },
+  // Payroll — Form 16 (group P5)
+  form16: { menu: 'form16/form16', title: 'Form-16', objectName: 'form16_vw', noun: 'Form-16', base: '/form16/form16', section: PAYROLL },
 };
 
 export const isHubScreen = (key: string): key is HubScreenKey => Object.prototype.hasOwnProperty.call(HUB_SCREENS, key);

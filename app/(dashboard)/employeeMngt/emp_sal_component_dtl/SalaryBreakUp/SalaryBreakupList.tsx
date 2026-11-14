@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileSpreadsheet, Loader2 } from "lucide-react";
+import { Calculator, FileSpreadsheet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PlainSelect } from "@/(dashboard)/utilities/_components/UtilityPage";
@@ -13,18 +13,26 @@ import HubList from "../../_hub/HubList";
 
 /**
  * CI employeeMngt/emp_sal_component_dtl/SalaryBreakUp ("Salary Breakup"): each employee's salary breakup of a financial
- * year (default the current one; "All years"), and for admins "Generate Monthly Tax Deduction" (the year's income tax
- * per month, .xlsx). Rules: lib/employeeMngt/hub/screens/salary_breakup.ts, lib/payroll/reports/monthlyTax.ts.
+ * year (default the current one; "All years"), and for admins CI's two exports: "Generate Tax Breakup" (each employee's
+ * declarations, taxable income and tax — CI emp_investment_declarations::exportTaxBreakup) and "Generate Monthly Tax
+ * Deduction" (the year's income tax per month), .xlsx. Rules: lib/employeeMngt/hub/screens/salary_breakup.ts,
+ * lib/payroll/declarations/taxBreakup.ts, lib/payroll/reports/monthlyTax.ts.
  */
 const ALL = "all";
 type Option = { value: number; label: string };
+
+/** CI's two export dialogs: endpoint, file name and title. */
+const EXPORTS = {
+  tax: { url: "/api/payroll/reports/tax-breakup", file: "Tax Breakup Report.xlsx", title: "Export Tax Breakup" },
+  monthly: { url: "/api/payroll/reports/monthly-tax", file: "Monthly Tax Deducation Report.xlsx", title: "Export Monthly Tax Deduction" },
+} as const;
 
 export default function SalaryBreakupList({ emp }: { emp?: string }) {
   const session = useCurrentSession();
   const admin = (session?.userLevel ?? 0) > 0;
   const [years, setYears] = useState<Option[] | null>(null);
   const [fy, setFy] = useState<string>(ALL);
-  const [dialog, setDialog] = useState(false);
+  const [dialog, setDialog] = useState<keyof typeof EXPORTS | null>(null);
   const [taxFy, setTaxFy] = useState("");
   const [busy, setBusy] = useState(false);
   const filters = useMemo(() => {
@@ -55,7 +63,8 @@ export default function SalaryBreakupList({ emp }: { emp?: string }) {
     }
     setBusy(true);
     try {
-      const res = await authFetch(`/api/payroll/reports/monthly-tax?fy=${encodeURIComponent(taxFy)}`);
+      if (!dialog) return;
+      const res = await authFetch(`${EXPORTS[dialog].url}?fy=${encodeURIComponent(taxFy)}`);
       if (!res.ok) {
         const json = (await res.json().catch(() => null)) as { message?: string } | null;
         throw new Error(json?.message ?? "The file could not be made.");
@@ -63,10 +72,10 @@ export default function SalaryBreakupList({ emp }: { emp?: string }) {
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement("a");
       a.href = url;
-      a.download = "Monthly Tax Deducation Report.xlsx";
+      a.download = EXPORTS[dialog].file;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setDialog(false);
+      setDialog(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "The file could not be made.");
     } finally {
@@ -90,19 +99,22 @@ export default function SalaryBreakupList({ emp }: { emp?: string }) {
         )}
         listActions={() =>
           admin && years?.length
-            ? [{ key: "monthly-tax", title: "Generate Monthly Tax Deduction", icon: FileSpreadsheet, onClick: () => { setTaxFy(fy !== ALL ? fy : String(years[0].value)); setDialog(true); } }]
+            ? [
+                { key: "tax-breakup", title: "Generate Tax Breakup", icon: Calculator, onClick: () => { setTaxFy(fy !== ALL ? fy : String(years[0].value)); setDialog("tax"); } },
+                { key: "monthly-tax", title: "Generate Monthly Tax Deduction", icon: FileSpreadsheet, onClick: () => { setTaxFy(fy !== ALL ? fy : String(years[0].value)); setDialog("monthly"); } },
+              ]
             : []
         }
       /> : null}
       {dialog ? (
-        <Dialog open onOpenChange={(v) => !v && !busy && setDialog(false)}>
+        <Dialog open onOpenChange={(v) => !v && !busy && setDialog(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Export Monthly Tax Deduction</DialogTitle>
+              <DialogTitle>{EXPORTS[dialog].title}</DialogTitle>
             </DialogHeader>
             <PlainSelect id="taxYear" label="Financial Year" value={taxFy} onChange={setTaxFy} options={(years ?? []).map((y) => ({ value: String(y.value), label: y.label }))} />
             <DialogFooter className="gap-2">
-              <Button variant="outline" disabled={busy} onClick={() => setDialog(false)}>
+              <Button variant="outline" disabled={busy} onClick={() => setDialog(null)}>
                 Close
               </Button>
               <Button disabled={busy} onClick={generate}>

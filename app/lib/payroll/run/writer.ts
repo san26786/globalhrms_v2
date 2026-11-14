@@ -7,7 +7,7 @@ import { computeTds, nonTaxableYearly, type TaxRule, type TdsResult } from '../t
 import { breakupDeltas, computePayslip, finishPayslip, type Cents, type PayslipResult } from './compute';
 import {
   annexureLines, currentAnnexures, existingPayslip, lopDays, monthText, odaDays, runInputs, timesheetIssues,
-  type EmployeeRecord, type RunContext,
+  type EmployeeRecord, type RunContext, type TaxSetup,
 } from './context';
 
 /**
@@ -51,19 +51,20 @@ export class SkipEmployee extends Error {
   }
 }
 
-/** CI calculateTDS via getTDSByEmpAndFY: the month's income tax (cents) for this payslip. */
-async function incomeTax(tx: Tx, ctx: RunContext, e: EmployeeRecord, breakup: Record<string, Cents>, lopCents: Cents, snapshot: Record<string, Cents>): Promise<{ cents: Cents; detail: TdsResult }> {
-  const t = ctx.tax!;
-  const ci = t.mode === 'ci';
-  const [job] = ci
-    ? await tx.$queryRaw<Array<{ r: boolean | null }>>`SELECT "NEW_REGIME" AS r FROM job_mst WHERE "EMP_ID" = ${e.id} AND "IS_DELETED" = 0 ORDER BY "JOB_ID" ASC LIMIT 1`
-    : await tx.$queryRaw<Array<{ r: boolean | null }>>`SELECT "NEW_REGIME" AS r FROM job_mst WHERE "EMP_ID" = ${e.id} AND "IS_DELETED" = 0 ORDER BY "JOB_ID" DESC LIMIT 1`;
-  if (!ci && (job?.r === null || job?.r === undefined)) throw new SkipEmployee("The employee's job record does not say which tax regime applies (New Tax Regime).");
-  const isNew = job?.r === true;
+/**
+ * The FY's tax rules that apply to the employee (CI calculateTDS' rule reads): the regime's slabs (gender, country,
+ * tax allowance type), standard deductions, rebates, marginal relief (new regime), cess and the non-taxable
+ * components' rules in settings order. Shared with the investment declarations' tax summary.
+ */
+export function employeeTaxRules(
+  t: TaxSetup,
+  m: { SCINTX: number; SFMINUS: number },
+  e: Pick<EmployeeRecord, 'gender' | 'taxAllowanceType'>,
+  isNew: boolean,
+) {
   const gender = (r: TaxRule) => r.gender === null || r.gender === 0 || r.gender === e.gender;
   const country = (r: { country: number | null }) => t.country === null || r.country === t.country;
   const regime = (r: TaxRule) => (r.newRegime ?? false) === isNew;
-  const m = ctx.masters;
   const slabs = t.rules.filter((r) => r.component === m.SCINTX && r.sign === m.SFMINUS && regime(r) && gender(r) && country(r)
     && (r.taxAllowanceType === null || r.taxAllowanceType === 0 || r.taxAllowanceType === e.taxAllowanceType));
   const flat = t.rules.filter((r) => r.ruleType !== null && r.ruleType === t.rt.BRTYFDR && regime(r)).map((r) => r.values);
@@ -74,6 +75,20 @@ async function incomeTax(tx: Tx, ctx: RunContext, e: EmployeeRecord, breakup: Re
   const nonTaxableRules = t.rules
     .filter((r) => r.component !== null && order.has(r.component) && gender(r))
     .sort((a, b) => order.get(a.component!)! - order.get(b.component!)!);
+  return { slabs, flat, rebates, relief, cess, nonTaxableRules };
+}
+
+/** CI calculateTDS via getTDSByEmpAndFY: the month's income tax (cents) for this payslip. */
+async function incomeTax(tx: Tx, ctx: RunContext, e: EmployeeRecord, breakup: Record<string, Cents>, lopCents: Cents, snapshot: Record<string, Cents>): Promise<{ cents: Cents; detail: TdsResult }> {
+  const t = ctx.tax!;
+  const ci = t.mode === 'ci';
+  const [job] = ci
+    ? await tx.$queryRaw<Array<{ r: boolean | null }>>`SELECT "NEW_REGIME" AS r FROM job_mst WHERE "EMP_ID" = ${e.id} AND "IS_DELETED" = 0 ORDER BY "JOB_ID" ASC LIMIT 1`
+    : await tx.$queryRaw<Array<{ r: boolean | null }>>`SELECT "NEW_REGIME" AS r FROM job_mst WHERE "EMP_ID" = ${e.id} AND "IS_DELETED" = 0 ORDER BY "JOB_ID" DESC LIMIT 1`;
+  if (!ci && (job?.r === null || job?.r === undefined)) throw new SkipEmployee("The employee's job record does not say which tax regime applies (New Tax Regime).");
+  const isNew = job?.r === true;
+  const m = ctx.masters;
+  const { slabs, flat, rebates, relief, cess, nonTaxableRules } = employeeTaxRules(t, m, e, isNew);
   const monthly = (snapshot.MONTHLY_SALARY ?? 0) / 100;
 
   let investments = 0;

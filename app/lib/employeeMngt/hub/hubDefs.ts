@@ -28,6 +28,7 @@ import { empHrprocessDefs } from './defs/emp_hrprocess';
 import { annexureProcessingDefs, myAnnexuresDefs } from './defs/annexures';
 import { myPayslipsDefs, payrollProcessingDefs } from './defs/payslips';
 import { salaryBreakupDefs } from './defs/salary_breakup';
+import { form16Defs } from './defs/form16';
 import { salaryComponentsDefs } from './defs/salary_components';
 import { salaryReportDefs } from './defs/salary_report';
 import type { HubScreenDefs } from './hubFields';
@@ -71,4 +72,5 @@ export const HUB_DEFS: Record<HubScreenKey, HubScreenDefs> = {
   salary_report: salaryReportDefs,
   salary_components: salaryComponentsDefs,
   salary_breakup: salaryBreakupDefs,
+  form16: form16Defs,
 };

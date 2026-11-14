@@ -141,7 +141,8 @@ export async function loadRunContext(brand: number, month: number, year: number,
   };
 }
 
-async function loadTaxSetup(brand: number, fy: FinancialYear, country: number | null, m: Record<Code, number>, mode: TdsMode): Promise<TaxSetup> {
+/** The FY's tax rules and settings (also read by the investment declarations' tax summary and Tax Breakup). */
+export async function loadTaxSetup(brand: number, fy: FinancialYear, country: number | null, m: Record<Code, number>, mode: TdsMode): Promise<TaxSetup> {
   const rt = (await getMasterIds(['BRTYFDR', 'BRTYRBE', 'BRTYMRF'])) as TaxSetup['rt'];
   const nonTaxable = await prisma.$queryRaw<Array<{ component: number }>>`
     SELECT s."COMPONENT_ID" AS component FROM salary_component_settings s

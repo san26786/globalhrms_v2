@@ -150,6 +150,9 @@ const SAME_PATH: readonly string[] = [
   'employeeMngt/emp_sal_component_dtl/professionalTax',
   'employeeMngt/emp_sal_component_dtl/MonthlyGrossReport',
   'employeeMngt/emp_sal_component_dtl/MonthlyNetReport',
+  // Payroll — Form 16 (group P5); its quarters and settings live under it (app/(dashboard)/form16/form16/**), so the
+  // Form 16 menu grant governs them too
+  'form16/form16',
   // Employee Hub — Job Detail and its probation worklist (app/(dashboard)/job/job_mst)
   'job/job_mst',
   'job/job_mst/probation',
@@ -197,6 +200,32 @@ const RENAMED: readonly RouteRule[] = [
   { ci: 'employeeMngt/emp_sal_component_dtl/professionalTax/:emp/:fy', next: '/employeeMngt/emp_sal_component_dtl/professionalTax?emp=:emp&fy=:fy' },
   { ci: 'employeeMngt/emp_sal_component_dtl/MonthlyGrossReport/:emp/:fy', next: '/employeeMngt/emp_sal_component_dtl/MonthlyGrossReport?emp=:emp&fy=:fy' },
   { ci: 'employeeMngt/emp_sal_component_dtl/MonthlyNetReport/:emp/:fy', next: '/employeeMngt/emp_sal_component_dtl/MonthlyNetReport?emp=:emp&fy=:fy' },
+  // Payroll — investment declarations (group P5): the page lives under Investment Details (its grant governs it)
+  { ci: 'employeeMngt/emp_investment_declarations/index/:id', next: '/employeeMngt/emp_investments/declarations?investment=:id', legacy: true },
+  { ci: 'employeeMngt/emp_investment_declarations', next: '/employeeMngt/emp_investments', legacy: true },
+  { ci: 'employeeMngt/emp_investment_declarations/exportTaxBreakup', next: '/employeeMngt/emp_sal_component_dtl/SalaryBreakUp', legacy: true },
+  { ci: 'employeeMngt/emp_investment_declarations/exportMonthlyTaxDeduction', next: '/employeeMngt/emp_sal_component_dtl/SalaryBreakUp', legacy: true },
+  { ci: 'employeeMngt/emp_investments/newEmpInvestments/:emp', next: '/employeeMngt/emp_investments/add?emp=:emp', legacy: true },
+  { ci: 'employeeMngt/emp_investments/editEmp_investments/:id/:emp', next: '/employeeMngt/emp_investments/edit/:id?emp=:emp', legacy: true },
+  { ci: 'employeeMngt/emp_investments/editEmp_investments/:id', next: '/employeeMngt/emp_investments/edit/:id', legacy: true },
+  // Payroll — Form 16 (group P5): CI links (forward only)
+  { ci: 'form16/form16/newform16detail', next: '/form16/form16/add', legacy: true },
+  { ci: 'form16/form16/editform16detail/:id', next: '/form16/form16/edit/:id', legacy: true },
+  { ci: 'form16/form16/previewForm16/:id', next: '/form16/form16/edit/:id', legacy: true },
+  { ci: 'form16/form16/generateForm16/:id', next: '/form16/form16/edit/:id', legacy: true },
+  { ci: 'form16/form16/generateForm16/:id/:emp', next: '/form16/form16/edit/:id', legacy: true },
+  { ci: 'form16/form16_quarters', next: '/form16/form16/quarters', legacy: true },
+  { ci: 'form16/form16_quarters/newform16quarterdetail', next: '/form16/form16/quarters/add', legacy: true },
+  { ci: 'form16/form16_quarters/newform16quarterdetail/:form16', next: '/form16/form16/quarters/add?form16=:form16', legacy: true },
+  { ci: 'form16/form16_quarters/editform16quarterdetail/:id', next: '/form16/form16/quarters/edit/:id?from=list', legacy: true },
+  { ci: 'form16/form16_quarters/editform16quarterdetail/:id/:form16', next: '/form16/form16/quarters/edit/:id', legacy: true },
+  { ci: 'form16/form16_quarter_settings', next: '/form16/form16/quarter_settings', legacy: true },
+  { ci: 'form16/form16_quarter_settings/newform16quartersettingsdetail', next: '/form16/form16/quarter_settings/add', legacy: true },
+  { ci: 'form16/form16_quarter_settings/editform16quartersettingsdetail/:id', next: '/form16/form16/quarter_settings/edit/:id', legacy: true },
+  { ci: 'form16/form16_settings', next: '/form16/form16/settings', legacy: true },
+  { ci: 'form16/form16_settings/index/:code', next: '/form16/form16/settings', legacy: true },
+  { ci: 'form16/form16_settings/newPayslipSettings', next: '/form16/form16/settings', legacy: true },
+  { ci: 'form16/form16_settings/editPayslip_settings/:id', next: '/form16/form16/settings', legacy: true },
   // Advance Settings — benefit rules, one list per rule type (CI index() defaulted to BRTYSBR)
   { ci: 'benefitrules/benefitrules/index/:type', next: '/benefitrules/benefitrules?type=:type' },
   { ci: 'benefitrules/benefitrules', next: '/benefitrules/benefitrules?type=BRTYSBR' },

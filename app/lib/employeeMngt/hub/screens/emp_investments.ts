@@ -8,8 +8,10 @@ import { financialYearOptions, keepCurrent, periodLabel } from '../hubOptions';
  * financial year (table investment_mst_declaration). Payroll's TDS reads ACTUAL_AMOUNT of the employee's
  * live row for the year.
  *
- * Not migrated yet: CI's "Save And Next" India tax-declaration page (emp_investment_declarations — nine
- * IT-Act sections that fill the amounts); its PostgreSQL tables do not match what CI writes.
+ * CI's form button "Save And Next" saves the header and opens its India tax-declaration page (the add / edit
+ * pages app/(dashboard)/employeeMngt/emp_investments; the page and its nine IT-Act sections, which fill
+ * TOTAL_INVESTMENT_AMOUNT / ACTUAL_AMOUNT: lib/payroll/declarations). The read-only "Investment Amount" shows
+ * TOTAL_DEDUCTION_AMOUNT, as CI (never written: 0).
  * Behaviour changes: one live declaration per employee and financial year (payroll takes the first);
  * new rows start with zero amounts (CI's insert left the NOT NULL amounts out, which PostgreSQL rejects);
  * the record's financial year stays selectable on edit after the period closes; delete is a soft delete
@@ -37,6 +39,12 @@ export const empInvestmentsConfig: HubConfig = {
   options: async (_subject, brand, row) => ({
     financialYears: await keepCurrent(await financialYearOptions(brand), row?.FY_ID, periodLabel),
   }),
+
+  // CI's read-only "Investment Amount" (getInvestmentAmount: TOTAL_DEDUCTION_AMOUNT); never written back.
+  read: (row, values) => {
+    const amount = row.TOTAL_DEDUCTION_AMOUNT;
+    values.investment_amount = amount === null || amount === undefined ? '' : String(amount);
+  },
 
   async validate(v, check, ctx) {
     if (!v.financial_year_id || check.has('financial_year_id')) return;
